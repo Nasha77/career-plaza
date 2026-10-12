@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Career Plaza: try four workplaces for a few minutes each and see what you used, enjoyed and could try next." />
+    <meta name="color-scheme" content="light dark" />
+    <title>Career Plaza</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet" />
+  </head>
+  <body data-screen="title">
+    <canvas id="scene" aria-hidden="true"></canvas>
+    <div id="vignette" aria-hidden="true"></div>
+    <div id="ui">
+      <header id="hud" class="hud"></header>
+      <main id="stage"></main>
+    </div>
+    <div id="floats" aria-hidden="true"></div>
+    <div id="veil" aria-hidden="true"></div>
+    <div id="live" class="sr-only" aria-live="polite"></div>
+    <noscript>Career Plaza needs JavaScript to run.</noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

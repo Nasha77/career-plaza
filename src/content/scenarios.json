@@ -1,0 +1,176 @@
+{
+  "skills": [
+    { "name": "Research", "hint": "finding things out from sources" },
+    { "name": "Communication", "hint": "talking ideas through with people" },
+    { "name": "Organisation", "hint": "putting information in order" },
+    { "name": "Analysis", "hint": "breaking a problem into parts" }
+  ],
+  "guide": {
+    "name": "Guide",
+    "welcome": "Welcome to Career Plaza. Pick a building. There's no wrong order.",
+    "afterFirst": "Nice. Your career map just lit up a little. Try another building and notice how it feels different.",
+    "afterTwo": "You've got enough to look at your growth record. You can keep exploring too.",
+    "afterAll": "You've been through every building. Skills show up in more than one place, did you notice?"
+  },
+  "acknowledgements": {
+    "minLength": 20,
+    "number": "I like that you pointed to a specific figure.",
+    "reason": "You gave a reason. That makes it easier to trust.",
+    "question": "A good question is a useful tool in this job.",
+    "otherwise": "Thanks, that gives me a clear starting point."
+  },
+  "scenarios": [
+    {
+      "id": "consulting",
+      "building": "Consulting Firm",
+      "npc": { "name": "Alex", "role": "Project manager" },
+      "setting": "Client meeting room. A profit chart hangs on the wall.",
+      "intro": "Thanks for jumping in. Our client's profit has fallen 18% this quarter and they want a first view by Friday.",
+      "question": "What would you check first?",
+      "twist": "New info: a competitor cut prices last month.",
+      "writePrompt": "In one or two sentences, what would you tell the client on Friday?",
+      "likePhrase": "untangling a business problem",
+      "invite": "It's a chance to see what solving a client's problem under a deadline feels like.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Break revenue and costs down by product and region to see where the drop is.",
+          "skills": [{ "skill": "Analysis", "weight": 2 }, { "skill": "Organisation", "weight": 1 }],
+          "feedback": "That narrows the problem fast. A lot of consultants start there because it turns one big worry into a few smaller ones.",
+          "twistFeedback": "With the price cut in mind, you can check whether the drop sits in the products that compete head to head.",
+          "reflectiveQuestion": "Did sorting through the numbers feel energising or draining?"
+        },
+        {
+          "id": "B",
+          "text": "Talk to a few of the client's customers about why they're buying less.",
+          "skills": [{ "skill": "Research", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
+          "feedback": "Going to the source gives you reasons the numbers can't. It also takes time, which is a real trade-off on a Friday deadline.",
+          "twistFeedback": "Customers may bring up the competitor's price cut, so listen for how much price really drives their choice.",
+          "reflectiveQuestion": "What did you enjoy more: finding the reasons or presenting them?"
+        },
+        {
+          "id": "C",
+          "text": "Write a one-page summary of what we know and list open questions for the client.",
+          "skills": [{ "skill": "Organisation", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
+          "feedback": "That gets everyone looking at the same picture early. It keeps the client involved instead of surprised.",
+          "twistFeedback": "The competitor's price cut can go at the top of your open questions, so the client sees it straight away.",
+          "reflectiveQuestion": "Would you rather be the person who frames the problem or the one who digs into it?"
+        }
+      ]
+    },
+    {
+      "id": "classroom",
+      "building": "University Classroom",
+      "npc": { "name": "Mia", "role": "Student" },
+      "setting": "A classroom. Mia is puzzling over her course reading.",
+      "intro": "I read the chapter on social constructivism three times and I still don't get it.",
+      "question": "Could you explain this theory more simply?",
+      "twist": "Mia says she is short on time and has 5 minutes before her next class.",
+      "writePrompt": "Write the first sentence you'd say to Mia.",
+      "likePhrase": "helping someone understand an idea",
+      "invite": "It's a chance to see what explaining ideas feels like as a job.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Use an everyday example, like how roles get decided in a group project.",
+          "skills": [{ "skill": "Communication", "weight": 2 }, { "skill": "Research", "weight": 1 }],
+          "feedback": "Mia's face lights up. Concrete examples help ideas stick, and you picked one she actually lives.",
+          "twistFeedback": "In five minutes, one familiar example is often enough to unlock the idea.",
+          "reflectiveQuestion": "What made you choose that example?"
+        },
+        {
+          "id": "B",
+          "text": "Break it into three short steps and sketch them on the board.",
+          "skills": [{ "skill": "Organisation", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
+          "feedback": "Clear structure helps when a topic feels like fog. Mia can now see where each idea fits.",
+          "twistFeedback": "Three steps still fit in five minutes if you keep each one to a sentence.",
+          "reflectiveQuestion": "Did planning how to teach it feel more fun than explaining it live?"
+        },
+        {
+          "id": "C",
+          "text": "Ask what she already understands, then build from there.",
+          "skills": [{ "skill": "Communication", "weight": 2 }, { "skill": "Analysis", "weight": 1 }],
+          "feedback": "You found the gap before explaining. Teachers call this checking prior knowledge.",
+          "twistFeedback": "One quick question fits in five minutes, and it saves time on what she already knows.",
+          "reflectiveQuestion": "How did it feel to lead with a question instead of an answer?"
+        }
+      ]
+    },
+    {
+      "id": "data",
+      "building": "Data Studio",
+      "npc": { "name": "Leo", "role": "Product manager" },
+      "setting": "An open office. A big dashboard shows user retention.",
+      "intro": "Retention dropped from 42% to 35% over three weeks. The team is asking what's going on.",
+      "question": "How would you investigate it?",
+      "twist": "Leo adds: the drop is mostly new users who signed up through a campus event.",
+      "writePrompt": "Write one hypothesis you'd test first, in a sentence.",
+      "likePhrase": "working with evidence",
+      "invite": "It's a chance to see how people turn numbers and user stories into decisions.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Compare retention before and after last month's app update, by user group.",
+          "skills": [{ "skill": "Analysis", "weight": 2 }, { "skill": "Research", "weight": 1 }],
+          "feedback": "Splitting by group can show whether the drop is everywhere or in one place.",
+          "twistFeedback": "Splitting out the users from the campus event would show their pattern straight away.",
+          "reflectiveQuestion": "How did it feel to work with numbers as evidence?"
+        },
+        {
+          "id": "B",
+          "text": "Read recent app-store reviews and support tickets.",
+          "skills": [{ "skill": "Research", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
+          "feedback": "Real user words give you hypotheses to test. They're messy, but they're often where the story starts.",
+          "twistFeedback": "Look for reviews from people who joined at the campus event. Their first week might tell the story.",
+          "reflectiveQuestion": "Were you more interested in what users said or in what they did?"
+        },
+        {
+          "id": "C",
+          "text": "Build a timeline of everything that changed in the last month.",
+          "skills": [{ "skill": "Organisation", "weight": 2 }, { "skill": "Analysis", "weight": 1 }],
+          "feedback": "A timeline stops the team from blaming the first thing they noticed.",
+          "twistFeedback": "Put the campus event on the timeline and see what else landed that week.",
+          "reflectiveQuestion": "Do you like putting scattered facts into order?"
+        }
+      ]
+    },
+    {
+      "id": "research",
+      "building": "Research Center",
+      "npc": { "name": "Professor Chen", "role": "Researcher" },
+      "setting": "A research office. Two reports sit side by side on the desk.",
+      "intro": "Report A says online tutorials improve grades. Report B finds no effect. Both look careful.",
+      "question": "The two sets of results conflict. What would you do?",
+      "twist": "Professor Chen mentions a third report just came out that sides with Report B.",
+      "writePrompt": "In one or two sentences, what would you say to the department about these reports?",
+      "likePhrase": "weighing up sources",
+      "invite": "It's a chance to see what careful, slow investigation feels like day to day.",
+      "options": [
+        {
+          "id": "A",
+          "text": "Compare their sample sizes, methods and who was studied.",
+          "skills": [{ "skill": "Research", "weight": 2 }, { "skill": "Analysis", "weight": 1 }],
+          "feedback": "Differences in method often explain differences in results. That's slow, careful work.",
+          "twistFeedback": "The new report gives you a third method to compare. It's fine to update your view as evidence comes in.",
+          "reflectiveQuestion": "Did digging into how the studies were run hold your attention?"
+        },
+        {
+          "id": "B",
+          "text": "Contact both authors to ask what might explain the gap.",
+          "skills": [{ "skill": "Communication", "weight": 2 }, { "skill": "Research", "weight": 1 }],
+          "feedback": "Researchers often respond, and a conversation can surface what the paper left out.",
+          "twistFeedback": "You could ask whether they've seen the new report. Changing your view when the evidence changes is part of the job.",
+          "reflectiveQuestion": "How do you feel about reaching out to people you've never met?"
+        },
+        {
+          "id": "C",
+          "text": "Write a short note on where the reports agree and where they differ.",
+          "skills": [{ "skill": "Organisation", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
+          "feedback": "Mapping agreement and disagreement gives the next reader a way into both.",
+          "twistFeedback": "Your note can now show two reports on one side. A good summary changes when the evidence does.",
+          "reflectiveQuestion": "Is summarising other people's work something you'd want to do more of?"
+        }
+      ]
+    }
+  ]
+}
