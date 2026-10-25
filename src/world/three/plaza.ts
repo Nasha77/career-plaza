@@ -23,6 +23,7 @@ export interface BuildingHandle {
   lift: number;
   liftTarget: number;
   pulse: number;
+  animate?: (t: number) => void;
 }
 
 export interface Plaza {
@@ -115,37 +116,112 @@ function labelSprite(kit: Kit, text: string): THREE.Sprite {
   return s;
 }
 
-function buildConsulting(kit: Kit, g: THREE.Group, win: Windows, own: (c: number) => THREE.MeshLambertMaterial) {
-  const body = own(0xd8b98a);
-  const dark = own(0x2f6f6a);
-  g.add(kit.box(6.6, 0.6, 5.6, dark, 0, 0.3, 0));
+type Own = (c: number) => THREE.MeshLambertMaterial;
+interface BuildInfo {
+  door: number;
+  height: number;
+  hit: readonly [number, number, number];
+  /** Small looping motion (turbine blades, a scrolling ticker). Called every frame when motion is allowed. */
+  animate?: (t: number) => void;
+}
+
+/** Low-poly palm: a leaning trunk and drooping fronds. */
+function palm(kit: Kit, g: THREE.Group, x: number, z: number, h = 3.4, lean = 0.12) {
+  const p = new THREE.Group();
+  p.position.set(x, 0, z);
+  p.rotation.z = lean;
+  p.add(kit.cyl(0.13, 0.2, h, 6, kit.lambert(0x8a6a48), 0, h / 2, 0));
+  const frond = kit.lambert(0x4f9a5c);
+  for (let i = 0; i < 6; i++) {
+    const f = kit.box(1.7, 0.06, 0.4, frond);
+    const a = (i / 6) * Math.PI * 2;
+    f.position.set(Math.cos(a) * 0.7, h + 0.05, Math.sin(a) * 0.7);
+    f.rotation.set(0, -a, -0.45);
+    p.add(f);
+  }
+  p.add(kit.sphere(0.22, 0, kit.lambert(0x6b4a2e), 0, h, 0));
+  g.add(p);
+}
+
+function buildResort(kit: Kit, g: THREE.Group, win: Windows, own: Own): BuildInfo {
+  const body = own(0xe6d2ae);
+  const trim = own(0x2f6f6a);
+  const white = own(0xf4f1ea);
+  g.add(kit.box(6.6, 0.6, 5.6, trim, 0, 0.3, 0));
   g.add(kit.box(6, 11, 5, body, 0, 5.5, 0));
+  // Balcony bands give the tower its hotel look
+  for (let y = 3.2; y <= 10.4; y += 1.2) {
+    g.add(kit.box(6.3, 0.12, 0.5, white, 0, y, 2.7), kit.box(6.3, 0.12, 0.5, white, 0, y, -2.7));
+  }
   // Rooftop garden deck with a curved canopy
-  g.add(kit.box(6.4, 0.3, 5.4, dark, 0, 11.15, 0));
-  const canopy = kit.cyl(3.4, 3.4, 0.25, 16, own(0xf2efe6), 0, 13.2, 0);
+  g.add(kit.box(6.4, 0.3, 5.4, trim, 0, 11.15, 0));
+  const canopy = kit.cyl(3.4, 3.4, 0.25, 16, white, 0, 13.2, 0);
   canopy.scale.set(1, 1, 0.75);
   g.add(canopy);
-  for (const [x, z] of [[-2.4, -1.6], [2.4, -1.6], [-2.4, 1.6], [2.4, 1.6]]) g.add(kit.cyl(0.12, 0.12, 1.9, 6, dark, x, 12.2, z));
+  for (const [x, z] of [[-2.4, -1.6], [2.4, -1.6], [-2.4, 1.6], [2.4, 1.6]]) g.add(kit.cyl(0.12, 0.12, 1.9, 6, trim, x, 12.2, z));
   g.add(kit.sphere(0.6, 0, kit.lambert(0x5f9e6e), -1.2, 11.7, 0.6), kit.sphere(0.5, 0, kit.lambert(0x78b57f), 1.3, 11.6, -0.5));
-  g.add(kit.box(3.2, 0.18, 1.4, dark, 0, 2.9, 3.1));
+  // Entrance canopy and door
+  g.add(kit.box(3.2, 0.18, 1.4, trim, 0, 2.9, 3.1));
   g.add(kit.box(1.8, 2.5, 0.1, kit.lambert(0x1f4e4a), 0, 1.25, 2.53));
+
+  // Pool deck to one side, with loungers, a parasol and palms
+  const deck = kit.lambert(0xd9cbb2);
+  g.add(kit.box(4.2, 0.35, 5.2, deck, -5.3, 0.17, 0.4));
+  g.add(kit.box(3.2, 0.1, 2.6, kit.lambert(0x55c2d6, { emissive: 0x2b8fa3, emissiveIntensity: 0.25 }), -5.3, 0.37, 0.0));
+  for (const z of [1.9, 2.6]) g.add(kit.box(1.4, 0.18, 0.5, white, -5.6, 0.48, z));
+  g.add(kit.cyl(0.04, 0.04, 1.5, 5, trim, -4.2, 1.1, 2.3));
+  g.add(kit.cyl(0.0, 0.9, 0.4, 8, kit.lambert(0xe07a5f), -4.2, 1.95, 2.3));
+  palm(kit, g, -6.8, -1.6, 3.6, 0.15);
+  palm(kit, g, -6.6, 2.6, 3.0, -0.1);
+  palm(kit, g, 4.1, 2.2, 3.2, -0.12);
+
+  // Harbour behind the resort: water, a boardwalk edge and a small sailboat
+  const water = kit.lambert(0x4fa8c4, { emissive: 0x1d6f8a, emissiveIntensity: 0.2 });
+  g.add(kit.box(16, 0.08, 6, water, 0, 0.05, -7.6));
+  g.add(kit.box(16, 0.3, 0.8, kit.lambert(0xa98d6b), 0, 0.15, -4.4));
+  const boat = new THREE.Group();
+  boat.position.set(3.5, 0.15, -8.2);
+  boat.add(kit.box(2.0, 0.35, 0.7, white, 0, 0.15, 0));
+  boat.add(kit.cyl(0.04, 0.04, 2.2, 5, kit.lambert(0x6b4a2e), 0.1, 1.4, 0));
+  const sail = kit.prism(1.2, 1.8, 0.04, kit.lambert(0xfff8ec));
+  sail.position.set(0.5, 0.45, 0);
+  boat.add(sail);
+  g.add(boat);
+
   const cols = span(4, -3, 3);
   const rows = span(7, 3.4, 10.8);
   win.grid('front', 6, 5, cols, rows);
   win.grid('back', 6, 5, cols, rows);
   win.grid('left', 6, 5, span(3, -2.5, 2.5), rows);
   win.grid('right', 6, 5, span(3, -2.5, 2.5), rows);
-  return { door: 2.6, height: 14.8, hit: [7.5, 15, 6.5] as const };
+  return {
+    door: 2.6,
+    height: 14.8,
+    hit: [8, 15, 7] as const,
+    animate: (t) => {
+      boat.position.y = 0.15 + Math.sin(t * 1.3) * 0.06;
+      boat.rotation.z = Math.sin(t * 0.9) * 0.05;
+    },
+  };
 }
 
-function buildClassroom(kit: Kit, g: THREE.Group, win: Windows, own: (c: number) => THREE.MeshLambertMaterial) {
-  const body = own(0xb7b9a9);
+function buildPolicy(kit: Kit, g: THREE.Group, win: Windows, own: Own): BuildInfo {
+  const body = own(0xc7c6b6);
   const roof = own(0x4a5560);
   const stone = own(0xf1ece2);
   g.add(kit.box(9, 4.6, 6, body, 0, 2.3, 0));
   const r = kit.prism(9.8, 2.1, 6.6, roof);
   r.position.y = 4.6;
   g.add(r);
+  // Solar panels on one roof slope
+  const panel = kit.lambert(0x23376b, { emissive: 0x16244a, emissiveIntensity: 0.3 });
+  const slope = Math.atan2(2.1, 4.9);
+  for (const z of [-2.0, 0, 2.0]) {
+    const p = kit.box(2.6, 0.08, 1.7, panel, 2.35, 5.72, z);
+    p.rotation.z = -slope;
+    g.add(p);
+  }
+  // Columned porch
   g.add(kit.box(6.2, 0.3, 2.2, stone, 0, 0.15, 4.0));
   for (const x of [-2.4, -0.8, 0.8, 2.4]) g.add(kit.cyl(0.22, 0.26, 3.8, 8, stone, x, 2.2, 4.6));
   g.add(kit.box(6.6, 0.35, 2.4, stone, 0, 4.25, 4.0));
@@ -153,87 +229,203 @@ function buildClassroom(kit: Kit, g: THREE.Group, win: Windows, own: (c: number)
   ped.position.set(0, 4.42, 5.0);
   g.add(ped);
   g.add(kit.box(1.6, 2.6, 0.1, kit.lambert(0x5b3a2e), 0, 1.3, 3.03));
-  const clock = kit.cyl(0.5, 0.5, 0.12, 12, kit.lambert(0xf7f3ea), 0, 5.6, 3.32);
-  clock.rotation.x = Math.PI / 2;
-  g.add(clock);
+  // A leaf emblem instead of a clock
+  const emblem = kit.cyl(0.5, 0.5, 0.12, 12, kit.lambert(0x5f9e6e), 0, 5.6, 3.32);
+  emblem.rotation.x = Math.PI / 2;
+  g.add(emblem);
+  // Planters along the front
+  const planter = kit.lambert(0x8f9a8b);
+  const leaf = kit.lambert(0x5f9e6e);
+  for (const x of [-4.0, 4.0]) {
+    g.add(kit.box(1.0, 0.6, 1.6, planter, x, 0.3, 3.6));
+    g.add(kit.sphere(0.55, 0, leaf, x, 0.95, 3.6));
+  }
+  // Flagpole with a green flag
+  g.add(kit.cyl(0.05, 0.05, 6.5, 5, kit.lambert(0xdedede), -4.8, 3.25, 4.6));
+  const flag = kit.box(1.2, 0.7, 0.04, kit.lambert(0x4f9a5c), -4.2, 6.1, 4.6);
+  g.add(flag);
+
+  // Small wind turbine beside the building
+  const turbine = new THREE.Group();
+  turbine.position.set(6.4, 0, 0.5);
+  turbine.add(kit.cyl(0.12, 0.2, 7.2, 8, kit.lambert(0xf2f2ee), 0, 3.6, 0));
+  turbine.add(kit.box(0.5, 0.4, 0.9, kit.lambert(0xf2f2ee), 0, 7.3, 0));
+  const rotor = new THREE.Group();
+  rotor.position.set(0, 7.3, 0.55);
+  for (let i = 0; i < 3; i++) {
+    const blade = kit.box(0.18, 2.6, 0.06, kit.lambert(0xffffff), 0, 1.3, 0);
+    const arm = new THREE.Group();
+    arm.rotation.z = (i / 3) * Math.PI * 2;
+    arm.add(blade);
+    rotor.add(arm);
+  }
+  rotor.add(kit.sphere(0.18, 0, kit.lambert(0xdedede)));
+  turbine.add(rotor);
+  g.add(turbine);
+
   win.grid('front', 9, 6, [-3.7, 3.7], [1.6, 3.3]);
   win.grid('back', 9, 6, span(5, -4.5, 4.5), [1.6, 3.3]);
   win.grid('left', 9, 6, span(3, -3, 3), [1.6, 3.3]);
   win.grid('right', 9, 6, span(3, -3, 3), [1.6, 3.3]);
-  return { door: 3.1, height: 7.2, hit: [10.5, 8, 9] as const };
+  return {
+    door: 3.1,
+    height: 8.5,
+    hit: [13, 9, 9] as const,
+    animate: (t) => {
+      rotor.rotation.z = t * 1.4;
+      flag.rotation.y = Math.sin(t * 2.2) * 0.15;
+    },
+  };
 }
 
-function buildData(kit: Kit, g: THREE.Group, win: Windows, own: (c: number) => THREE.MeshLambertMaterial) {
-  const body = own(0x4fa3a5);
-  const upper = own(0x3e8789);
-  const dark = own(0x1f4e5a);
-  g.add(kit.box(7, 4, 6, body, 0, 2, 0));
-  g.add(kit.box(7.1, 0.3, 6.1, dark, 0, 4.0, 0));
-  const top = kit.box(5.2, 3.2, 4.6, upper, 0.9, 5.7, -0.4);
-  top.rotation.y = 0.18;
-  g.add(top);
-  // Rooftop screen
-  g.add(kit.box(0.15, 1.2, 0.15, dark, -2.4, 4.6, 2.1), kit.box(0.15, 1.2, 0.15, dark, -0.8, 4.6, 2.1));
-  g.add(kit.box(2.6, 1.5, 0.15, dark, -1.6, 5.6, 2.1));
-  const screen = kit.canvasTexture(256, 150, (ctx, w, h) => {
-    ctx.fillStyle = '#0f2e36';
-    ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = '#7ee0d2';
-    ctx.lineWidth = 10;
-    ctx.beginPath();
-    ctx.moveTo(14, 40);
-    for (const [px, py] of [[70, 55], [120, 75], [170, 95], [240, 110]]) ctx.lineTo(px, py);
-    ctx.stroke();
+function buildFoundation(kit: Kit, g: THREE.Group, win: Windows, own: Own): BuildInfo {
+  // A row of three two-storey shophouses in warm pastels, joined by a covered walkway
+  const bays: [number, number, number][] = [
+    [-2.7, 0xf2c6a8, 0x2f6f6a],
+    [0, 0xbfe0cf, 0x8c3b4a],
+    [2.7, 0xf6e3a6, 0x3d7ea6],
+  ];
+  const cream = own(0xf7f1e6);
+  const roofTile = own(0xb5694a);
+  bays.forEach(([x, wall, shutter]) => {
+    const w = own(wall);
+    g.add(kit.box(2.7, 6.2, 6, w, x, 3.1, 0));
+    // Upper-floor windows framed by coloured shutters
+    for (const dx of [-0.55, 0.55]) {
+      g.add(kit.box(0.22, 1.3, 0.08, kit.lambert(shutter), x + dx * 1.55, 4.6, 3.05));
+    }
+    g.add(kit.box(2.7, 0.3, 6.2, cream, x, 6.35, 0));
   });
-  const sp = new THREE.Mesh(kit.geo('plane', () => new THREE.PlaneGeometry(1, 1)), kit.track(new THREE.MeshBasicMaterial({ map: screen })));
-  sp.scale.set(2.4, 1.3, 1);
-  sp.position.set(-1.6, 5.6, 2.19);
-  g.add(sp);
-  // Dish
-  const dish = new THREE.Mesh(
-    kit.geo('dish', () => new THREE.SphereGeometry(0.8, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2)),
-    kit.lambert(0xe9eef0, { side: THREE.DoubleSide }),
-  );
-  dish.position.set(2.3, 7.7, -1);
-  dish.rotation.x = Math.PI * 0.75;
-  g.add(dish, kit.cyl(0.08, 0.08, 0.6, 5, dark, 2.3, 7.4, -1));
-  g.add(kit.box(2.2, 2.6, 0.1, kit.lambert(0x17363f), 0, 1.3, 3.03));
-  win.grid('front', 7, 6, [-2.7, -1.7, 1.7, 2.7], [1.5, 2.9], 0.7, 0.9);
-  win.grid('back', 7, 6, span(5, -3.5, 3.5), [1.5, 2.9], 0.7, 0.9);
-  win.grid('left', 7, 6, span(4, -3, 3), [1.5, 2.9], 0.7, 0.9);
-  win.grid('right', 7, 6, span(4, -3, 3), [1.5, 2.9], 0.7, 0.9);
-  return { door: 3.1, height: 8.4, hit: [8.5, 9, 7.5] as const };
-}
+  // Tiled roof with its ridge running along the row
+  const roof = kit.prism(6.2, 1.2, 8.4, roofTile);
+  roof.rotation.y = Math.PI / 2;
+  roof.position.y = 6.5;
+  g.add(roof);
 
-function buildResearch(kit: Kit, g: THREE.Group, win: Windows, own: (c: number) => THREE.MeshLambertMaterial) {
-  const body = own(0x9db58a);
-  const band = own(0x5e7a52);
-  const dome = own(0xe9dfc0);
-  g.add(kit.cyl(4, 4.2, 5, 12, body, 0, 2.5, 0));
-  g.add(kit.cyl(4.15, 4.15, 0.4, 12, band, 0, 5.1, 0));
-  const d = new THREE.Mesh(
-    kit.geo('dome', () => new THREE.SphereGeometry(3.9, 12, 6, 0, Math.PI * 2, 0, Math.PI / 2)),
-    dome,
-  );
-  d.position.y = 5.25;
-  g.add(d);
-  const slit = kit.box(0.8, 3.2, 0.3, band, 0, 7.6, 2.0);
-  slit.rotation.x = -0.75;
-  g.add(slit);
-  g.add(kit.box(3.4, 3.2, 2.2, body, 0, 1.6, 4.2));
-  const ped = kit.prism(3.8, 0.9, 2.4, band);
-  ped.position.set(0, 3.2, 4.2);
-  g.add(ped);
-  g.add(kit.box(1.6, 2.4, 0.1, kit.lambert(0x3a4a33), 0, 1.2, 5.32));
-  for (let i = 0; i < 12; i++) {
-    const a = (i / 12) * Math.PI * 2 + Math.PI / 12;
-    if (Math.abs(Math.sin(a / 2)) < 0.3) continue; // leave the entrance clear
-    for (const y of [2, 3.7]) win.add(Math.sin(a) * 4.05, y, Math.cos(a) * 4.05, a, 0.7, 0.9);
+  // Covered five-foot way: slab, pillars and striped awnings
+  g.add(kit.box(8.4, 0.25, 1.8, cream, 0, 2.95, 3.9));
+  for (const x of [-4.05, -1.35, 1.35, 4.05]) g.add(kit.cyl(0.14, 0.16, 2.9, 8, cream, x, 1.45, 4.6));
+  const stripes = kit.canvasTexture(128, 64, (ctx, w, h) => {
+    for (let i = 0; i < 8; i++) {
+      ctx.fillStyle = i % 2 ? '#ffffff' : '#e07a5f';
+      ctx.fillRect((i * w) / 8, 0, w / 8, h);
+    }
+  });
+  const awningMat = kit.track(new THREE.MeshLambertMaterial({ map: stripes, side: THREE.DoubleSide }));
+  bays.forEach(([x]) => {
+    const a = new THREE.Mesh(kit.geo('plane', () => new THREE.PlaneGeometry(1, 1)), awningMat);
+    a.scale.set(2.3, 0.9, 1);
+    a.position.set(x, 3.75, 3.4);
+    a.rotation.x = -0.9;
+    g.add(a);
+  });
+  g.add(kit.box(1.4, 2.4, 0.1, kit.lambert(0x5b3a2e), 0, 1.2, 3.03));
+
+  // Bunting across the front
+  const flagColors = [0xe07a5f, 0xf2c14e, 0x5f9e6e, 0x3d7ea6, 0xd9a6c9];
+  for (let i = 0; i < 11; i++) {
+    const f = kit.cyl(0.0, 0.22, 0.42, 3, kit.lambert(flagColors[i % flagColors.length]), -4 + i * 0.8, 5.55 - Math.sin((i / 10) * Math.PI) * 0.35, 3.3);
+    f.rotation.x = Math.PI;
+    g.add(f);
   }
-  return { door: 5.4, height: 9.4, hit: [9.5, 10, 11] as const };
+
+  // Community garden in front: raised beds with plants
+  const bed = kit.lambert(0x8a6a48);
+  for (const [x, z] of [[-5.6, 2.6], [5.6, 2.6]]) {
+    g.add(kit.box(1.4, 0.5, 2.2, bed, x, 0.25, z));
+    for (const dz of [-0.6, 0, 0.6]) g.add(kit.sphere(0.3, 0, kit.lambert(dz === 0 ? 0xf2c14e : 0x5f9e6e), x, 0.7, z + dz));
+  }
+
+  // Mural on the side wall: overlapping circles and a heart, painted by the community
+  const mural = kit.canvasTexture(256, 256, (ctx, w, h) => {
+    ctx.fillStyle = '#fbf3e4';
+    ctx.fillRect(0, 0, w, h);
+    const dots: [number, number, number, string][] = [
+      [70, 80, 50, '#e07a5f'],
+      [170, 90, 60, '#3d7ea6'],
+      [110, 170, 55, '#f2c14e'],
+      [200, 190, 40, '#5f9e6e'],
+    ];
+    ctx.globalAlpha = 0.85;
+    for (const [x, y, r, c] of dots) {
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#c4462a';
+    ctx.beginPath();
+    ctx.moveTo(128, 150);
+    ctx.bezierCurveTo(90, 120, 95, 85, 128, 100);
+    ctx.bezierCurveTo(161, 85, 166, 120, 128, 150);
+    ctx.fill();
+  });
+  const m = new THREE.Mesh(kit.geo('plane', () => new THREE.PlaneGeometry(1, 1)), kit.track(new THREE.MeshLambertMaterial({ map: mural })));
+  m.scale.set(4.4, 4.4, 1);
+  m.position.set(4.06, 3.3, -0.4);
+  m.rotation.y = Math.PI / 2;
+  g.add(m);
+
+  win.grid('front', 8.1, 6, [-2.7, 0, 2.7], [4.6], 1.0, 1.3);
+  win.grid('front', 8.1, 6, [-3.5, -1.9, 1.9, 3.5], [1.3], 0.8, 1.1);
+  win.grid('back', 8.1, 6, span(6, -3.9, 3.9), [1.6, 4.6], 0.8, 1.1);
+  win.grid('left', 8.1, 6, span(3, -2.5, 2.5), [1.6, 4.6], 0.8, 1.1);
+  return { door: 3.1, height: 7.7, hit: [12.5, 8.5, 8] as const };
 }
 
-const BUILDERS = { resort: buildConsulting, policy: buildClassroom, foundation: buildData, workforce: buildResearch };
+function buildWorkforce(kit: Kit, g: THREE.Group, win: Windows, own: Own): BuildInfo {
+  const glass = own(0x8fb9cf);
+  const band = own(0xf2f4f5);
+  const dark = own(0x2a3a44);
+  g.add(kit.cyl(4.3, 4.5, 0.5, 20, dark, 0, 0.25, 0));
+  g.add(kit.cyl(3.6, 3.8, 11, 20, glass, 0, 5.75, 0));
+  for (let y = 2.0; y <= 10.5; y += 1.7) g.add(kit.cyl(3.7, 3.7, 0.18, 20, band, 0, y, 0));
+  // Scrolling news ticker band
+  const ticker = kit.canvasTexture(1024, 64, (ctx, w, h) => {
+    ctx.fillStyle = '#0f2a30';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#7ee0d2';
+    ctx.font = `800 40px ${DISPLAY_FONT}`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText('FUTURE OF WORK  •  SKILLS  •  AI  •  PEOPLE  •  TRAINING  •  ', 10, h / 2 + 2);
+  });
+  ticker.wrapS = THREE.RepeatWrapping;
+  ticker.repeat.set(2, 1);
+  const tickerMesh = new THREE.Mesh(
+    kit.geo('ticker', () => new THREE.CylinderGeometry(3.72, 3.72, 0.8, 32, 1, true)),
+    kit.track(new THREE.MeshBasicMaterial({ map: ticker })),
+  );
+  tickerMesh.position.y = 8.6;
+  g.add(tickerMesh);
+  // Crown: halo ring and antenna
+  g.add(kit.cyl(2.8, 3.6, 0.6, 20, dark, 0, 11.55, 0));
+  const halo = new THREE.Mesh(kit.geo('halo', () => new THREE.TorusGeometry(2.4, 0.12, 6, 32)), kit.lambert(0x7ee0d2, { emissive: 0x3aa69a, emissiveIntensity: 0.6 }));
+  halo.rotation.x = Math.PI / 2;
+  halo.position.y = 12.4;
+  g.add(halo);
+  g.add(kit.cyl(0.06, 0.06, 2.4, 5, band, 0, 13.0, 0));
+  // Glass entrance pavilion
+  g.add(kit.box(3.6, 3.0, 2.4, glass, 0, 1.5, 4.2));
+  g.add(kit.box(4.2, 0.2, 3.0, band, 0, 3.1, 4.3));
+  g.add(kit.box(1.6, 2.3, 0.1, kit.lambert(0x1d2b33), 0, 1.15, 5.42));
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2 + Math.PI / 16;
+    if (Math.abs(Math.sin(a / 2)) < 0.28) continue; // keep the entrance clear
+    for (const y of [2.9, 4.6, 6.3, 10.0]) win.add(Math.sin(a) * 3.72, y, Math.cos(a) * 3.72, a, 0.8, 1.0);
+  }
+  return {
+    door: 5.5,
+    height: 13.5,
+    hit: [9, 14, 11] as const,
+    animate: (t) => {
+      ticker.offset.x = -(t * 0.04) % 1;
+      halo.rotation.z = t * 0.3;
+    },
+  };
+}
+
+const BUILDERS = { resort: buildResort, policy: buildPolicy, foundation: buildFoundation, workforce: buildWorkforce };
 
 function makeBuilding(kit: Kit, id: ScenarioId, parent: THREE.Group): BuildingHandle {
   const group = new THREE.Group();
@@ -292,6 +484,7 @@ function makeBuilding(kit: Kit, id: ScenarioId, parent: THREE.Group): BuildingHa
     lift: 0,
     liftTarget: 0,
     pulse: 0,
+    animate: info.animate,
   };
 }
 

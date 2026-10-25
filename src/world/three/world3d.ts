@@ -662,6 +662,7 @@ export class World3D implements World {
         b.label.scale.set(LABEL_W * ls, LABEL_H * ls, 1);
         b.label.position.y = labelY(b.height) + b.lift;
 
+        if (motion) b.animate?.(t);
         b.pulse = Math.max(0, b.pulse - dt * 0.5);
         const glow = b.lit ? 0.42 + (motion ? Math.sin(t * 2 + b.height) * 0.12 : 0) : 0;
         b.ringMat.color.set(b.lit ? 0xf2b634 : 0xffffff);

@@ -91,10 +91,14 @@ export function skillChip(skill: SkillName, note?: string): HTMLElement {
 
 /** Small building silhouettes used in buttons, the HUD and the career map. */
 const BUILDING_ICONS: Record<ScenarioId, string> = {
-  resort: '<path d="M7 21V5h7v16M14 21V9h3v12M9 8h3M9 11h3M9 14h3M9 17h3M10 2v3"/>',
-  policy: '<path d="M3 9l9-5 9 5M4 9h16M6 9v9M10 9v9M14 9v9M18 9v9M3 21h18M4 18h16"/>',
-  foundation: '<path d="M3 21V11h10v10M13 21V6h8v15M15 9h4l-2 3-1-1-1 2M5 14h6M5 17h6"/>',
-  workforce: '<path d="M4 21v-8h16v8M5 13a7 7 0 0 1 14 0M12 6V3M10 21v-4h4v4M14.5 7.5l2-2"/>',
+  // Resort tower with a rooftop canopy, beside the water
+  resort: '<path d="M8 20V6h7v14M7 6h9M8 4h7M10 9h3M10 12h3M10 15h3M3 21c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0 3 1 4.5 0"/>',
+  // Civic building with solar panels and a small wind turbine
+  policy: '<path d="M3 10l7-5 7 5M4 10h12M6 10v8M10 10v8M14 10v8M3 20h14M20 20V8M20 8l-2.5-3M20 8l3 1M20 8l-.5 3.5"/>',
+  // Shophouse row with an awning and bunting
+  foundation: '<path d="M3 21V9h18v12M3 9l9-5 9 5M3 14h18M5 14l1.5 2 1.5-2 1.5 2 1.5-2 1.5 2 1.5-2 1.5 2 1.5-2 1.5 2M10 21v-3h4v3"/>',
+  // Round glass tower with a ticker band and halo
+  workforce: '<path d="M7 21V7h10v14M7 11h10M7 15h10M9 4h6M12 2v2M10 21v-3h4v3"/>',
 };
 
 export function buildingIcon(id: ScenarioId): SVGElement {
