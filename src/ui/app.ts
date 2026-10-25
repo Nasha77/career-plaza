@@ -1,5 +1,7 @@
 import { CONTENT, SCENARIO_IDS, getScenario } from '../content';
 import type { FeedbackProvider, FeedbackResult } from '../feedback/provider';
+import { aiAvailable, aiCoach, aiFollowup, aiSummary } from '../ai/client';
+import { AiProvider } from '../feedback/ai';
 import { MAX_REVISIONS, coachWriting, type CoachResult } from '../feedback/coach';
 import { ScriptedProvider } from '../feedback/scripted';
 import { buildRecord, exploredIds, guideLine, joinList, ratingWord, recordAsText, thenAndNow, type GrowthRecord, type ThenAndNow } from '../record';
@@ -20,7 +22,7 @@ import {
 } from './dom';
 
 type Screen = 'title' | 'selfcheck' | 'plaza' | 'scenario' | 'record';
-type Step = 'intro' | 'choose' | 'write' | 'coach' | 'feedback' | 'reflect' | 'rate' | 'resources';
+type Step = 'intro' | 'choose' | 'write' | 'coach' | 'followup' | 'feedback' | 'reflect' | 'rate' | 'resources';
 
 interface Run {
   scenario: Scenario;
@@ -32,6 +34,8 @@ interface Run {
   firstDraft?: string;
   revisions: number;
   coach?: CoachResult;
+  followupQuestion?: string;
+  followupAnswer?: string;
   feedback?: FeedbackResult;
   saved?: boolean;
   /** A reaction to the player's last action, said at the start of the next step. */
@@ -73,12 +77,22 @@ export class App {
   private busy = false;
   private webglFailed: boolean;
   private justFinished: ScenarioId | null = null;
+  /** True only under `npm run dev` with a key in .env.local. */
+  private ai = false;
 
   constructor(private els: Elements, private opts: AppOptions) {
     this.world = opts.world;
     this.webglFailed = opts.webglFailed;
     this.bindWorld();
     this.world.setVisited(exploredIds(this.save.attempts));
+    if (import.meta.env.DEV) {
+      void aiAvailable().then((on) => {
+        if (!on) return;
+        this.ai = true;
+        this.provider = new AiProvider();
+        this.renderHud();
+      });
+    }
     document.addEventListener('keydown', (e) => {
       if (!isTyping()) return;
       const t = e.target as HTMLElement | null;
@@ -142,6 +156,7 @@ export class App {
       { class: 'mapstat', role: 'status' },
       h('span', { class: 'pips', 'aria-hidden': 'true' }, pips),
       h('span', null, `Career map: ${explored.length} of 4 explored`),
+      this.ai ? h('span', { class: 'ai-badge', title: 'Characters are using the local AI on this computer' }, 'AI on') : null,
     );
 
     let right: HTMLElement | null = null;
@@ -482,6 +497,26 @@ export class App {
         void this.speak(lines, texts, controls);
         break;
       }
+      case 'followup': {
+        const q = say();
+        q.classList.add('question');
+        const ta = h('textarea', { id: 'followup', rows: 3, maxlength: 400, placeholder: 'Your reply…', 'aria-labelledby': 'followup-l' }) as HTMLTextAreaElement;
+        const controls = h(
+          'div',
+          { class: 'block' },
+          h('label', { id: 'followup-l', class: 'label', for: 'followup' }, `Reply to ${s.npc.name}`),
+          ta,
+          h(
+            'div',
+            { class: 'actions' },
+            h('button', { class: 'btn primary', type: 'button', onclick: () => void this.answerFollowup(ta.value) }, 'Reply'),
+            h('button', { class: 'btn ghost', type: 'button', onclick: () => void this.answerFollowup('') }, 'Skip'),
+          ),
+        );
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [q, controls])));
+        void this.speak([q], [run.followupQuestion ?? ''], controls);
+        break;
+      }
       case 'feedback': {
         const fb = run.feedback!;
         const r = say();
@@ -635,26 +670,65 @@ export class App {
     return line;
   }
 
-  private keepAnswer() {
-    if (!this.run) return;
-    this.run.pendingLine = CONTENT.reactions.keep;
-    void this.toFeedback();
-  }
-
   private async submitWriting(text: string) {
     const run = this.run;
     if (!run || !run.choiceId) return;
     run.written = text.trim() || undefined;
-    if (!run.written) run.pendingLine = CONTENT.reactions.skipWrite;
+    if (!run.written) run.pendingLine = run.scenario.reactions.skipWrite;
     if (run.written && run.revisions < MAX_REVISIONS) {
-      const c = coachWriting(run.scenario, run.written);
+      let c: CoachResult | null = null;
+      if (this.ai) {
+        this.showThinking(run, `${run.scenario.npc.name} is reading your answer…`);
+        c = await aiCoach(run.scenario.id, run.choiceId, run.written);
+        if (this.run !== run) return;
+      }
+      c = c ?? coachWriting(run.scenario, run.written);
       if (c.status === 'could_strengthen') {
         run.coach = c;
         this.go('coach');
         return;
       }
     }
+    await this.afterWriting();
+  }
+
+  private keepAnswer() {
+    if (!this.run) return;
+    this.run.pendingLine = this.run.scenario.reactions.keep;
+    void this.afterWriting();
+  }
+
+  /** With the AI on, the manager asks one follow-up question about what the student wrote. */
+  private async afterWriting() {
+    const run = this.run;
+    if (!run || !run.choiceId) return;
+    if (this.ai && run.written && !run.followupQuestion) {
+      this.showThinking(run, `${run.scenario.npc.name} is thinking…`);
+      const q = await aiFollowup(run.scenario.id, run.choiceId, run.written);
+      if (this.run !== run) return;
+      if (q) {
+        run.followupQuestion = q;
+        this.go('followup');
+        return;
+      }
+    }
     await this.toFeedback();
+  }
+
+  private async answerFollowup(text: string) {
+    const run = this.run;
+    if (!run) return;
+    run.followupAnswer = text.trim() || undefined;
+    await this.toFeedback();
+  }
+
+  /** A short "thinking" card while the AI replies, so the student knows something is happening. */
+  private showThinking(run: Run, label: string) {
+    this.world.setTalking('npc');
+    this.announce(label);
+    this.els.stage.replaceChildren(
+      this.wrapScenario(this.dialogueCard(run, [h('p', { class: 'say thinking', role: 'status' }, label, h('span', { class: 'dots', 'aria-hidden': 'true' }, h('span'), h('span'), h('span')))])),
+    );
   }
 
   /** Revising keeps the first draft so the growth record can show both versions. */
@@ -663,20 +737,30 @@ export class App {
     if (!run) return;
     if (run.firstDraft === undefined) run.firstDraft = run.written;
     run.revisions += 1;
-    run.pendingLine = CONTENT.reactions.revise;
+    run.pendingLine = run.scenario.reactions.revise;
     this.go('write');
   }
 
   private async toFeedback() {
     const run = this.run;
     if (!run || !run.choiceId) return;
+    if (this.ai) this.showThinking(run, `${run.scenario.npc.name} is thinking…`);
+    const pending = run.pendingLine;
     run.feedback = await this.provider.getFeedback({
       scenarioId: run.scenario.id,
       choiceId: run.choiceId,
       writtenResponse: run.written,
       isRevisit: run.isRevisit,
       twist: run.isRevisit ? run.scenario.twist : undefined,
+      followupQuestion: run.followupQuestion,
+      followupAnswer: run.followupAnswer,
+      earlier: this.attempts.slice(-4).map((a) => {
+        const sc = getScenario(a.scenarioId);
+        return { building: sc.building, choice: sc.options.find((o) => o.id === a.choiceId)?.text ?? '' };
+      }),
     });
+    run.pendingLine = pending;
+    if (this.run !== run) return;
     // Only praise a revision that now meets the bar, not one the student chose to keep as is.
     const improved = run.written !== undefined && coachWriting(run.scenario, run.written).status === 'solid';
     if (run.revisions > 0 && improved && run.written !== run.firstDraft) {
@@ -688,7 +772,7 @@ export class App {
   private saveReflection(text: string) {
     if (!this.run) return;
     this.run.reflection = text.trim() || undefined;
-    this.run.pendingLine = this.run.reflection ? CONTENT.reactions.reflected : CONTENT.reactions.skippedReflect;
+    this.run.pendingLine = this.run.reflection ? this.run.scenario.reactions.reflected : this.run.scenario.reactions.skippedReflect;
     this.go('rate');
   }
 
@@ -730,7 +814,7 @@ export class App {
     this.save = { ...this.save, attempts: [...this.attempts, attempt] };
     saveState(this.save);
     run.saved = true;
-    const r = CONTENT.reactions;
+    const r = run.scenario.reactions;
     const mood = run.enjoyment >= 4 ? r.rateHigh : run.enjoyment <= 2 ? r.rateLow : r.rateMid;
     run.pendingLine = run.wantsMore ? `${mood} ${r.wantsMore}` : mood;
     this.justFinished = attempt.scenarioId;
@@ -755,6 +839,19 @@ export class App {
     this.els.stage.replaceChildren(page);
     page.scrollTop = 0;
     page.querySelector<HTMLElement>('h1')?.focus();
+    if (this.ai) void this.fillSummary(page);
+  }
+
+  private async fillSummary(page: HTMLElement) {
+    const slot = h('p', { class: 'soft thinking', role: 'status' }, 'Writing your personal summary', h('span', { class: 'dots', 'aria-hidden': 'true' }, h('span'), h('span'), h('span')));
+    const section = h('section', { class: 'rsec card summary', 'aria-labelledby': 'rs-summary' }, h('h2', { id: 'rs-summary' }, 'Your summary'), slot);
+    page.querySelector('.record-head')?.after(section);
+    const paras = await aiSummary(this.attempts, this.save.selfChecks[0] ?? null);
+    if (!paras) {
+      section.remove();
+      return;
+    }
+    slot.replaceWith(...paras.map((t) => h('p', null, t)), h('p', { class: 'soft small' }, 'Written by AI from your choices, words and ratings. Read it as a starting point, not a verdict.'));
   }
 
   private backToPlazaFromRecord() {
@@ -778,7 +875,7 @@ export class App {
 
 const STEPS: Step[] = ['intro', 'choose', 'write', 'feedback', 'reflect', 'rate', 'resources'];
 /** Coaching is part of the writing step, so it shares its dot. */
-const stepIndex = (s: Step) => STEPS.indexOf(s === 'coach' ? 'write' : s);
+const stepIndex = (s: Step) => STEPS.indexOf(s === 'coach' || s === 'followup' ? 'write' : s);
 
 // ---- Growth record rendering -------------------------------------------------
 

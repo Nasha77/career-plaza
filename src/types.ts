@@ -33,11 +33,27 @@ export interface WriteGuide {
   keywords: string[];
 }
 
+/** Each manager's lines for the smaller actions, in their own voice. */
+export interface Reactions {
+  skipWrite: string;
+  revise: string;
+  keep: string;
+  reflected: string;
+  skippedReflect: string;
+  rateHigh: string;
+  rateMid: string;
+  rateLow: string;
+  wantsMore: string;
+}
+
 export interface Scenario {
   id: ScenarioId;
   building: string;
   internRole: string;
   npc: { name: string; role: string };
+  /** Personality, used for the scripted lines and as the AI's character brief. */
+  persona: { personality: string; voice: string };
+  reactions: Reactions;
   setting: string;
   intro: string;
   question: string;
@@ -72,18 +88,6 @@ export interface ContentFile {
     reason: string;
     question: string;
     otherwise: string;
-  };
-  /** Manager lines for the smaller actions, shared by every scenario. */
-  reactions: {
-    skipWrite: string;
-    revise: string;
-    keep: string;
-    reflected: string;
-    skippedReflect: string;
-    rateHigh: string;
-    rateMid: string;
-    rateLow: string;
-    wantsMore: string;
   };
   selfCheck: SelfCheckContent;
   commonResources: Resource[];

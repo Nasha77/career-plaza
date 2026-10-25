@@ -31,17 +31,6 @@
     "question": "A good question is a useful tool in this job.",
     "otherwise": "Thanks, that gives me a clear starting point."
   },
-  "reactions": {
-    "skipWrite": "That's fine, we can draft it together later.",
-    "revise": "Take another go. No rush.",
-    "keep": "Fair enough. Let's go with that for now.",
-    "reflected": "Thanks for sharing that. It helps me see what kind of work suits you.",
-    "skippedReflect": "No problem. Something to think about on the way home.",
-    "rateHigh": "Glad this one clicked for you.",
-    "rateMid": "Thanks. Every task tells you something about what you like.",
-    "rateLow": "Thanks for being honest. Not every task clicks, and that's useful to know too.",
-    "wantsMore": "I'll remember you'd like more of this. Come back any time."
-  },
   "selfCheck": {
     "intro": "Take a minute to note where you think you stand. There are no right answers, and only you see this.",
     "confidence": [
@@ -149,6 +138,10 @@
         "name": "Priya",
         "role": "CSR Communications Manager"
       },
+      "persona": {
+        "personality": "Warm, upbeat and people-first. Gets visibly excited about stories and community, encourages generously, and always brings the conversation back to the people the work is for.",
+        "voice": "Energetic and friendly. Short, lively sentences, the occasional exclamation mark, talks about people and stories rather than processes."
+      },
       "setting": "A busy communications office. A volunteering poster and a sign-up sheet are pinned to the wall.",
       "intro": "Welcome aboard! Our volunteer day at a senior activity centre is in two weeks, but only 12 of 40 spots are filled. We need more of our team members to sign up.",
       "question": "Where would you start?",
@@ -210,7 +203,7 @@
           "feedback": "Good instinct. The numbers usually show who we're missing, so the next message reaches the right people.",
           "twistFeedback": "Check whether past events with guest visits drew more sign-ups. That tells you how hard to lean on it.",
           "reflectiveQuestion": "Did digging into the sign-up data feel satisfying or slow?",
-          "chooseLine": "Smart. Last year's sign-up list is in the shared drive."
+          "chooseLine": "Ooh, smart! Last year's sign-up list is in the shared drive."
         },
         {
           "id": "B",
@@ -228,7 +221,7 @@
           "feedback": "Stories move people more than reminders do. You're giving them a reason, not just a date.",
           "twistFeedback": "A guest gives your story a hook, but keep the seniors at the centre of it, not the celebrity.",
           "reflectiveQuestion": "Would you enjoy writing for an audience every week?",
-          "chooseLine": "Love that. I've got a few photos from last year you can use."
+          "chooseLine": "I love that! I've got some lovely photos from last year you can use."
         },
         {
           "id": "C",
@@ -246,9 +239,20 @@
           "feedback": "Uncertainty stops people from signing up. Clear roles make saying yes easy.",
           "twistFeedback": "Add a role for welcoming the guest, so the visit feels planned rather than squeezed in.",
           "reflectiveQuestion": "Do you like being the person who makes plans run smoothly?",
-          "chooseLine": "Good call. People hesitate when they don't know what they're signing up for."
+          "chooseLine": "Good call! People hesitate when they don't know what they're signing up for."
         }
-      ]
+      ],
+      "reactions": {
+        "skipWrite": "No worries at all! We'll write it together later.",
+        "revise": "Love that you're giving it another go. Take your time!",
+        "keep": "Totally fair. Let's run with it.",
+        "reflected": "Thank you for sharing that, it really helps me get to know you!",
+        "skippedReflect": "All good! Mull it over on your way home.",
+        "rateHigh": "Yay, I'm so glad this one clicked for you!",
+        "rateMid": "Thanks! Every task teaches you something about what you like.",
+        "rateLow": "Thanks for being honest. Not every task clicks, and that's okay!",
+        "wantsMore": "I'll keep a spot for you. Come back any time!"
+      }
     },
     {
       "id": "policy",
@@ -257,6 +261,10 @@
       "npc": {
         "name": "Daniel",
         "role": "International Policy Advisor"
+      },
+      "persona": {
+        "personality": "Calm, precise and quietly funny. Cares about accuracy above speed, chooses words carefully, and has a dry sense of humour about bureaucracy.",
+        "voice": "Measured and exact. Short, careful sentences, understated praise, the odd deadpan joke. Never exaggerates."
       },
       "setting": "A quiet policy office. Two screens are open side by side: a government report and a public registry.",
       "intro": "We keep a public tracker of carbon credit deals between countries. One government's report says it has approved its first credit transfer, but the official registry shows nothing yet. The tracker updates on Friday.",
@@ -318,7 +326,7 @@
           "feedback": "That's the core of this job. Official documents often say less than they seem to at first.",
           "twistFeedback": "Now the close reading matters even more. Check what our tracker actually said before anyone quotes it again.",
           "reflectiveQuestion": "Did reading closely through official documents hold your attention?",
-          "chooseLine": "Good. Read the footnotes too, that's where the detail hides."
+          "chooseLine": "Good. Read the footnotes too. That's where the detail hides."
         },
         {
           "id": "B",
@@ -354,9 +362,20 @@
           "feedback": "Seeing the pattern tells us if this is a red flag or just how slow the process usually is.",
           "twistFeedback": "The pipeline view helps you show the news site where this deal really stands.",
           "reflectiveQuestion": "Do you enjoy turning lots of records into one clear picture?",
-          "chooseLine": "Nice. The pipeline view is one of the most useful things we publish."
+          "chooseLine": "Nice. The pipeline view is quietly one of the most useful things we publish."
         }
-      ]
+      ],
+      "reactions": {
+        "skipWrite": "Fine. We'll draft it once the sources are clearer.",
+        "revise": "Good. A second pass usually tightens the wording.",
+        "keep": "Noted. We'll go with that wording for now.",
+        "reflected": "Thank you. That's useful information.",
+        "skippedReflect": "Understood. It can wait until after Friday.",
+        "rateHigh": "Good. Not everyone enjoys reading registries. You might be one of us.",
+        "rateMid": "Fair. A mixed result is still a result.",
+        "rateLow": "Honest answer. Better to know now than three months in.",
+        "wantsMore": "I'll note your interest. Accurately."
+      }
     },
     {
       "id": "foundation",
@@ -365,6 +384,10 @@
       "npc": {
         "name": "Grace",
         "role": "Vice President, Community Programmes"
+      },
+      "persona": {
+        "personality": "Thoughtful, gentle and curious. Takes time to understand people, asks \"why\" and \"what changed\", and values honesty over polish.",
+        "voice": "Unhurried and kind. Reflective sentences, often wonders aloud, praises honesty and care rather than speed."
       },
       "setting": "A bright meeting room. A report on a funded youth programme sits on the table, covered in sticky notes.",
       "intro": "We funded a digital skills programme for young people. Three hundred attended, but leadership is asking what actually changed for them. The renewal decision is next month.",
@@ -428,7 +451,7 @@
           "feedback": "Attendance is a start, but outcomes are the real question. You're looking in the right place.",
           "twistFeedback": "Comparing two programmes fairly means using the same measures for both. Check that you can.",
           "reflectiveQuestion": "How did it feel to judge a programme by its numbers?",
-          "chooseLine": "Great. The survey team sent the follow-up data last week."
+          "chooseLine": "That's a good place to start. The survey team sent the follow-up data last week."
         },
         {
           "id": "B",
@@ -464,9 +487,20 @@
           "feedback": "Leaders need a clear, honest picture. Naming what we don't know is a strength, not a weakness.",
           "twistFeedback": "Your note now needs to compare two programmes, not just describe one. Keep it balanced.",
           "reflectiveQuestion": "Would you rather be the one who finds the evidence or the one who explains it?",
-          "chooseLine": "Good. Leadership always appreciates something they can read in five minutes."
+          "chooseLine": "I like that. Leadership always appreciates something honest they can read in five minutes."
         }
-      ]
+      ],
+      "reactions": {
+        "skipWrite": "That's alright. Sometimes it helps to think before writing.",
+        "revise": "Take your time. What would you want leadership to remember?",
+        "keep": "That's fine. We can always come back to it.",
+        "reflected": "Thank you for sharing that. What you notice about yourself matters.",
+        "skippedReflect": "That's alright. Maybe come back to that question later.",
+        "rateHigh": "I'm glad. Meaningful work tends to feel that way.",
+        "rateMid": "Thank you. Mixed feelings are worth paying attention to.",
+        "rateLow": "Thank you for being honest. Knowing what doesn't fit is part of finding what does.",
+        "wantsMore": "I'll remember that. The door is always open."
+      }
     },
     {
       "id": "workforce",
@@ -475,6 +509,10 @@
       "npc": {
         "name": "Marcus",
         "role": "Head of Workforce Strategy"
+      },
+      "persona": {
+        "personality": "Fast-moving, big-picture and coach-like. Thinks in priorities, pushes people to sharpen their point, and is direct but encouraging.",
+        "voice": "Punchy and direct. Very short sentences, asks \"so what?\" and \"what is next?\", uses momentum words like \"move\", \"sharpen\" and \"next\"."
       },
       "setting": "A modern office. A screen shows headlines about AI and jobs, and a briefing deck is open on the table.",
       "intro": "Next week we brief senior leaders on how AI is changing entry-level jobs across the companies we work with. I need you to help us get ahead of the trends.",
@@ -537,7 +575,7 @@
           "feedback": "A good scan is the foundation. Leaders trust a briefing that's built on solid sources.",
           "twistFeedback": "Look for surveys or interviews with workers themselves, not just expert reports.",
           "reflectiveQuestion": "Did sifting through lots of reports energise you or tire you out?",
-          "chooseLine": "Good start. I'll share the reading list we used last quarter."
+          "chooseLine": "Good start. I'll send you the reading list we used last quarter."
         },
         {
           "id": "B",
@@ -555,7 +593,7 @@
           "feedback": "Prioritising is what turns information into strategy. That's what leaders need from us.",
           "twistFeedback": "Add a column showing how workers feel about each change. It may shift your priorities.",
           "reflectiveQuestion": "How did it feel to make calls about what matters most?",
-          "chooseLine": "Sharp. Leaders always ask, 'So what do we do first?'"
+          "chooseLine": "Sharp. Leaders always ask: so what do we do first?"
         },
         {
           "id": "C",
@@ -573,9 +611,20 @@
           "feedback": "Bringing the right people into the room is half the work in this team.",
           "twistFeedback": "Consider a short panel or video of workers. It changes the tone of the whole session.",
           "reflectiveQuestion": "Do you enjoy organising events where different groups meet?",
-          "chooseLine": "Great. Getting the right voices in the room matters as much as the slides."
+          "chooseLine": "Great. The right voices in the room matter as much as the slides."
         }
-      ]
+      ],
+      "reactions": {
+        "skipWrite": "No problem. Speed matters. We'll write it later.",
+        "revise": "Good. Sharpen it. One clear point.",
+        "keep": "Your call. Let's move.",
+        "reflected": "Good. Knowing what drives you is half the strategy.",
+        "skippedReflect": "Fine. Park it, come back to it.",
+        "rateHigh": "Great. That energy is what this team runs on.",
+        "rateMid": "Okay. Now ask yourself which part you'd keep.",
+        "rateLow": "Straight answer. That's valuable data.",
+        "wantsMore": "Noted. Next time I'll throw you something bigger."
+      }
     }
   ]
 }

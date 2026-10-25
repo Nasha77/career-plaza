@@ -52,10 +52,31 @@ or used automatically when WebGL is unavailable) plays exactly the same game.
 
 - **No external assets.** Every 3D object is built from code primitives; signs, charts and
   the dashboard are drawn with the 2D canvas API at runtime.
-- **No AI calls.** `ClaudeProvider` is a stub with a TODO. A live version needs a small
-  backend proxy to hold the API key; never put a key in client code.
+- **AI is local only.** The public site (`npm run build`) is fully scripted and never calls an AI service.
+  See "Turn on the AI" below.
 - **Accessibility.** Buildings can be chosen from HTML buttons as well as in 3D. The app
   respects `prefers-reduced-motion` (fades instead of camera flights, no orbit, instant text)
   and `prefers-color-scheme` (light and dark).
 
 `npm run build:single` writes `dist-single/career-plaza.html`, one self-contained file with CSS and JS inlined, for hosting as a single published page.
+
+## Turn on the AI (local only, free)
+
+With a Gemini key, the managers react to what the student actually wrote, coach weak answers
+with specific tips, ask one follow-up question, and the growth record gets a personal summary.
+Each manager has their own personality (set in `persona` in the content file).
+
+1. Get a free key at [Google AI Studio](https://aistudio.google.com) ("Get API key"). No card needed.
+2. Copy `.env.example` to `.env.local` and paste the key after `GEMINI_API_KEY=`.
+3. Run `npm run dev`. The HUD shows **AI on**, and the terminal logs each AI call.
+
+How it stays safe and free:
+
+- The key lives only in `.env.local`, which git ignores. Only the local dev server reads it; it is never
+  sent to the browser and never included in the build. Don't share your key; each teammate can use their own.
+- AI routes exist only under `npm run dev` (`server/ai-plugin.ts`), so the GitHub Pages site stays scripted.
+- Student text is length-capped and passed to the model as data, not instructions. Replies must match a
+  fixed JSON shape and pass checks (length, no code or links, no scores or "best fit"); anything else
+  falls back to the scripted line. There is also a cap on calls per dev-server run and per minute.
+- On Google's free tier, prompts may be used to improve Google's products, so don't type real students'
+  personal information while testing on a free key.

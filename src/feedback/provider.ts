@@ -6,6 +6,11 @@ export interface FeedbackInput {
   writtenResponse?: string;
   isRevisit: boolean;
   twist?: string;
+  /** The manager's follow-up question and the student's reply, when the AI asked one. */
+  followupQuestion?: string;
+  followupAnswer?: string;
+  /** Earlier internships, so a manager can mention a skill carrying over. */
+  earlier?: { building: string; choice: string }[];
 }
 
 export interface FeedbackResult {
