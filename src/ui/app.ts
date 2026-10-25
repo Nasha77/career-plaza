@@ -464,7 +464,7 @@ export class App {
         );
         const reaction = this.takePending(run);
         const r0 = reaction ? say() : null;
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, findingsCard(run, true), p, controls])));
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, taskCard(run), findingsCard(run, true), p, controls])));
         void this.speak(r0 && reaction ? [r0, p] : [p], reaction ? [reaction, s.writePrompt] : [s.writePrompt], controls);
         break;
       }
@@ -475,6 +475,7 @@ export class App {
         const controls = h(
           'div',
           { class: 'block' },
+          taskCard(run),
           findingsCard(run, false),
           h('p', { class: 'label' }, 'What a strong answer does here'),
           h('ul', { class: 'coach-points' }, s.writeGuide.points.map((pt) => h('li', null, pt))),
@@ -514,7 +515,7 @@ export class App {
             h('button', { class: 'btn ghost', type: 'button', onclick: () => void this.answerFollowup('') }, 'Skip'),
           ),
         );
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [q, findingsCard(run, false), controls])));
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [q, taskCard(run), findingsCard(run, false), controls])));
         void this.speak([q], [run.followupQuestion ?? ''], controls);
         break;
       }
@@ -1354,5 +1355,20 @@ function findingsCard(run: { scenario: Scenario; choiceId?: ChoiceId }, open: bo
     body,
     f.note ? h('p', { class: 'find-note' }, h('strong', null, 'Worth noticing: '), f.note) : null,
     h('p', { class: 'find-foot' }, 'Practice data: the names and figures are made up.'),
+  );
+}
+
+// ---- Task reminder: what the student is working on, kept on screen while they write ----
+
+function taskCard(run: { scenario: Scenario; choiceId?: ChoiceId; isRevisit: boolean }): HTMLElement {
+  const s = run.scenario;
+  const option = s.options.find((o) => o.id === run.choiceId);
+  return h(
+    'div',
+    { class: 'task-card', role: 'note', 'aria-label': 'Your task' },
+    h('p', { class: 'task-kicker' }, 'Your task'),
+    h('p', null, s.brief),
+    run.isRevisit ? h('p', null, h('span', { class: 'k' }, 'New this time: '), s.twist) : null,
+    option ? h('p', null, h('span', { class: 'k' }, 'Your approach: '), option.text) : null,
   );
 }

@@ -68,6 +68,8 @@ export interface Scenario {
   reactions: Reactions;
   setting: string;
   intro: string;
+  /** One neutral line restating the task, shown while the student writes. */
+  brief: string;
   question: string;
   twist: string;
   writePrompt: string;

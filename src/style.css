@@ -1703,3 +1703,22 @@ body:not(.simple) .title-card {
   font-size: 0.78rem;
   color: var(--ink-2);
 }
+
+/* ---------- Task reminder ---------- */
+.task-card {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border-left: 4px solid var(--accent);
+  background: var(--surface-2);
+  display: grid;
+  gap: 4px;
+  font-size: 0.93rem;
+}
+.task-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
