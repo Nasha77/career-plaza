@@ -3,7 +3,7 @@ import type { Kit } from './kit';
 
 const TMP_Q = new THREE.Quaternion();
 
-export type Accessory = 'cap' | 'tie' | 'backpack' | 'headphones' | 'glasses';
+export type Accessory = 'cap' | 'tie' | 'backpack' | 'headphones' | 'glasses' | 'lanyard';
 
 export interface CharacterSpec {
   body: number;
@@ -97,6 +97,16 @@ export function makeCharacter(kit: Kit, spec: CharacterSpec): Character {
       head.add(kit.cyl(0.12, 0.12, 0.1, 8, accent, 0.37, 0.0, 0).rotateZ(Math.PI / 2));
       break;
     }
+    case 'lanyard': {
+      // Neck strap and staff pass, the badge of event and community teams
+      const strap = new THREE.Mesh(kit.geo('strap', () => new THREE.TorusGeometry(0.24, 0.025, 4, 12, Math.PI)), accent);
+      strap.position.set(0, 1.05, 0.3);
+      strap.rotation.set(0, 0, Math.PI);
+      torso.add(strap);
+      torso.add(kit.box(0.2, 0.26, 0.04, kit.lambert(0xffffff), 0, 0.72, 0.4));
+      torso.add(kit.box(0.2, 0.07, 0.045, accent, 0, 0.81, 0.405));
+      break;
+    }
     case 'glasses': {
       const lens = kit.geo('lens', () => new THREE.TorusGeometry(0.085, 0.022, 4, 10));
       const l = new THREE.Mesh(lens, accent);
@@ -162,10 +172,14 @@ export function makeCharacter(kit: Kit, spec: CharacterSpec): Character {
   };
 }
 
-export const CHARACTERS: Record<'guide' | 'consulting' | 'classroom' | 'data' | 'research', CharacterSpec> = {
+export const CHARACTERS: Record<'guide' | 'resort' | 'policy' | 'foundation' | 'workforce', CharacterSpec> = {
   guide: { body: 0x2e6b5e, legs: 0x2a3a36, skin: 0xc68c62, hair: 0x2a1d17, accessory: 'cap', accent: 0xe3a21a },
-  consulting: { body: 0x34465e, legs: 0x26303f, skin: 0xe2b38f, hair: 0x3b2a20, accessory: 'tie', accent: 0xd04a3a },
-  classroom: { body: 0xe07a5f, legs: 0x3e4a6b, skin: 0xa86d4c, hair: 0x1f1714, accessory: 'backpack', accent: 0x3d7ea6, hairStyle: 'bun', seated: true },
-  data: { body: 0xe0b03c, legs: 0x33404a, skin: 0x8a5a3c, hair: 0x15110f, accessory: 'headphones', accent: 0x26323a },
-  research: { body: 0x8c3b4a, legs: 0x3d3a3a, skin: 0xe8c3a0, hair: 0xb9b9b4, accessory: 'glasses', accent: 0x2b2b2b, hairStyle: 'long' },
+  // Priya, CSR Communications Manager: coral blazer and a staff lanyard
+  resort: { body: 0xd9694c, legs: 0x2f3b45, skin: 0x9a6446, hair: 0x1a1210, accessory: 'lanyard', accent: 0x2f6f6a, hairStyle: 'long' },
+  // Daniel, International Policy Advisor: navy suit and tie
+  policy: { body: 0x34465e, legs: 0x26303f, skin: 0xe2b38f, hair: 0x3b2a20, accessory: 'tie', accent: 0x5f9e6e },
+  // Grace, VP Community Programmes: plum cardigan and glasses
+  foundation: { body: 0x8c3b4a, legs: 0x3d3a3a, skin: 0xe8c3a0, hair: 0x2a1d17, accessory: 'glasses', accent: 0x2b2b2b, hairStyle: 'bun' },
+  // Marcus, Head of Workforce Strategy: charcoal jacket and a mustard tie
+  workforce: { body: 0x3a4148, legs: 0x23282d, skin: 0x7a4e34, hair: 0x15110f, accessory: 'tie', accent: 0xe3a21a },
 };

@@ -7,7 +7,7 @@
   ],
   "guide": {
     "name": "Guide",
-    "welcome": "Welcome to Career Plaza. Pick a building. There's no wrong order.",
+    "welcome": "Welcome to Career Plaza. Each building is a real kind of internship. Pick one. There's no wrong order.",
     "afterFirst": "Nice. Your career map just lit up a little. Try another building and notice how it feels different.",
     "afterTwo": "You've got enough to look at your growth record. You can keep exploring too.",
     "afterAll": "You've been through every building. Skills show up in more than one place, did you notice?"
@@ -19,156 +19,314 @@
     "question": "A good question is a useful tool in this job.",
     "otherwise": "Thanks, that gives me a clear starting point."
   },
+  "selfCheck": {
+    "intro": "Take a minute to note where you think you stand. There are no right answers, and only you see this.",
+    "confidence": [
+      { "skill": "Research", "statement": "I can find reliable information on a topic I know nothing about." },
+      { "skill": "Communication", "statement": "I can explain a complicated idea so someone else gets it." },
+      { "skill": "Organisation", "statement": "I can turn a messy task into a clear plan with steps." },
+      { "skill": "Analysis", "statement": "I can spot patterns or problems in numbers or evidence." }
+    ],
+    "skillPicks": [
+      {
+        "question": "A free afternoon at work. Would you rather…",
+        "options": [
+          { "skill": "Research", "label": "Dig through sources" },
+          { "skill": "Communication", "label": "Talk with people" },
+          { "skill": "Organisation", "label": "Plan an event" },
+          { "skill": "Analysis", "label": "Work through data" }
+        ]
+      },
+      {
+        "question": "A project you'd be proud of…",
+        "options": [
+          { "skill": "Research", "label": "A well-researched report" },
+          { "skill": "Communication", "label": "A speech that moved people" },
+          { "skill": "Organisation", "label": "An event that ran perfectly" },
+          { "skill": "Analysis", "label": "A chart that changed a decision" }
+        ]
+      }
+    ],
+    "fieldPick": {
+      "question": "Which area sounds most interesting right now?",
+      "options": [
+        { "scenario": "resort", "label": "Community programmes" },
+        { "scenario": "policy", "label": "Public policy" },
+        { "scenario": "foundation", "label": "Philanthropy and social impact" },
+        { "scenario": "workforce", "label": "The future of work" }
+      ]
+    }
+  },
+  "commonResources": [
+    {
+      "title": "NTU School of Humanities: Classroom to careers",
+      "url": "https://www.ntu.edu.sg/soh/news-events/news/detail/classroom-to-careers-charting-your-humanities-journey",
+      "why": "How humanities students move into careers like this one."
+    },
+    {
+      "title": "NTU Career & Attachment Office",
+      "url": "https://www.ntu.edu.sg/cao",
+      "why": "Career coaching, internships and workshops: a real next step after exploring."
+    }
+  ],
   "scenarios": [
     {
-      "id": "consulting",
-      "building": "Consulting Firm",
-      "npc": { "name": "Alex", "role": "Project manager" },
-      "setting": "Client meeting room. A profit chart hangs on the wall.",
-      "intro": "Thanks for jumping in. Our client's profit has fallen 18% this quarter and they want a first view by Friday.",
-      "question": "What would you check first?",
-      "twist": "New info: a competitor cut prices last month.",
-      "writePrompt": "In one or two sentences, what would you tell the client on Friday?",
-      "likePhrase": "untangling a business problem",
-      "invite": "It's a chance to see what solving a client's problem under a deadline feels like.",
+      "id": "resort",
+      "building": "Harbourfront Resort",
+      "internRole": "Communications Intern (Community Programmes)",
+      "npc": { "name": "Priya", "role": "CSR Communications Manager" },
+      "setting": "A busy communications office. A volunteering poster and a sign-up sheet are pinned to the wall.",
+      "intro": "Welcome aboard! Our volunteer day at a senior activity centre is in two weeks, but only 12 of 40 spots are filled. We need more of our team members to sign up.",
+      "question": "Where would you start?",
+      "twist": "Priya adds: a well-known local singer is visiting next week and could join the volunteer day.",
+      "writePrompt": "Write the first line of your message to team members.",
+      "writeGuide": {
+        "points": [
+          "Speaks directly to team members",
+          "Gives a reason to care, not just a date",
+          "Makes the next step clear"
+        ],
+        "tip": "This gets the basics across. Could you add one line on why the day matters to the seniors, and what you'd like people to do next?",
+        "keywords": ["volunteer", "sign", "senior", "join", "centre", "center", "team", "help", "day", "spot"]
+      },
+      "likePhrase": "bringing people together for a good cause",
+      "invite": "It's a chance to see what running community programmes and writing for a staff audience feels like.",
+      "resources": [
+        {
+          "title": "National Volunteer & Philanthropy Centre (NVPC)",
+          "url": "https://nvpc.org.sg/",
+          "why": "Singapore's national body for volunteering and giving, and how companies run community programmes."
+        },
+        {
+          "title": "Giving.sg",
+          "url": "https://www.giving.sg/",
+          "why": "Real volunteering opportunities you can join now."
+        },
+        {
+          "title": "SkillsFuture Skills Framework",
+          "url": "https://www.skillsfuture.gov.sg/skills-framework",
+          "why": "Official guides to job roles and skills by sector. Look up communications and events roles."
+        }
+      ],
       "options": [
         {
           "id": "A",
-          "text": "Break revenue and costs down by product and region to see where the drop is.",
+          "text": "Look at last year's volunteer data to see which departments joined and when, then focus on the gaps.",
           "skills": [{ "skill": "Analysis", "weight": 2 }, { "skill": "Organisation", "weight": 1 }],
-          "feedback": "That narrows the problem fast. A lot of consultants start there because it turns one big worry into a few smaller ones.",
-          "twistFeedback": "With the price cut in mind, you can check whether the drop sits in the products that compete head to head.",
-          "reflectiveQuestion": "Did sorting through the numbers feel energising or draining?"
+          "feedback": "Good instinct. The numbers usually show who we're missing, so the next message reaches the right people.",
+          "twistFeedback": "Check whether past events with guest visits drew more sign-ups. That tells you how hard to lean on it.",
+          "reflectiveQuestion": "Did digging into the sign-up data feel satisfying or slow?"
         },
         {
           "id": "B",
-          "text": "Talk to a few of the client's customers about why they're buying less.",
-          "skills": [{ "skill": "Research", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
-          "feedback": "Going to the source gives you reasons the numbers can't. It also takes time, which is a real trade-off on a Friday deadline.",
-          "twistFeedback": "Customers may bring up the competitor's price cut, so listen for how much price really drives their choice.",
-          "reflectiveQuestion": "What did you enjoy more: finding the reasons or presenting them?"
-        },
-        {
-          "id": "C",
-          "text": "Write a one-page summary of what we know and list open questions for the client.",
-          "skills": [{ "skill": "Organisation", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
-          "feedback": "That gets everyone looking at the same picture early. It keeps the client involved instead of surprised.",
-          "twistFeedback": "The competitor's price cut can go at the top of your open questions, so the client sees it straight away.",
-          "reflectiveQuestion": "Would you rather be the person who frames the problem or the one who digs into it?"
-        }
-      ]
-    },
-    {
-      "id": "classroom",
-      "building": "University Classroom",
-      "npc": { "name": "Mia", "role": "Student" },
-      "setting": "A classroom. Mia is puzzling over her course reading.",
-      "intro": "I read the chapter on social constructivism three times and I still don't get it.",
-      "question": "Could you explain this theory more simply?",
-      "twist": "Mia says she is short on time and has 5 minutes before her next class.",
-      "writePrompt": "Write the first sentence you'd say to Mia.",
-      "likePhrase": "helping someone understand an idea",
-      "invite": "It's a chance to see what explaining ideas feels like as a job.",
-      "options": [
-        {
-          "id": "A",
-          "text": "Use an everyday example, like how roles get decided in a group project.",
+          "text": "Write a warm story for the staff newsletter about what last year's visit meant to the seniors.",
           "skills": [{ "skill": "Communication", "weight": 2 }, { "skill": "Research", "weight": 1 }],
-          "feedback": "Mia's face lights up. Concrete examples help ideas stick, and you picked one she actually lives.",
-          "twistFeedback": "In five minutes, one familiar example is often enough to unlock the idea.",
-          "reflectiveQuestion": "What made you choose that example?"
+          "feedback": "Stories move people more than reminders do. You're giving them a reason, not just a date.",
+          "twistFeedback": "A guest gives your story a hook, but keep the seniors at the centre of it, not the celebrity.",
+          "reflectiveQuestion": "Would you enjoy writing for an audience every week?"
         },
         {
-          "id": "B",
-          "text": "Break it into three short steps and sketch them on the board.",
+          "id": "C",
+          "text": "Build a clear sign-up sheet with roles and time slots, so people know exactly what they'd be doing.",
           "skills": [{ "skill": "Organisation", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
-          "feedback": "Clear structure helps when a topic feels like fog. Mia can now see where each idea fits.",
-          "twistFeedback": "Three steps still fit in five minutes if you keep each one to a sentence.",
-          "reflectiveQuestion": "Did planning how to teach it feel more fun than explaining it live?"
-        },
-        {
-          "id": "C",
-          "text": "Ask what she already understands, then build from there.",
-          "skills": [{ "skill": "Communication", "weight": 2 }, { "skill": "Analysis", "weight": 1 }],
-          "feedback": "You found the gap before explaining. Teachers call this checking prior knowledge.",
-          "twistFeedback": "One quick question fits in five minutes, and it saves time on what she already knows.",
-          "reflectiveQuestion": "How did it feel to lead with a question instead of an answer?"
+          "feedback": "Uncertainty stops people from signing up. Clear roles make saying yes easy.",
+          "twistFeedback": "Add a role for welcoming the guest, so the visit feels planned rather than squeezed in.",
+          "reflectiveQuestion": "Do you like being the person who makes plans run smoothly?"
         }
       ]
     },
     {
-      "id": "data",
-      "building": "Data Studio",
-      "npc": { "name": "Leo", "role": "Product manager" },
-      "setting": "An open office. A big dashboard shows user retention.",
-      "intro": "Retention dropped from 42% to 35% over three weeks. The team is asking what's going on.",
-      "question": "How would you investigate it?",
-      "twist": "Leo adds: the drop is mostly new users who signed up through a campus event.",
-      "writePrompt": "Write one hypothesis you'd test first, in a sentence.",
-      "likePhrase": "working with evidence",
-      "invite": "It's a chance to see how people turn numbers and user stories into decisions.",
-      "options": [
+      "id": "policy",
+      "building": "Climate Policy Association",
+      "internRole": "International Policy Intern",
+      "npc": { "name": "Daniel", "role": "International Policy Advisor" },
+      "setting": "A quiet policy office. Two screens are open side by side: a government report and a public registry.",
+      "intro": "We keep a public tracker of carbon credit deals between countries. One government's report says it has approved its first credit transfer, but the official registry shows nothing yet. The tracker updates on Friday.",
+      "question": "How would you handle this entry?",
+      "twist": "Daniel adds: a news site has already reported the transfer as complete, citing our tracker.",
+      "writePrompt": "Write the one-line note that will appear on the public tracker for this entry.",
+      "writeGuide": {
+        "points": [
+          "States clearly what is and isn't confirmed",
+          "Names the sources",
+          "Uses neutral, factual wording"
+        ],
+        "tip": "This is a start. Could you say what each source shows, and hold off on calling the transfer done until it's confirmed?",
+        "keywords": ["report", "registry", "confirm", "pending", "await", "transfer", "source", "official", "update"]
+      },
+      "likePhrase": "checking evidence carefully",
+      "invite": "It's a chance to see what tracking international policy and writing for a public audience feels like.",
+      "resources": [
         {
-          "id": "A",
-          "text": "Compare retention before and after last month's app update, by user group.",
-          "skills": [{ "skill": "Analysis", "weight": 2 }, { "skill": "Research", "weight": 1 }],
-          "feedback": "Splitting by group can show whether the drop is everywhere or in one place.",
-          "twistFeedback": "Splitting out the users from the campus event would show their pattern straight away.",
-          "reflectiveQuestion": "How did it feel to work with numbers as evidence?"
+          "title": "UNFCCC: Article 6 of the Paris Agreement",
+          "url": "https://unfccc.int/process-and-meetings/the-paris-agreement/article-6",
+          "why": "The official source on how countries trade carbon credits, exactly what this tracker follows."
         },
         {
-          "id": "B",
-          "text": "Read recent app-store reviews and support tickets.",
-          "skills": [{ "skill": "Research", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
-          "feedback": "Real user words give you hypotheses to test. They're messy, but they're often where the story starts.",
-          "twistFeedback": "Look for reviews from people who joined at the campus event. Their first week might tell the story.",
-          "reflectiveQuestion": "Were you more interested in what users said or in what they did?"
+          "title": "Article 6 explained (Wikipedia)",
+          "url": "https://en.wikipedia.org/wiki/Cooperative_mechanisms_under_Article_6_of_the_Paris_Agreement",
+          "why": "A plain-language overview if the topic is new to you."
         },
         {
-          "id": "C",
-          "text": "Build a timeline of everything that changed in the last month.",
-          "skills": [{ "skill": "Organisation", "weight": 2 }, { "skill": "Analysis", "weight": 1 }],
-          "feedback": "A timeline stops the team from blaming the first thing they noticed.",
-          "twistFeedback": "Put the campus event on the timeline and see what else landed that week.",
-          "reflectiveQuestion": "Do you like putting scattered facts into order?"
+          "title": "Singapore's first carbon credit agreement (NCCS)",
+          "url": "https://www.nccs.gov.sg/singapore-signs-first-implementation-agreement-with-papua-new-guinea-on-carbon-credits/",
+          "why": "A real Singapore example of the kind of deal policy interns track."
         }
-      ]
-    },
-    {
-      "id": "research",
-      "building": "Research Center",
-      "npc": { "name": "Professor Chen", "role": "Researcher" },
-      "setting": "A research office. Two reports sit side by side on the desk.",
-      "intro": "Report A says online tutorials improve grades. Report B finds no effect. Both look careful.",
-      "question": "The two sets of results conflict. What would you do?",
-      "twist": "Professor Chen mentions a third report just came out that sides with Report B.",
-      "writePrompt": "In one or two sentences, what would you say to the department about these reports?",
-      "likePhrase": "weighing up sources",
-      "invite": "It's a chance to see what careful, slow investigation feels like day to day.",
+      ],
       "options": [
         {
           "id": "A",
-          "text": "Compare their sample sizes, methods and who was studied.",
+          "text": "Read both sources closely and compare dates and wording to see exactly what each one confirms.",
           "skills": [{ "skill": "Research", "weight": 2 }, { "skill": "Analysis", "weight": 1 }],
-          "feedback": "Differences in method often explain differences in results. That's slow, careful work.",
-          "twistFeedback": "The new report gives you a third method to compare. It's fine to update your view as evidence comes in.",
-          "reflectiveQuestion": "Did digging into how the studies were run hold your attention?"
+          "feedback": "That's the core of this job. Official documents often say less than they seem to at first.",
+          "twistFeedback": "Now the close reading matters even more. Check what our tracker actually said before anyone quotes it again.",
+          "reflectiveQuestion": "Did reading closely through official documents hold your attention?"
         },
         {
           "id": "B",
-          "text": "Contact both authors to ask what might explain the gap.",
-          "skills": [{ "skill": "Communication", "weight": 2 }, { "skill": "Research", "weight": 1 }],
-          "feedback": "Researchers often respond, and a conversation can surface what the paper left out.",
-          "twistFeedback": "You could ask whether they've seen the new report. Changing your view when the evidence changes is part of the job.",
-          "reflectiveQuestion": "How do you feel about reaching out to people you've never met?"
+          "text": "Mark the entry \"awaiting confirmation\" and write a short public note explaining the gap between the two sources.",
+          "skills": [{ "skill": "Communication", "weight": 2 }, { "skill": "Organisation", "weight": 1 }],
+          "feedback": "Being open about uncertainty builds trust. Our readers rely on us to say what we don't know.",
+          "twistFeedback": "A clear correction note protects the tracker's credibility. Accuracy beats speed here.",
+          "reflectiveQuestion": "How did it feel to explain something unresolved to a public audience?"
         },
         {
           "id": "C",
-          "text": "Write a short note on where the reports agree and where they differ.",
+          "text": "Chart where every deal sits, from agreement to approval to transfer, to see if a gap like this is normal.",
+          "skills": [{ "skill": "Analysis", "weight": 2 }, { "skill": "Research", "weight": 1 }],
+          "feedback": "Seeing the pattern tells us if this is a red flag or just how slow the process usually is.",
+          "twistFeedback": "The pipeline view helps you show the news site where this deal really stands.",
+          "reflectiveQuestion": "Do you enjoy turning lots of records into one clear picture?"
+        }
+      ]
+    },
+    {
+      "id": "foundation",
+      "building": "Community Foundation",
+      "internRole": "Programme Intern (Community Giving)",
+      "npc": { "name": "Grace", "role": "Vice President, Community Programmes" },
+      "setting": "A bright meeting room. A report on a funded youth programme sits on the table, covered in sticky notes.",
+      "intro": "We funded a digital skills programme for young people. Three hundred attended, but leadership is asking what actually changed for them. The renewal decision is next month.",
+      "question": "What would you do first?",
+      "twist": "Grace mentions that funding is tighter this year, so leadership wants to compare this programme with an eldercare programme.",
+      "writePrompt": "In one or two sentences, how would you describe this programme's impact to leadership?",
+      "writeGuide": {
+        "points": [
+          "Separates who attended from what changed for them",
+          "Is honest about what we don't know yet",
+          "Suggests what to measure or decide next"
+        ],
+        "tip": "Attendance shows reach. Could you add what changed for participants, or what you'd measure to find out?",
+        "keywords": ["attend", "outcome", "impact", "survey", "change", "measure", "participant", "skill", "young", "youth", "data"]
+      },
+      "likePhrase": "making sure help actually helps",
+      "invite": "It's a chance to see how philanthropy teams decide what to fund and how they show impact.",
+      "resources": [
+        {
+          "title": "Community Foundation of Singapore: What We Do",
+          "url": "https://www.cf.org.sg/what-we-do/",
+          "why": "How a Singapore foundation decides what to fund and reports on impact."
+        },
+        {
+          "title": "National Volunteer & Philanthropy Centre (NVPC)",
+          "url": "https://nvpc.org.sg/",
+          "why": "Research and programmes on corporate giving in Singapore."
+        },
+        {
+          "title": "Giving.sg",
+          "url": "https://www.giving.sg/",
+          "why": "The charities and causes philanthropy teams work with."
+        }
+      ],
+      "options": [
+        {
+          "id": "A",
+          "text": "Compare attendance with the follow-up survey data to see who stayed on and what improved.",
+          "skills": [{ "skill": "Analysis", "weight": 2 }, { "skill": "Organisation", "weight": 1 }],
+          "feedback": "Attendance is a start, but outcomes are the real question. You're looking in the right place.",
+          "twistFeedback": "Comparing two programmes fairly means using the same measures for both. Check that you can.",
+          "reflectiveQuestion": "How did it feel to judge a programme by its numbers?"
+        },
+        {
+          "id": "B",
+          "text": "Interview a few participants and the partner charity about what changed for them.",
+          "skills": [{ "skill": "Research", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
+          "feedback": "People's experiences explain what the data can't. It takes time, but it adds depth.",
+          "twistFeedback": "Stories from both programmes help leadership see the human side of a hard choice.",
+          "reflectiveQuestion": "Did you enjoy the idea of listening to people's stories more than reading reports?"
+        },
+        {
+          "id": "C",
+          "text": "Draft a one-page impact note for leadership: what we know, what we don't, and what to measure next time.",
+          "skills": [{ "skill": "Communication", "weight": 2 }, { "skill": "Organisation", "weight": 1 }],
+          "feedback": "Leaders need a clear, honest picture. Naming what we don't know is a strength, not a weakness.",
+          "twistFeedback": "Your note now needs to compare two programmes, not just describe one. Keep it balanced.",
+          "reflectiveQuestion": "Would you rather be the one who finds the evidence or the one who explains it?"
+        }
+      ]
+    },
+    {
+      "id": "workforce",
+      "building": "Workforce Strategy Hub",
+      "internRole": "Policy & Research Intern (Future of Work)",
+      "npc": { "name": "Marcus", "role": "Head of Workforce Strategy" },
+      "setting": "A modern office. A screen shows headlines about AI and jobs, and a briefing deck is open on the table.",
+      "intro": "Next week we brief senior leaders on how AI is changing entry-level jobs across the companies we work with. I need you to help us get ahead of the trends.",
+      "question": "Where would you begin?",
+      "twist": "Marcus says the union representative has asked that workers' own voices be part of the session.",
+      "writePrompt": "Write the headline for the first slide of the briefing.",
+      "writeGuide": {
+        "points": [
+          "Makes one clear point, not just a topic",
+          "Tells leaders what to notice or do",
+          "Is short enough to read at a glance"
+        ],
+        "tip": "Headlines work best as a takeaway. Instead of a topic like \"AI and jobs\", try one point leaders should remember.",
+        "keywords": ["ai", "entry", "job", "role", "skill", "worker", "training", "work", "change", "graduate"]
+      },
+      "likePhrase": "thinking ahead about how work is changing",
+      "invite": "It's a chance to see how strategy teams spot trends and bring business, government and unions together.",
+      "resources": [
+        {
+          "title": "SkillsFuture: Skills Demand for the Future Economy",
+          "url": "https://skillsfuture.gov.sg/skillsreport",
+          "why": "Singapore's official report on which skills are growing, the kind of source a trend scan uses."
+        },
+        {
+          "title": "MOM: What is tripartism?",
+          "url": "https://www.mom.gov.sg/employment-practices/tripartism-in-singapore/what-is-tripartism",
+          "why": "How government, unions and employers work together in Singapore."
+        },
+        {
+          "title": "World Economic Forum: Future of Jobs Report 2025",
+          "url": "https://www.weforum.org/publications/the-future-of-jobs-report-2025/",
+          "why": "The best-known global report on AI and jobs."
+        }
+      ],
+      "options": [
+        {
+          "id": "A",
+          "text": "Scan recent reports, news and new regulations, and summarise the main trends in a table.",
+          "skills": [{ "skill": "Research", "weight": 2 }, { "skill": "Organisation", "weight": 1 }],
+          "feedback": "A good scan is the foundation. Leaders trust a briefing that's built on solid sources.",
+          "twistFeedback": "Look for surveys or interviews with workers themselves, not just expert reports.",
+          "reflectiveQuestion": "Did sifting through lots of reports energise you or tire you out?"
+        },
+        {
+          "id": "B",
+          "text": "Sort the trends by which jobs they affect most and how soon, to show where to act first.",
+          "skills": [{ "skill": "Analysis", "weight": 2 }, { "skill": "Research", "weight": 1 }],
+          "feedback": "Prioritising is what turns information into strategy. That's what leaders need from us.",
+          "twistFeedback": "Add a column showing how workers feel about each change. It may shift your priorities.",
+          "reflectiveQuestion": "How did it feel to make calls about what matters most?"
+        },
+        {
+          "id": "C",
+          "text": "Plan the briefing session: the agenda, the speakers, and which business, government and union voices to include.",
           "skills": [{ "skill": "Organisation", "weight": 2 }, { "skill": "Communication", "weight": 1 }],
-          "feedback": "Mapping agreement and disagreement gives the next reader a way into both.",
-          "twistFeedback": "Your note can now show two reports on one side. A good summary changes when the evidence does.",
-          "reflectiveQuestion": "Is summarising other people's work something you'd want to do more of?"
+          "feedback": "Bringing the right people into the room is half the work in this team.",
+          "twistFeedback": "Consider a short panel or video of workers. It changes the tone of the whole session.",
+          "reflectiveQuestion": "Do you enjoy organising events where different groups meet?"
         }
       ]
     }

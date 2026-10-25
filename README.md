@@ -16,9 +16,23 @@ npm run preview  # serve the built files locally
 
 ## Edit the words
 
-All scenario text, NPC lines, twists, reflective questions, guide lines and the
-written-response acknowledgements live in **`src/content/scenarios.json`**. Edit the
-text there; no code changes are needed. Keep the `id`, `skill` and `weight` fields as they are.
+All the words live in **`src/content/scenarios.json`**:
+
+- the four internship scenarios (each based on a real internship description, with employers renamed), their managers, options, feedback, reflective questions and twists;
+- `writeGuide` for each scenario: what a strong written answer does, plus the one coaching tip;
+- `resources` for each role, and `commonResources` shown on every role;
+- `selfCheck`: the start-of-game confidence statements and "what draws you" picks;
+- guide lines and written-response acknowledgements.
+
+Edit the text there; no code changes are needed. Keep the `id`, `skill`, `weight` and `scenario` fields as they are.
+
+## What a run looks like
+
+1. **Self-check** (new players, skippable): rate confidence in four skills and pick what draws you.
+2. **Scenario**: the player is the intern; the manager sets the task, the player picks an approach and writes a short answer.
+3. **Coaching**: a clearly weak answer gets one tip and an optional chance to revise (up to two times). Both drafts are kept.
+4. **Feedback, reflection and ratings**, then **resources** for that role.
+5. **Growth record**: includes "Then and now", comparing the self-check with what the player did and enjoyed.
 
 ## How it's put together
 

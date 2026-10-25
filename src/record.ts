@@ -1,5 +1,5 @@
 import { CONTENT, SCENARIO_IDS, SKILL_NAMES, getScenario, skillHint } from './content';
-import type { Attempt, ScenarioId, SkillName } from './types';
+import type { Attempt, ScenarioId, SelfCheck, SkillName } from './types';
 
 export interface BuildingSummary {
   id: ScenarioId;
@@ -138,7 +138,7 @@ function tryNext(buildings: BuildingSummary[], explored: ScenarioId[]): string[]
 const RATING_WORDS = ['', 'not much', 'a little', 'somewhat', 'quite a lot', 'a lot'];
 export const ratingWord = (n: number) => RATING_WORDS[Math.max(1, Math.min(5, Math.round(n)))];
 
-export function recordAsText(r: GrowthRecord): string {
+export function recordAsText(r: GrowthRecord, then?: ThenAndNow): string {
   const lines: string[] = ['CAREER PLAZA: MY GROWTH RECORD', ''];
   lines.push(`Career map: ${r.explored.length} of 4 explored`, '');
   lines.push('WHAT I TRIED');
@@ -147,8 +147,13 @@ export function recordAsText(r: GrowthRecord): string {
     const opt = s.options.find((o) => o.id === a.choiceId);
     lines.push(`- ${s.building}${a.isRevisit ? ' (revisit)' : ''}, ${new Date(a.startedAt).toLocaleString()}`);
     if (opt) lines.push(`  Chose: ${opt.text}`);
-    if (a.writtenResponse) lines.push(`  My words: "${a.writtenResponse}"`);
+    if (a.firstDraft) lines.push(`  First draft: "${a.firstDraft}"`);
+    if (a.writtenResponse) lines.push(`  ${a.firstDraft ? 'Revised words' : 'My words'}: "${a.writtenResponse}"`);
     if (a.reflectionNote) lines.push(`  Reflection: "${a.reflectionNote}"`);
+  }
+  if (then && then.noticed.length) {
+    lines.push('', 'THEN AND NOW');
+    for (const n of then.noticed) lines.push(`- ${n}`);
   }
   lines.push('', 'WHAT I ENJOYED');
   for (const b of r.buildings) {
@@ -182,4 +187,115 @@ export function guideLine(attempts: Attempt[]): string {
   if (n >= 2) return GUIDE.afterTwo;
   if (n === 1) return GUIDE.afterFirst;
   return GUIDE.welcome;
+}
+
+// ---- Then and now: the start self-check compared with what happened in play ----
+
+export interface SkillThenNow {
+  skill: SkillName;
+  /** Start self-rating, 1-5. */
+  expected?: number;
+  /** Latest retake rating, only when the check was taken more than once. */
+  now?: number;
+  /** How confident they felt in scenarios that used this skill (weighted by how much it was used). */
+  practice?: number;
+  /** How much they enjoyed scenarios that used this skill. */
+  enjoyed?: number;
+}
+
+export interface ThenAndNow {
+  start: SelfCheck | null;
+  retaken: boolean;
+  skills: SkillThenNow[];
+  expectedSkills: SkillName[];
+  expectedField: ScenarioId | null;
+  enjoyedSkills: SkillName[];
+  enjoyedBuilding: ScenarioId | null;
+  noticed: string[];
+}
+
+const fieldLabel = (id: ScenarioId) =>
+  CONTENT.selfCheck.fieldPick.options.find((o) => o.scenario === id)?.label.toLowerCase() ?? nameOf(id);
+
+function weightedFor(attempts: Attempt[], skill: SkillName, key: 'confidence' | 'enjoyment'): number | undefined {
+  let sum = 0;
+  let weight = 0;
+  for (const a of attempts) {
+    const w = a.skills.find((s) => s.skill === skill)?.weight ?? 0;
+    sum += a[key] * w;
+    weight += w;
+  }
+  return weight ? sum / weight : undefined;
+}
+
+/** Highest values within a small margin, so near-ties are shown together rather than ranked. */
+function topWithin<T>(items: { key: T; value: number }[], margin = 0.25): T[] {
+  if (!items.length) return [];
+  const best = Math.max(...items.map((i) => i.value));
+  return items.filter((i) => i.value >= best - margin).map((i) => i.key);
+}
+
+export function thenAndNow(attempts: Attempt[], checks: SelfCheck[]): ThenAndNow {
+  const start = checks[0] ?? null;
+  const latest = checks.length > 1 ? checks[checks.length - 1] : null;
+
+  const skills: SkillThenNow[] = SKILL_NAMES.map((skill) => ({
+    skill,
+    expected: start?.confidence[skill],
+    now: latest?.confidence[skill],
+    practice: weightedFor(attempts, skill, 'confidence'),
+    enjoyed: weightedFor(attempts, skill, 'enjoyment'),
+  }));
+
+  const expectedSkills = start ? SKILL_NAMES.filter((s) => start.skillPicks.includes(s)) : [];
+  const expectedField = start?.field ?? null;
+
+  const enjoyedSkills = topWithin(
+    skills.filter((s) => s.enjoyed !== undefined).map((s) => ({ key: s.skill, value: s.enjoyed! })),
+  );
+  const byBuilding = exploredIds(attempts).map((id) => ({
+    key: id,
+    value: avg(attempts.filter((a) => a.scenarioId === id).map((a) => a.enjoyment)),
+  }));
+  const topBuildings = topWithin(byBuilding, 0);
+  const enjoyedBuilding = topBuildings.length === 1 ? topBuildings[0] : null;
+
+  const noticed: string[] = [];
+  if (start) {
+    for (const s of skills) {
+      if (s.expected === undefined || s.practice === undefined) continue;
+      if (s.practice - s.expected >= 1.5) {
+        noticed.push(`You rated yourself lower on ${s.skill} than you felt when using it. You may be better at it than you think.`);
+      } else if (s.expected - s.practice >= 1.5) {
+        noticed.push(`You felt less sure about ${s.skill} in practice than you expected. That's useful to know, and it's a skill you can grow.`);
+      }
+    }
+    if (expectedField && enjoyedBuilding && expectedField !== enjoyedBuilding && attempts.some((a) => a.scenarioId === expectedField)) {
+      noticed.push(
+        `You expected ${fieldLabel(expectedField)} to interest you most, but you enjoyed the ${nameOf(enjoyedBuilding)} more. Worth exploring both.`,
+      );
+    }
+    const pickedButUnenjoyed = expectedSkills.find((sk) => {
+      const e = skills.find((s) => s.skill === sk)?.enjoyed;
+      return e !== undefined && e <= 2.5;
+    });
+    if (pickedButUnenjoyed) {
+      noticed.push(`You expected to enjoy ${pickedButUnenjoyed}, but the scenarios that used it didn't land as well. Try it again in another building to see if the setting made the difference.`);
+    }
+  }
+  const confidentNotEnjoyed = skills.find((s) => (s.practice ?? 0) >= 4 && s.enjoyed !== undefined && s.enjoyed <= 2.5);
+  if (confidentNotEnjoyed) {
+    noticed.push(`You felt confident using ${confidentNotEnjoyed.skill}, but it hasn't been the part you enjoyed most. Being good at something and enjoying it can be different, and both matter.`);
+  }
+
+  return {
+    start,
+    retaken: checks.length > 1,
+    skills,
+    expectedSkills,
+    expectedField,
+    enjoyedSkills,
+    enjoyedBuilding,
+    noticed: noticed.slice(0, 3),
+  };
 }

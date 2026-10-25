@@ -1,9 +1,10 @@
 import { CONTENT, SCENARIO_IDS, getScenario } from '../content';
 import type { FeedbackProvider, FeedbackResult } from '../feedback/provider';
+import { MAX_REVISIONS, coachWriting, type CoachResult } from '../feedback/coach';
 import { ScriptedProvider } from '../feedback/scripted';
-import { buildRecord, exploredIds, guideLine, joinList, ratingWord, recordAsText, type GrowthRecord } from '../record';
+import { buildRecord, exploredIds, guideLine, joinList, ratingWord, recordAsText, thenAndNow, type GrowthRecord, type ThenAndNow } from '../record';
 import { clearState, loadState, saveState } from '../store';
-import type { Attempt, ChoiceId, Rating, SaveState, Scenario, ScenarioId, SkillName } from '../types';
+import type { Attempt, ChoiceId, Rating, Resource, SaveState, Scenario, ScenarioId, SelfCheck, SkillName } from '../types';
 import { reducedMotion, type World } from '../world/types';
 import {
   buildingIcon,
@@ -18,8 +19,8 @@ import {
   uid,
 } from './dom';
 
-type Screen = 'title' | 'plaza' | 'scenario' | 'record';
-type Step = 'intro' | 'choose' | 'write' | 'feedback' | 'reflect' | 'rate';
+type Screen = 'title' | 'selfcheck' | 'plaza' | 'scenario' | 'record';
+type Step = 'intro' | 'choose' | 'write' | 'coach' | 'feedback' | 'reflect' | 'rate' | 'resources';
 
 interface Run {
   scenario: Scenario;
@@ -28,7 +29,11 @@ interface Run {
   step: Step;
   choiceId?: ChoiceId;
   written?: string;
+  firstDraft?: string;
+  revisions: number;
+  coach?: CoachResult;
   feedback?: FeedbackResult;
+  saved?: boolean;
   reflection?: string;
   enjoyment?: Rating;
   confidence?: Rating;
@@ -51,10 +56,10 @@ export interface AppOptions {
 
 const NPC_COLOR: Record<ScenarioId | 'guide', string> = {
   guide: 'var(--brand)',
-  consulting: '#34465E',
-  classroom: '#D9694C',
-  data: '#B88A12',
-  research: '#8C3B4A',
+  resort: '#C4462A',
+  policy: '#34465E',
+  foundation: '#8C3B4A',
+  workforce: '#3A4148',
 };
 
 export class App {
@@ -115,7 +120,7 @@ export class App {
   private renderHud() {
     const hud = this.els.hud;
     hud.replaceChildren();
-    if (this.screen === 'title') return;
+    if (this.screen === 'title' || this.screen === 'selfcheck') return;
     const explored = exploredIds(this.attempts);
 
     let left: HTMLElement;
@@ -168,7 +173,7 @@ export class App {
       { class: 'title-card card', 'aria-labelledby': 'title-h' },
       h('p', { class: 'kicker' }, 'Humancareers · Part 1'),
       h('h1', { id: 'title-h' }, 'Career Plaza'),
-      h('p', { class: 'pitch' }, 'Step into four workplaces and try the work for a few minutes each. See what you used, what you enjoyed, and where to go next.'),
+      h('p', { class: 'pitch' }, 'Try four real internships for a few minutes each. See what you used, what you enjoyed, and where to go next.'),
       h('p', { class: 'promise' }, h('strong', null, 'No scores. No wrong answers.'), ' About 8 to 10 minutes.'),
       this.webglFailed
         ? h('p', { class: 'notice', role: 'note' }, "3D couldn't start on this device, so you'll play in Simple mode. Everything else works the same.")
@@ -176,7 +181,7 @@ export class App {
       h(
         'div',
         { class: 'actions' },
-        h('button', { class: 'btn primary big', type: 'button', onclick: () => this.showPlaza() }, hasProgress ? 'Continue exploring' : 'Start'),
+        h('button', { class: 'btn primary big', type: 'button', onclick: () => this.startFromTitle() }, hasProgress ? 'Continue exploring' : 'Start'),
         this.world.mode === '3d'
           ? h('button', { class: 'btn ghost', type: 'button', onclick: () => this.switchToSimple() }, 'Simple mode (no 3D)')
           : null,
@@ -190,7 +195,31 @@ export class App {
     this.world.dispose();
     this.world = this.opts.toSimple();
     this.bindWorld();
-    this.showPlaza();
+    this.startFromTitle();
+  }
+
+  /** New players get the short self-check first; returning players go straight to the plaza. */
+  private startFromTitle() {
+    if (!this.save.selfChecks.length && !this.attempts.length) this.showSelfCheck('start');
+    else this.showPlaza();
+  }
+
+  // ---- Self-check ------------------------------------------------------------
+
+  private showSelfCheck(mode: 'start' | 'retake') {
+    this.setScreen('selfcheck');
+    this.world.setActive(true);
+    const done = (check: SelfCheck | null) => {
+      if (check) {
+        this.save = { ...this.save, selfChecks: [...this.save.selfChecks, check] };
+        saveState(this.save);
+      }
+      if (mode === 'retake') this.showRecord();
+      else this.showPlaza();
+    };
+    const page = renderSelfCheck(mode, done);
+    this.els.stage.replaceChildren(page);
+    page.querySelector<HTMLElement>('h1')?.focus();
   }
 
   // ---- Plaza ----------------------------------------------------------------
@@ -212,7 +241,7 @@ export class App {
           class: `bbtn b-${id} ${visited ? 'visited' : ''}`,
           type: 'button',
           'data-id': id,
-          'aria-label': `${s.building}, with ${s.npc.name}. ${visited ? 'Explored. Enter again for a new twist.' : 'Not explored yet.'}`,
+          'aria-label': `${s.building}: ${s.internRole}, with ${s.npc.name}. ${visited ? 'Explored. Enter again for a new twist.' : 'Not explored yet.'}`,
           onclick: () => void this.enterBuilding(id),
           onmouseenter: () => this.world.setHover(id),
           onmouseleave: () => this.world.setHover(null),
@@ -224,7 +253,7 @@ export class App {
           'span',
           { class: 'btext' },
           h('span', { class: 'bname' }, s.building),
-          simple ? h('span', { class: 'bdesc' }, `${s.npc.name}, ${s.npc.role.toLowerCase()}. ${s.setting}`) : null,
+          simple ? h('span', { class: 'bdesc' }, `You: ${s.internRole}. Working with ${s.npc.name}, ${s.npc.role}.`) : null,
           h('span', { class: 'bstatus' }, visited ? (simple ? '✓ Explored · new twist inside' : '✓ Explored') : 'New'),
         ),
       );
@@ -282,6 +311,7 @@ export class App {
       isRevisit: this.attempts.some((a) => a.scenarioId === id),
       startedAt: new Date().toISOString(),
       step: 'intro',
+      revisions: 0,
       wantsMore: false,
     };
     this.world.setHover(null);
@@ -299,7 +329,7 @@ export class App {
 
   private async leaveScenario() {
     if (this.busy || !this.run) return;
-    if (this.run.choiceId) {
+    if (this.run.choiceId && !this.run.saved) {
       const ok = await confirmDialog({
         title: 'Leave this building?',
         body: "This attempt won't be saved. You can come back any time.",
@@ -333,7 +363,7 @@ export class App {
         { class: 'speaker' },
         h('span', { class: 'avatar', style: `--c:${NPC_COLOR[s.id]}`, 'aria-hidden': 'true' }, s.npc.name.replace('Professor ', '')[0]),
         h('span', null, h('strong', { id: 'npc-name' }, s.npc.name), h('span', { class: 'role' }, `${s.npc.role} · ${s.building}`)),
-        h('span', { class: 'steps', 'aria-label': `Step ${stepIndex(run.step) + 1} of 6` }, STEPS.map((st) => h('span', { class: `sdot ${stepIndex(st) <= stepIndex(run.step) ? 'on' : ''}` }))),
+        h('span', { class: 'steps', 'aria-label': `Step ${stepIndex(run.step) + 1} of ${STEPS.length}` }, STEPS.map((st) => h('span', { class: `sdot ${stepIndex(st) <= stepIndex(run.step) ? 'on' : ''}` }))),
       ),
       ...bodyChildren,
     );
@@ -365,7 +395,7 @@ export class App {
         const l1 = say();
         const twist = run.isRevisit ? h('p', { class: 'twist' }, h('span', { class: 'twist-tag' }, 'New this time'), h('span', { class: 'twist-text' })) : null;
         const controls = h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => this.go('choose') }, 'Continue'));
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [h('p', { class: 'setting' }, s.setting), l1, twist, controls])));
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [h('p', { class: 'role-line' }, h('span', { class: 'k' }, 'Your role: '), s.internRole), h('p', { class: 'setting' }, s.setting), l1, twist, controls])));
         const lines: HTMLElement[] = [l1];
         const texts = [s.intro];
         if (twist) {
@@ -419,6 +449,35 @@ export class App {
         void this.speak([p], [s.writePrompt], controls);
         break;
       }
+      case 'coach': {
+        const c = run.coach!;
+        const works = c.whatWorks ? say() : null;
+        const tip = say();
+        const controls = h(
+          'div',
+          { class: 'block' },
+          h('p', { class: 'label' }, 'What a strong answer does here'),
+          h('ul', { class: 'coach-points' }, s.writeGuide.points.map((pt) => h('li', null, pt))),
+          h('blockquote', { class: 'sample' }, h('span', { class: 'k' }, 'Your words: '), `“${run.written ?? ''}”`),
+          h(
+            'div',
+            { class: 'actions' },
+            h('button', { class: 'btn primary', type: 'button', onclick: () => this.reviseAnswer() }, 'Revise my answer'),
+            h('button', { class: 'btn ghost', type: 'button', onclick: () => void this.toFeedback() }, 'Keep it and continue'),
+          ),
+        );
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [works, tip, controls])));
+        const lines: HTMLElement[] = [];
+        const texts: string[] = [];
+        if (works && c.whatWorks) {
+          lines.push(works);
+          texts.push(c.whatWorks);
+        }
+        lines.push(tip);
+        texts.push(c.tip);
+        void this.speak(lines, texts, controls);
+        break;
+      }
       case 'feedback': {
         const fb = run.feedback!;
         const r = say();
@@ -464,7 +523,7 @@ export class App {
       }
       case 'rate': {
         this.world.setTalking(null);
-        const finish = h('button', { class: 'btn primary', type: 'button', disabled: true, onclick: () => void this.finish() }, 'Finish and go back to the plaza');
+        const finish = h('button', { class: 'btn primary', type: 'button', disabled: true, onclick: () => this.finish() }, 'Finish');
         const hint = h('p', { class: 'hint', id: 'rate-hint' }, 'Pick one for each question.');
         const update = () => {
           const ready = !!(run.enjoyment && run.confidence);
@@ -520,6 +579,24 @@ export class App {
         this.announce('Rate how much you enjoyed this and how confident you felt.');
         break;
       }
+      case 'resources': {
+        const line = say();
+        const controls = h(
+          'div',
+          { class: 'block' },
+          resourceList(s.resources, true),
+          h('p', { class: 'label' }, 'For any humanities career'),
+          resourceList(CONTENT.commonResources, false),
+          h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => void this.exitToPlaza() }, 'Back to the plaza')),
+        );
+        stage.replaceChildren(
+          this.wrapScenario(
+            this.dialogueCard(run, [h('h2', { class: 'rate-h' }, `Learn more: ${s.internRole}`), line, controls]),
+          ),
+        );
+        void this.speak([line], ["If you want to know more about this kind of work, here's where I'd start. These links open in a new tab."], controls);
+        break;
+      }
     }
   }
 
@@ -543,6 +620,29 @@ export class App {
     const run = this.run;
     if (!run || !run.choiceId) return;
     run.written = text.trim() || undefined;
+    if (run.written && run.revisions < MAX_REVISIONS) {
+      const c = coachWriting(run.scenario, run.written);
+      if (c.status === 'could_strengthen') {
+        run.coach = c;
+        this.go('coach');
+        return;
+      }
+    }
+    await this.toFeedback();
+  }
+
+  /** Revising keeps the first draft so the growth record can show both versions. */
+  private reviseAnswer() {
+    const run = this.run;
+    if (!run) return;
+    if (run.firstDraft === undefined) run.firstDraft = run.written;
+    run.revisions += 1;
+    this.go('write');
+  }
+
+  private async toFeedback() {
+    const run = this.run;
+    if (!run || !run.choiceId) return;
     run.feedback = await this.provider.getFeedback({
       scenarioId: run.scenario.id,
       choiceId: run.choiceId,
@@ -550,6 +650,9 @@ export class App {
       isRevisit: run.isRevisit,
       twist: run.isRevisit ? run.scenario.twist : undefined,
     });
+    if (run.revisions > 0 && run.written && run.written !== run.firstDraft) {
+      run.feedback.acknowledgement = 'Thanks for taking another pass. That reads more clearly.';
+    }
     if (this.run === run) this.go('feedback');
   }
 
@@ -576,15 +679,17 @@ export class App {
     });
   }
 
-  private async finish() {
+  private finish() {
     const run = this.run;
-    if (!run || !run.choiceId || !run.feedback || !run.enjoyment || !run.confidence || this.busy) return;
+    if (!run || !run.choiceId || !run.feedback || !run.enjoyment || !run.confidence || this.busy || run.saved) return;
     const attempt: Attempt = {
       id: uid(),
       scenarioId: run.scenario.id,
       startedAt: run.startedAt,
       choiceId: run.choiceId,
       writtenResponse: run.written,
+      firstDraft: run.firstDraft !== undefined && run.firstDraft !== run.written ? run.firstDraft : undefined,
+      revisions: run.revisions || undefined,
       reflectionNote: run.reflection,
       enjoyment: run.enjoyment,
       confidence: run.confidence,
@@ -592,10 +697,12 @@ export class App {
       isRevisit: run.isRevisit,
       skills: run.feedback.skills.map((s) => ({ skill: s.skill, weight: s.weight })),
     };
-    this.save = { version: 1, attempts: [...this.attempts, attempt] };
+    this.save = { ...this.save, attempts: [...this.attempts, attempt] };
     saveState(this.save);
+    run.saved = true;
     this.justFinished = attempt.scenarioId;
-    await this.exitToPlaza();
+    this.renderHud();
+    this.go('resources');
   }
 
   // ---- Growth record --------------------------------------------------------
@@ -605,8 +712,10 @@ export class App {
     this.setScreen('record');
     this.world.setActive(false);
     const r = buildRecord(this.attempts);
-    const page = renderRecord(r, {
-      onCopy: (btn, fallback) => void copyText(recordAsText(r), btn, fallback),
+    const then = thenAndNow(this.attempts, this.save.selfChecks);
+    const page = renderRecord(r, then, {
+      onCopy: (btn, fallback) => void copyText(recordAsText(r, then), btn, fallback),
+      onCheck: () => this.showSelfCheck('retake'),
       onStartOver: () => void this.startOver(),
       onPlaza: () => this.backToPlazaFromRecord(),
     });
@@ -622,7 +731,7 @@ export class App {
   private async startOver() {
     const ok = await confirmDialog({
       title: 'Start over?',
-      body: 'This clears every attempt, rating and note on this device. It cannot be undone.',
+      body: 'This clears every attempt, rating, note and self-check on this device. It cannot be undone.',
       confirm: 'Clear and start over',
       cancel: 'Keep my record',
       danger: true,
@@ -634,14 +743,21 @@ export class App {
   }
 }
 
-const STEPS: Step[] = ['intro', 'choose', 'write', 'feedback', 'reflect', 'rate'];
-const stepIndex = (s: Step) => STEPS.indexOf(s);
+const STEPS: Step[] = ['intro', 'choose', 'write', 'feedback', 'reflect', 'rate', 'resources'];
+/** Coaching is part of the writing step, so it shares its dot. */
+const stepIndex = (s: Step) => STEPS.indexOf(s === 'coach' ? 'write' : s);
 
 // ---- Growth record rendering -------------------------------------------------
 
 function renderRecord(
   r: GrowthRecord,
-  on: { onCopy: (btn: HTMLButtonElement, fallback: HTMLElement) => void; onStartOver: () => void; onPlaza: () => void },
+  then: ThenAndNow,
+  on: {
+    onCopy: (btn: HTMLButtonElement, fallback: HTMLElement) => void;
+    onCheck: () => void;
+    onStartOver: () => void;
+    onPlaza: () => void;
+  },
 ): HTMLElement {
   const name = (id: ScenarioId) => getScenario(id).building;
   const maxSkill = Math.max(1, ...r.skills.map((s) => s.total));
@@ -664,8 +780,9 @@ function renderRecord(
           h('time', { datetime: a.startedAt }, formatWhen(a.startedAt)),
         ),
         h('p', null, h('span', { class: 'k' }, 'You chose: '), opt?.text ?? ''),
+        a.firstDraft ? h('blockquote', { class: 'sample draft' }, h('span', { class: 'k' }, 'First draft: '), `“${a.firstDraft}”`) : null,
         a.writtenResponse
-          ? h('blockquote', { class: 'sample' }, h('span', { class: 'k' }, 'Your words: '), `“${a.writtenResponse}”`)
+          ? h('blockquote', { class: 'sample' }, h('span', { class: 'k' }, a.firstDraft ? 'After revising: ' : 'Your words: '), `“${a.writtenResponse}”`)
           : h('p', { class: 'soft' }, 'No written response this time.'),
         a.reflectionNote ? h('p', { class: 'note' }, h('span', { class: 'k' }, 'Your reflection: '), a.reflectionNote) : null,
       );
@@ -753,6 +870,7 @@ function renderRecord(
         h('div', null, h('p', { class: 'kicker' }, 'Career Plaza'), h('h1', { tabindex: -1 }, 'My growth record'), h('p', { class: 'soft' }, `Built from ${r.attempts.length} ${r.attempts.length === 1 ? 'visit' : 'visits'} to ${r.explored.length} of 4 buildings.`)),
         h('figure', { class: 'record-map' }, careerMapSvg(r.explored), h('figcaption', null, `Career map: ${r.explored.length} of 4 explored`)),
       ),
+      section('rs-then', 'Then and now', 'How you saw yourself at the start, next to what happened when you tried the work.', thenAndNowView(then, on.onCheck)),
       section('rs-tried', 'What you tried', null, tried),
       section('rs-enjoyed', 'What you enjoyed', 'Your own ratings, side by side.', enjoyed),
       section(
@@ -767,6 +885,7 @@ function renderRecord(
       section('rs-gaps', 'Skills to grow', null, h('ul', { class: 'plain' }, r.gaps.map((g) => h('li', { class: skillClass(g.skill) }, skillGlyph(g.skill), h('span', null, g.text))))),
       section('rs-next', 'Try next', null, h('ul', { class: 'plain next' }, r.tryNext.map((t) => h('li', null, h('span', { class: 'arrow', 'aria-hidden': 'true' }, '→'), h('span', null, t))))),
       section('rs-compare', 'Compare the work', 'A side-by-side look at the buildings you tried.', compare),
+      section('rs-learn', 'Learn more about these roles', 'Links open in a new tab.', learnMore(r.explored)),
       h(
         'section',
         { class: 'rsec card actions-sec', 'aria-label': 'Record actions' },
@@ -790,16 +909,16 @@ function formatWhen(iso: string) {
 /** Top-down silhouette of the plaza with explored buildings lit. */
 export function careerMapSvg(explored: ScenarioId[]): SVGElement {
   const pos: Record<ScenarioId, [number, number]> = {
-    consulting: [100, 34],
-    classroom: [166, 100],
-    data: [100, 166],
-    research: [34, 100],
+    resort: [100, 34],
+    policy: [166, 100],
+    foundation: [100, 166],
+    workforce: [34, 100],
   };
   const shapes: Record<ScenarioId, string> = {
-    consulting: '<rect x="-13" y="-16" width="26" height="32" rx="2"/>',
-    classroom: '<rect x="-14" y="-20" width="28" height="40" rx="2"/>',
-    data: '<rect x="-17" y="-13" width="20" height="26" rx="2"/><rect x="0" y="-9" width="17" height="22" rx="2"/>',
-    research: '<circle r="17"/>',
+    resort: '<rect x="-13" y="-16" width="26" height="32" rx="2"/>',
+    policy: '<rect x="-14" y="-20" width="28" height="40" rx="2"/>',
+    foundation: '<rect x="-17" y="-13" width="20" height="26" rx="2"/><rect x="0" y="-9" width="17" height="22" rx="2"/>',
+    workforce: '<circle r="17"/>',
   };
   const parts = SCENARIO_IDS.map((id) => {
     const [x, y] = pos[id];
@@ -865,4 +984,216 @@ function confirmDialog(o: { title: string; body: string; confirm: string; cancel
     document.body.append(overlay);
     cancel.focus();
   });
+}
+
+// ---- Resources ----------------------------------------------------------------
+
+function resourceList(items: Resource[], primary: boolean): HTMLElement {
+  return h(
+    'ul',
+    { class: `resources ${primary ? '' : 'secondary'}` },
+    items.map((res) =>
+      h(
+        'li',
+        null,
+        h(
+          'a',
+          { href: res.url, target: '_blank', rel: 'noopener noreferrer', class: 'res-link' },
+          h('span', { class: 'res-title' }, res.title),
+          h('span', { class: 'sr-only' }, ' (opens in a new tab)'),
+          h('span', { class: 'res-arrow', 'aria-hidden': 'true' }, '↗'),
+        ),
+        h('span', { class: 'res-why' }, res.why),
+      ),
+    ),
+  );
+}
+
+function learnMore(explored: ScenarioId[]): HTMLElement {
+  return h(
+    'div',
+    { class: 'learn' },
+    explored.map((id) => {
+      const s = getScenario(id);
+      return h(
+        'div',
+        { class: 'learn-role' },
+        h('h3', null, h('span', { class: `bicon-wrap b-${id}` }, buildingIcon(id)), h('span', null, s.internRole, h('span', { class: 'soft' }, ` · ${s.building}`))),
+        resourceList(s.resources, true),
+      );
+    }),
+    h('div', { class: 'learn-role' }, h('h3', null, 'For any humanities career'), resourceList(CONTENT.commonResources, false)),
+  );
+}
+
+// ---- Then and now ---------------------------------------------------------------
+
+function thenAndNowView(t: ThenAndNow, onCheck: () => void): HTMLElement {
+  const name = (id: ScenarioId) => getScenario(id).building;
+  const fieldLabel = (id: ScenarioId) => CONTENT.selfCheck.fieldPick.options.find((o) => o.scenario === id)?.label ?? name(id);
+  const dots = (v: number | undefined, label: string, empty: string) =>
+    v === undefined ? h('span', { class: 'soft small' }, empty) : ratingDots(v, `${label} ${ratingWord(v)}`);
+
+  if (!t.start) {
+    return h(
+      'div',
+      { class: 'then-empty' },
+      h('p', null, 'You skipped the start check. Take it now to compare how you see yourself with what you did in each building.'),
+      h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'button', onclick: onCheck }, 'Take the check')),
+    );
+  }
+
+  const goodAt = h(
+    'div',
+    { class: 'table-wrap', tabindex: 0, role: 'region', 'aria-label': 'Skills: expected and in practice' },
+    h(
+      'table',
+      { class: 'compare then-table' },
+      h(
+        'thead',
+        null,
+        h(
+          'tr',
+          null,
+          h('th', { scope: 'col' }, 'Skill'),
+          h('th', { scope: 'col' }, 'You expected'),
+          h('th', { scope: 'col' }, 'In practice'),
+          t.retaken ? h('th', { scope: 'col' }, 'Now you say') : null,
+        ),
+      ),
+      h(
+        'tbody',
+        null,
+        t.skills.map((s) =>
+          h(
+            'tr',
+            { class: skillClass(s.skill) },
+            h('th', { scope: 'row' }, h('span', { class: 'skill-name' }, skillGlyph(s.skill), s.skill)),
+            h('td', null, dots(s.expected, 'Expected confidence', 'Not rated')),
+            h('td', null, dots(s.practice, 'Confidence in practice', 'Not used yet')),
+            t.retaken ? h('td', null, dots(s.now, 'Confidence now', 'Not rated')) : null,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  const expected = [...t.expectedSkills.map((sk) => skillChip(sk)), t.expectedField ? h('span', { class: 'chip field' }, fieldLabel(t.expectedField)) : null].filter(Boolean) as HTMLElement[];
+  const enjoyed = [...t.enjoyedSkills.map((sk) => skillChip(sk)), t.enjoyedBuilding ? h('span', { class: 'chip field' }, name(t.enjoyedBuilding)) : null].filter(Boolean) as HTMLElement[];
+
+  const interests = h(
+    'div',
+    { class: 'then-interests' },
+    h('div', null, h('p', { class: 'label' }, 'You expected to enjoy'), expected.length ? h('div', { class: 'chips' }, expected) : h('p', { class: 'soft' }, 'No picks made.')),
+    h('div', null, h('p', { class: 'label' }, 'In practice you enjoyed'), enjoyed.length ? h('div', { class: 'chips' }, enjoyed) : h('p', { class: 'soft' }, 'Finish a building to see this.')),
+  );
+
+  return h(
+    'div',
+    { class: 'then' },
+    h('h3', null, "What you're good at"),
+    h('p', { class: 'soft' }, 'Your start self-rating next to how confident you felt when the work used each skill.'),
+    goodAt,
+    h('h3', null, "What you're interested in"),
+    interests,
+    t.noticed.length
+      ? h('div', { class: 'noticed' }, h('p', { class: 'label' }, 'What you might notice'), h('ul', { class: 'plain next' }, t.noticed.map((n) => h('li', null, h('span', { class: 'arrow', 'aria-hidden': 'true' }, '→'), h('span', null, n)))))
+      : null,
+    h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'button', onclick: onCheck }, 'Take the check again')),
+  );
+}
+
+// ---- Self-check page ---------------------------------------------------------------
+
+function renderSelfCheck(mode: 'start' | 'retake', done: (check: SelfCheck | null) => void): HTMLElement {
+  const c = CONTENT.selfCheck;
+  const confidence: Partial<Record<SkillName, Rating>> = {};
+  const picks: (SkillName | null)[] = c.skillPicks.map(() => null);
+  let field: ScenarioId | null = null;
+
+  const save = h('button', { class: 'btn primary', type: 'button', disabled: true }, mode === 'start' ? 'Save and start exploring' : 'Save my answers') as HTMLButtonElement;
+  const hint = h('p', { class: 'hint' }, 'Rate all four statements to continue. The picks are optional.');
+  const update = () => {
+    const ready = c.confidence.every((q) => confidence[q.skill]);
+    save.disabled = !ready;
+    hint.hidden = ready;
+  };
+  save.addEventListener('click', () =>
+    done({
+      takenAt: new Date().toISOString(),
+      confidence,
+      skillPicks: picks.filter((p): p is SkillName => p !== null),
+      field,
+    }),
+  );
+
+  const confidenceSets = c.confidence.map((q, i) =>
+    h(
+      'fieldset',
+      { class: 'scale' },
+      h('legend', null, h('span', { class: `skill-name ${skillClass(q.skill)}` }, skillGlyph(q.skill)), ` ${q.statement}`),
+      h(
+        'div',
+        { class: 'scale-row' },
+        [1, 2, 3, 4, 5].map((n) =>
+          h(
+            'label',
+            { class: 'pill' },
+            h('input', {
+              type: 'radio',
+              name: `conf-${i}`,
+              value: n,
+              onchange: () => {
+                confidence[q.skill] = n as Rating;
+                update();
+              },
+            }),
+            h('span', null, String(n)),
+          ),
+        ),
+      ),
+      h('div', { class: 'scale-ends', 'aria-hidden': 'true' }, h('span', null, '1 not yet'), h('span', null, '5 very')),
+    ),
+  );
+
+  const choiceSet = <T,>(name: string, legend: string, options: { value: T; label: string }[], onPick: (v: T) => void) =>
+    h(
+      'fieldset',
+      { class: 'scale' },
+      h('legend', null, legend),
+      h(
+        'div',
+        { class: 'choice-row' },
+        options.map((o) =>
+          h('label', { class: 'pill text' }, h('input', { type: 'radio', name, onchange: () => onPick(o.value) }), h('span', null, o.label)),
+        ),
+      ),
+    );
+
+  const pickSets = c.skillPicks.map((q, i) =>
+    choiceSet(`pick-${i}`, q.question, q.options.map((o) => ({ value: o.skill, label: o.label })), (v) => (picks[i] = v)),
+  );
+  const fieldSet = choiceSet('field', c.fieldPick.question, c.fieldPick.options.map((o) => ({ value: o.scenario, label: o.label })), (v) => (field = v));
+
+  const card = h(
+    'section',
+    { class: 'selfcheck-card card', 'aria-labelledby': 'sc-h' },
+    h('p', { class: 'kicker' }, mode === 'start' ? 'Before you explore' : 'Take the check again'),
+    h('h1', { id: 'sc-h', tabindex: -1 }, 'Where do you stand?'),
+    h('p', { class: 'soft' }, c.intro),
+    h('h2', { class: 'label' }, 'How confident are you?'),
+    confidenceSets,
+    h('h2', { class: 'label' }, 'What draws you?'),
+    pickSets,
+    fieldSet,
+    hint,
+    h(
+      'div',
+      { class: 'actions' },
+      save,
+      h('button', { class: 'btn ghost', type: 'button', onclick: () => done(null) }, mode === 'start' ? 'Skip for now' : 'Cancel'),
+    ),
+  );
+  update();
+  return h('div', { class: 'selfcheck-wrap' }, card);
 }

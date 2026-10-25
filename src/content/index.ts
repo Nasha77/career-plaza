@@ -4,7 +4,7 @@ import type { ContentFile, Scenario, ScenarioId, SkillName } from '../types';
 export const CONTENT = raw as ContentFile;
 
 /** Plaza order, also the order of the original camera tour. */
-export const SCENARIO_IDS: ScenarioId[] = ['consulting', 'classroom', 'data', 'research'];
+export const SCENARIO_IDS: ScenarioId[] = ['resort', 'policy', 'foundation', 'workforce'];
 export const SKILL_NAMES: SkillName[] = CONTENT.skills.map((s) => s.name);
 
 export function getScenario(id: ScenarioId): Scenario {

@@ -91,10 +91,10 @@ export function skillChip(skill: SkillName, note?: string): HTMLElement {
 
 /** Small building silhouettes used in buttons, the HUD and the career map. */
 const BUILDING_ICONS: Record<ScenarioId, string> = {
-  consulting: '<path d="M7 21V5h7v16M14 21V9h3v12M9 8h3M9 11h3M9 14h3M9 17h3M10 2v3"/>',
-  classroom: '<path d="M3 9l9-5 9 5M4 9h16M6 9v9M10 9v9M14 9v9M18 9v9M3 21h18M4 18h16"/>',
-  data: '<path d="M3 21V11h10v10M13 21V6h8v15M15 9h4l-2 3-1-1-1 2M5 14h6M5 17h6"/>',
-  research: '<path d="M4 21v-8h16v8M5 13a7 7 0 0 1 14 0M12 6V3M10 21v-4h4v4M14.5 7.5l2-2"/>',
+  resort: '<path d="M7 21V5h7v16M14 21V9h3v12M9 8h3M9 11h3M9 14h3M9 17h3M10 2v3"/>',
+  policy: '<path d="M3 9l9-5 9 5M4 9h16M6 9v9M10 9v9M14 9v9M18 9v9M3 21h18M4 18h16"/>',
+  foundation: '<path d="M3 21V11h10v10M13 21V6h8v15M15 9h4l-2 3-1-1-1 2M5 14h6M5 17h6"/>',
+  workforce: '<path d="M4 21v-8h16v8M5 13a7 7 0 0 1 14 0M12 6V3M10 21v-4h4v4M14.5 7.5l2-2"/>',
 };
 
 export function buildingIcon(id: ScenarioId): SVGElement {

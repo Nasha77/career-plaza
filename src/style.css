@@ -22,10 +22,10 @@
   --skill-organisation: #4f6f22;
   --skill-analysis: #9a6800;
 
-  --b-consulting: #5b7db1;
-  --b-classroom: #d98c7a;
-  --b-data: #4fa3a5;
-  --b-research: #8fae7e;
+  --b-resort: #d1a96b;
+  --b-policy: #9ea7a8;
+  --b-foundation: #4fa3a5;
+  --b-workforce: #8fae7e;
 
   --font-body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-display: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
@@ -551,7 +551,7 @@ textarea:focus-visible {
   }
 }
 .bbtn {
-  --bc: var(--b-consulting);
+  --bc: var(--b-resort);
   display: flex;
   align-items: center;
   gap: 10px;
@@ -564,14 +564,14 @@ textarea:focus-visible {
   cursor: pointer;
   transition: border-color 120ms, transform 120ms, background 120ms;
 }
-.b-classroom {
-  --bc: var(--b-classroom);
+.b-policy {
+  --bc: var(--b-policy);
 }
-.b-data {
-  --bc: var(--b-data);
+.b-foundation {
+  --bc: var(--b-foundation);
 }
-.b-research {
-  --bc: var(--b-research);
+.b-workforce {
+  --bc: var(--b-workforce);
 }
 .bbtn:hover,
 .bbtn.hovered {
@@ -1400,4 +1400,178 @@ body:not(.simple) .title-card {
   .option:hover {
     transform: none;
   }
+}
+
+/* ---------- Self-check ---------- */
+.selfcheck-wrap {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  pointer-events: auto;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 35%, transparent), color-mix(in srgb, var(--bg) 70%, transparent));
+}
+.selfcheck-card {
+  width: 100%;
+  max-width: 600px;
+  padding: 22px 20px 20px;
+  margin-block: 8px 24px;
+}
+.selfcheck-card h1 {
+  font-size: clamp(1.7rem, 6vw, 2.2rem);
+  font-weight: 800;
+  margin: 4px 0 8px;
+  text-wrap: balance;
+}
+.selfcheck-card h1:focus {
+  outline: none;
+}
+.selfcheck-card h2.label {
+  margin-top: 22px;
+}
+.selfcheck-card legend {
+  font-weight: 700;
+  line-height: 1.4;
+}
+.selfcheck-card legend .skill-name {
+  display: inline-flex;
+  vertical-align: middle;
+}
+.choice-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.pill.text span {
+  min-height: 48px;
+  padding: 6px 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.25;
+}
+@media (max-width: 380px) {
+  .choice-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Scenario additions ---------- */
+.role-line {
+  margin-top: 10px;
+  font-size: 0.92rem;
+}
+.coach-points {
+  margin: 0 0 10px;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 4px;
+}
+.sample.draft {
+  opacity: 0.75;
+  border-left-style: dashed;
+}
+
+/* ---------- Resources ---------- */
+.resources {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.resources li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+}
+.resources.secondary li {
+  background: transparent;
+}
+.res-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--brand);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  min-height: 24px;
+}
+.res-link:hover {
+  text-decoration-thickness: 2px;
+}
+.res-arrow {
+  font-size: 0.85em;
+}
+.res-why {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+.learn {
+  display: grid;
+  gap: 16px;
+}
+.learn h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  font-family: var(--font-body);
+}
+.learn h3 .bicon-wrap {
+  width: 30px;
+  height: 30px;
+}
+
+/* ---------- Then and now ---------- */
+.then {
+  display: grid;
+  gap: 10px;
+}
+.then h3 {
+  font-size: 1.05rem;
+  margin-top: 6px;
+}
+.then-table {
+  min-width: 420px;
+}
+.then-table .skill-name {
+  gap: 8px;
+}
+.then-interests {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.then-interests .label {
+  margin-top: 0;
+}
+@media (max-width: 480px) {
+  .then-interests {
+    grid-template-columns: 1fr;
+  }
+}
+.chip.field {
+  --sk: var(--brand);
+}
+.small {
+  font-size: 0.85rem;
+}
+.noticed {
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+}
+.noticed .label {
+  margin-top: 0;
+}
+.then-empty .actions {
+  margin-top: 10px;
 }

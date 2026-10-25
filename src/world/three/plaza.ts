@@ -37,16 +37,16 @@ export interface Plaza {
 
 const DIST = 20;
 const PLACES: Record<ScenarioId, [number, number]> = {
-  consulting: [0, -DIST],
-  classroom: [DIST, 0],
-  data: [0, DIST],
-  research: [-DIST, 0],
+  resort: [0, -DIST],
+  policy: [DIST, 0],
+  foundation: [0, DIST],
+  workforce: [-DIST, 0],
 };
 const NAMES: Record<ScenarioId, string> = {
-  consulting: 'Consulting Firm',
-  classroom: 'University Classroom',
-  data: 'Data Studio',
-  research: 'Research Center',
+  resort: 'Harbourfront Resort',
+  policy: 'Climate Policy Association',
+  foundation: 'Community Foundation',
+  workforce: 'Workforce Strategy Hub',
 };
 
 type Face = 'front' | 'back' | 'left' | 'right';
@@ -91,7 +91,12 @@ export const labelY = (height: number) => Math.min(height, 8) + 1.2;
 
 function labelSprite(kit: Kit, text: string): THREE.Sprite {
   const tex = kit.canvasTexture(640, 140, (ctx, w, h) => {
-    ctx.font = `800 58px ${DISPLAY_FONT}`;
+    let size = 58;
+    ctx.font = `800 ${size}px ${DISPLAY_FONT}`;
+    while (ctx.measureText(text).width > w - 84 && size > 30) {
+      size -= 2;
+      ctx.font = `800 ${size}px ${DISPLAY_FONT}`;
+    }
     const tw = Math.min(w - 20, ctx.measureText(text).width + 64);
     const x = (w - tw) / 2;
     ctx.fillStyle = 'rgba(20, 48, 42, 0.92)';
@@ -111,14 +116,19 @@ function labelSprite(kit: Kit, text: string): THREE.Sprite {
 }
 
 function buildConsulting(kit: Kit, g: THREE.Group, win: Windows, own: (c: number) => THREE.MeshLambertMaterial) {
-  const body = own(0x5b7db1);
-  const dark = own(0x2f4a73);
+  const body = own(0xd8b98a);
+  const dark = own(0x2f6f6a);
   g.add(kit.box(6.6, 0.6, 5.6, dark, 0, 0.3, 0));
   g.add(kit.box(6, 11, 5, body, 0, 5.5, 0));
-  g.add(kit.box(4.2, 1.6, 3.6, dark, 0, 11.8, 0));
-  g.add(kit.cyl(0.07, 0.07, 2.2, 5, dark, 1.2, 13.7, 0));
+  // Rooftop garden deck with a curved canopy
+  g.add(kit.box(6.4, 0.3, 5.4, dark, 0, 11.15, 0));
+  const canopy = kit.cyl(3.4, 3.4, 0.25, 16, own(0xf2efe6), 0, 13.2, 0);
+  canopy.scale.set(1, 1, 0.75);
+  g.add(canopy);
+  for (const [x, z] of [[-2.4, -1.6], [2.4, -1.6], [-2.4, 1.6], [2.4, 1.6]]) g.add(kit.cyl(0.12, 0.12, 1.9, 6, dark, x, 12.2, z));
+  g.add(kit.sphere(0.6, 0, kit.lambert(0x5f9e6e), -1.2, 11.7, 0.6), kit.sphere(0.5, 0, kit.lambert(0x78b57f), 1.3, 11.6, -0.5));
   g.add(kit.box(3.2, 0.18, 1.4, dark, 0, 2.9, 3.1));
-  g.add(kit.box(1.8, 2.5, 0.1, kit.lambert(0x24364f), 0, 1.25, 2.53));
+  g.add(kit.box(1.8, 2.5, 0.1, kit.lambert(0x1f4e4a), 0, 1.25, 2.53));
   const cols = span(4, -3, 3);
   const rows = span(7, 3.4, 10.8);
   win.grid('front', 6, 5, cols, rows);
@@ -129,8 +139,8 @@ function buildConsulting(kit: Kit, g: THREE.Group, win: Windows, own: (c: number
 }
 
 function buildClassroom(kit: Kit, g: THREE.Group, win: Windows, own: (c: number) => THREE.MeshLambertMaterial) {
-  const body = own(0xd98c7a);
-  const roof = own(0x7a4b45);
+  const body = own(0xb7b9a9);
+  const roof = own(0x4a5560);
   const stone = own(0xf1ece2);
   g.add(kit.box(9, 4.6, 6, body, 0, 2.3, 0));
   const r = kit.prism(9.8, 2.1, 6.6, roof);
@@ -223,7 +233,7 @@ function buildResearch(kit: Kit, g: THREE.Group, win: Windows, own: (c: number) 
   return { door: 5.4, height: 9.4, hit: [9.5, 10, 11] as const };
 }
 
-const BUILDERS = { consulting: buildConsulting, classroom: buildClassroom, data: buildData, research: buildResearch };
+const BUILDERS = { resort: buildConsulting, policy: buildClassroom, foundation: buildData, workforce: buildResearch };
 
 function makeBuilding(kit: Kit, id: ScenarioId, parent: THREE.Group): BuildingHandle {
   const group = new THREE.Group();
