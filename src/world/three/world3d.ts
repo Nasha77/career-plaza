@@ -167,14 +167,9 @@ export class World3D implements World {
     });
     this.applyLit();
 
-    // Theme
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onTheme = () => this.applyTheme(document.documentElement.dataset.theme === 'dark' || (document.documentElement.dataset.theme !== 'light' && mq.matches));
-    onTheme();
-    this.listen(mq, 'change', onTheme);
-    const themeObserver = new MutationObserver(onTheme);
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-    this.cleanup.push(() => themeObserver.disconnect());
+    // The plaza is always in daytime, whatever the device's light or dark setting.
+    // (The HTML panels still follow the device theme.)
+    this.applyTheme(false);
 
     // Size
     const onResize = () => this.resize();
