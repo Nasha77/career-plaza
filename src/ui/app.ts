@@ -34,6 +34,8 @@ interface Run {
   coach?: CoachResult;
   feedback?: FeedbackResult;
   saved?: boolean;
+  /** A reaction to the player's last action, said at the start of the next step. */
+  pendingLine?: string;
   reflection?: string;
   enjoyment?: Rating;
   confidence?: Rating;
@@ -445,8 +447,10 @@ export class App {
             h('button', { class: 'btn ghost', type: 'button', onclick: () => void this.submitWriting('') }, 'Skip'),
           ),
         );
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [p, controls])));
-        void this.speak([p], [s.writePrompt], controls);
+        const reaction = this.takePending(run);
+        const r0 = reaction ? say() : null;
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, p, controls])));
+        void this.speak(r0 && reaction ? [r0, p] : [p], reaction ? [reaction, s.writePrompt] : [s.writePrompt], controls);
         break;
       }
       case 'coach': {
@@ -463,7 +467,7 @@ export class App {
             'div',
             { class: 'actions' },
             h('button', { class: 'btn primary', type: 'button', onclick: () => this.reviseAnswer() }, 'Revise my answer'),
-            h('button', { class: 'btn ghost', type: 'button', onclick: () => void this.toFeedback() }, 'Keep it and continue'),
+            h('button', { class: 'btn ghost', type: 'button', onclick: () => this.keepAnswer() }, 'Keep it and continue'),
           ),
         );
         stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [works, tip, controls])));
@@ -489,9 +493,11 @@ export class App {
           h('div', { class: 'chips' }, fb.skills.map((sk) => skillChip(sk.skill, sk.weight === 2 ? 'main' : 'also'))),
           h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => this.go('reflect') }, 'Continue')),
         );
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r, ack, chips])));
-        const lines: HTMLElement[] = [r];
-        const texts = [fb.npcReaction];
+        const reaction = this.takePending(run);
+        const r0 = reaction ? say() : null;
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, r, ack, chips])));
+        const lines: HTMLElement[] = r0 ? [r0, r] : [r];
+        const texts = reaction ? [reaction, fb.npcReaction] : [fb.npcReaction];
         if (ack && fb.acknowledgement) {
           lines.push(ack);
           texts.push(fb.acknowledgement);
@@ -522,7 +528,8 @@ export class App {
         break;
       }
       case 'rate': {
-        this.world.setTalking(null);
+        const reaction = this.takePending(run);
+        const r0 = reaction ? say() : null;
         const finish = h('button', { class: 'btn primary', type: 'button', disabled: true, onclick: () => this.finish() }, 'Finish');
         const hint = h('p', { class: 'hint', id: 'rate-hint' }, 'Pick one for each question.');
         const update = () => {
@@ -565,6 +572,7 @@ export class App {
           h('span', null, "I'd like to try more like this"),
         );
         const card = this.dialogueCard(run, [
+          r0,
           h('h2', { class: 'rate-h' }, 'Before you head out'),
           h('p', { class: 'soft' }, 'Just for you. This is how you felt, not how you did.'),
           scale('enjoyment', 'How much did you enjoy this?', '1 not much', '5 a lot'),
@@ -575,8 +583,10 @@ export class App {
         ]);
         stage.replaceChildren(this.wrapScenario(card));
         update();
+        const ratingsBlock = h('div');
+        if (r0 && reaction) void this.speak([r0], [reaction], ratingsBlock);
         (card.querySelector('input') as HTMLElement | null)?.focus({ preventScroll: true });
-        this.announce('Rate how much you enjoyed this and how confident you felt.');
+        this.announce(`${reaction ? `${reaction} ` : ''}Rate how much you enjoyed this and how confident you felt.`);
         break;
       }
       case 'resources': {
@@ -594,7 +604,9 @@ export class App {
             this.dialogueCard(run, [h('h2', { class: 'rate-h' }, `Learn more: ${s.internRole}`), line, controls]),
           ),
         );
-        void this.speak([line], ["If you want to know more about this kind of work, here's where I'd start. These links open in a new tab."], controls);
+        const reaction = this.takePending(run);
+        const resourcesLine = "If you want to know more about this kind of work, here's where I'd start. These links open in a new tab.";
+        void this.speak([line], [reaction ? `${reaction} ${resourcesLine}` : resourcesLine], controls);
         break;
       }
     }
@@ -613,13 +625,27 @@ export class App {
   private choose(id: ChoiceId) {
     if (!this.run) return;
     this.run.choiceId = id;
+    this.run.pendingLine = this.run.scenario.options.find((o) => o.id === id)?.chooseLine;
     this.go('write');
+  }
+
+  private takePending(run: Run): string | undefined {
+    const line = run.pendingLine;
+    run.pendingLine = undefined;
+    return line;
+  }
+
+  private keepAnswer() {
+    if (!this.run) return;
+    this.run.pendingLine = CONTENT.reactions.keep;
+    void this.toFeedback();
   }
 
   private async submitWriting(text: string) {
     const run = this.run;
     if (!run || !run.choiceId) return;
     run.written = text.trim() || undefined;
+    if (!run.written) run.pendingLine = CONTENT.reactions.skipWrite;
     if (run.written && run.revisions < MAX_REVISIONS) {
       const c = coachWriting(run.scenario, run.written);
       if (c.status === 'could_strengthen') {
@@ -637,6 +663,7 @@ export class App {
     if (!run) return;
     if (run.firstDraft === undefined) run.firstDraft = run.written;
     run.revisions += 1;
+    run.pendingLine = CONTENT.reactions.revise;
     this.go('write');
   }
 
@@ -650,7 +677,9 @@ export class App {
       isRevisit: run.isRevisit,
       twist: run.isRevisit ? run.scenario.twist : undefined,
     });
-    if (run.revisions > 0 && run.written && run.written !== run.firstDraft) {
+    // Only praise a revision that now meets the bar, not one the student chose to keep as is.
+    const improved = run.written !== undefined && coachWriting(run.scenario, run.written).status === 'solid';
+    if (run.revisions > 0 && improved && run.written !== run.firstDraft) {
       run.feedback.acknowledgement = 'Thanks for taking another pass. That reads more clearly.';
     }
     if (this.run === run) this.go('feedback');
@@ -659,6 +688,7 @@ export class App {
   private saveReflection(text: string) {
     if (!this.run) return;
     this.run.reflection = text.trim() || undefined;
+    this.run.pendingLine = this.run.reflection ? CONTENT.reactions.reflected : CONTENT.reactions.skippedReflect;
     this.go('rate');
   }
 
@@ -700,6 +730,9 @@ export class App {
     this.save = { ...this.save, attempts: [...this.attempts, attempt] };
     saveState(this.save);
     run.saved = true;
+    const r = CONTENT.reactions;
+    const mood = run.enjoyment >= 4 ? r.rateHigh : run.enjoyment <= 2 ? r.rateLow : r.rateMid;
+    run.pendingLine = run.wantsMore ? `${mood} ${r.wantsMore}` : mood;
     this.justFinished = attempt.scenarioId;
     this.renderHud();
     this.go('resources');

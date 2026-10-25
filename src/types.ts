@@ -12,6 +12,8 @@ export interface ScenarioOption {
   id: ChoiceId;
   text: string;
   skills: SkillAward[];
+  /** What the manager says right after this option is picked. */
+  chooseLine: string;
   feedback: string;
   twistFeedback: string;
   reflectiveQuestion: string;
@@ -70,6 +72,18 @@ export interface ContentFile {
     reason: string;
     question: string;
     otherwise: string;
+  };
+  /** Manager lines for the smaller actions, shared by every scenario. */
+  reactions: {
+    skipWrite: string;
+    revise: string;
+    keep: string;
+    reflected: string;
+    skippedReflect: string;
+    rateHigh: string;
+    rateMid: string;
+    rateLow: string;
+    wantsMore: string;
   };
   selfCheck: SelfCheckContent;
   commonResources: Resource[];
