@@ -8,12 +8,24 @@ export interface SkillAward {
   weight: 1 | 2;
 }
 
+/** Made-up practice findings for one option: a small table, notes, or a list. */
+export interface Finding {
+  title: string;
+  kind: 'table' | 'notes' | 'list';
+  rows?: [string, string][];
+  items?: string[];
+  /** The one takeaway worth noticing. */
+  note?: string;
+}
+
 export interface ScenarioOption {
   id: ChoiceId;
   text: string;
   skills: SkillAward[];
   /** What the manager says right after this option is picked. */
   chooseLine: string;
+  /** What the student's action turned up: shown while they write, and given to the AI. */
+  result: Finding;
   feedback: string;
   twistFeedback: string;
   reflectiveQuestion: string;

@@ -464,7 +464,7 @@ export class App {
         );
         const reaction = this.takePending(run);
         const r0 = reaction ? say() : null;
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, p, controls])));
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, findingsCard(run, true), p, controls])));
         void this.speak(r0 && reaction ? [r0, p] : [p], reaction ? [reaction, s.writePrompt] : [s.writePrompt], controls);
         break;
       }
@@ -475,6 +475,7 @@ export class App {
         const controls = h(
           'div',
           { class: 'block' },
+          findingsCard(run, false),
           h('p', { class: 'label' }, 'What a strong answer does here'),
           h('ul', { class: 'coach-points' }, s.writeGuide.points.map((pt) => h('li', null, pt))),
           h('blockquote', { class: 'sample' }, h('span', { class: 'k' }, 'Your words: '), `“${run.written ?? ''}”`),
@@ -513,7 +514,7 @@ export class App {
             h('button', { class: 'btn ghost', type: 'button', onclick: () => void this.answerFollowup('') }, 'Skip'),
           ),
         );
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [q, controls])));
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [q, findingsCard(run, false), controls])));
         void this.speak([q], [run.followupQuestion ?? ''], controls);
         break;
       }
@@ -1326,4 +1327,32 @@ function renderSelfCheck(mode: 'start' | 'retake', done: (check: SelfCheck | nul
   );
   update();
   return h('div', { class: 'selfcheck-wrap' }, card);
+}
+
+// ---- Findings: what the student's chosen approach turned up ---------------------------
+
+function findingsCard(run: { scenario: Scenario; choiceId?: ChoiceId }, open: boolean): HTMLElement | null {
+  const option = run.scenario.options.find((o) => o.id === run.choiceId);
+  if (!option) return null;
+  const f = option.result;
+  let body: HTMLElement;
+  if (f.kind === 'table') {
+    body = h(
+      'table',
+      { class: 'find-table' },
+      h('tbody', null, (f.rows ?? []).map(([k, v]) => h('tr', null, h('th', { scope: 'row' }, k), h('td', null, v)))),
+    );
+  } else if (f.kind === 'list') {
+    body = h('ol', { class: 'find-list' }, (f.items ?? []).map((i) => h('li', null, i)));
+  } else {
+    body = h('ul', { class: 'find-notes' }, (f.items ?? []).map((i) => h('li', null, i)));
+  }
+  return h(
+    'details',
+    { class: 'findings', open },
+    h('summary', null, h('span', { class: 'find-kicker' }, 'What you found'), h('span', { class: 'find-title' }, f.title)),
+    body,
+    f.note ? h('p', { class: 'find-note' }, h('strong', null, 'Worth noticing: '), f.note) : null,
+    h('p', { class: 'find-foot' }, 'Practice data: the names and figures are made up.'),
+  );
 }

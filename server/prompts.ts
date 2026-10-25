@@ -41,6 +41,15 @@ function chosen(s: Scenario, choiceId: unknown) {
   return s.options.find((o) => o.id === choiceId) ?? null;
 }
 
+/** The made-up practice findings the student sees on screen, written out for the model. */
+function findings(o: ReturnType<typeof chosen>): string {
+  if (!o?.result) return '';
+  const f = o.result as { title: string; rows?: string[][]; items?: string[]; note?: string };
+  const body = f.rows ? f.rows.map(([k, v]) => `- ${k}: ${v}`) : (f.items ?? []).map((i) => `- ${i}`);
+  const note = f.note ? `\nWorth noticing: ${f.note}` : '';
+  return `What the student's approach turned up, shown on their screen (made-up practice data, "${f.title}"):\n${body.join('\n')}${note}`;
+}
+
 // ---- Coaching -----------------------------------------------------------------
 
 export function coachPrompt(s: Scenario, choiceId: unknown, text: string) {
@@ -52,13 +61,15 @@ You are reading the short piece of writing you asked for: "${s.writePrompt}"
 A strong answer does these things:
 ${s.writeGuide.points.map((p) => `- ${p}`).join('\n')}
 
+The student can see the findings from their chosen approach while writing. A strong answer often uses them.
+
 Decide whether it is fine to move on, or whether one tip would clearly help.
 - Be generous. Only choose "could_strengthen" when the answer is clearly weak: one or two words, vague, off-topic, or aimed at the wrong audience. Any reasonable attempt is "solid".
 - "whatWorks": one short sentence naming something specific that works in their words, or an empty string if nothing does.
-- "tip": for "could_strengthen", one specific, kind suggestion about their actual words, at most two sentences. For "solid", an empty string.
+- "tip": for "could_strengthen", one specific, kind suggestion about their actual words, at most two sentences. If they missed something useful in the findings, you can point them to it. For "solid", an empty string.
 
 ${SHARED_RULES}`,
-    user: `${o ? `The student chose this approach: "${o.text}"\n` : ''}${fenced('student_text', text)}`,
+    user: `${o ? `The student chose this approach: "${o.text}"\n` : ''}${findings(o)}\n\n${fenced('student_text', text)}`,
     schema: {
       type: 'OBJECT',
       properties: {
@@ -78,10 +89,10 @@ export function followupPrompt(s: Scenario, choiceId: unknown, text: string) {
   return {
     system: `${characterBrief(s)}
 
-The student chose an approach and wrote a short answer. Ask ONE short follow-up question, in character, that asks them to explain their thinking about something specific they wrote or chose. It should feel like a real manager's curious question, not a test. At most 25 words. It must end with a question mark.
+The student chose an approach, saw what it turned up, and wrote a short answer. Ask ONE short follow-up question, in character, that asks them to explain their thinking about something specific they wrote, chose, or noticed (or left out) in the findings. It should feel like a real manager's curious question, not a test. At most 25 words. It must end with a question mark.
 
 ${SHARED_RULES}`,
-    user: `${o ? `The student chose this approach: "${o.text}"\n` : ''}They were asked: "${s.writePrompt}"\n${fenced('student_text', text)}`,
+    user: `${o ? `The student chose this approach: "${o.text}"\n` : ''}${findings(o)}\n\nThey were asked: "${s.writePrompt}"\n${fenced('student_text', text)}`,
     schema: {
       type: 'OBJECT',
       properties: { question: { type: 'STRING' } },
@@ -124,6 +135,7 @@ React to the student's choice like a real manager would, in your own voice.
 ${SHARED_RULES}`,
     user: [
       o ? `The student chose this approach: "${o.text}"` : '',
+      findings(o),
       text ? `They wrote, answering "${s.writePrompt}":\n${fenced('student_text', text)}` : 'They chose not to write anything.',
       fq && fa ? `You asked them: "${fq}"\nThey replied:\n${fenced('student_reply', fa)}` : '',
     ]

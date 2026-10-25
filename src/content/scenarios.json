@@ -203,7 +203,34 @@
           "feedback": "Good instinct. The numbers usually show who we're missing, so the next message reaches the right people.",
           "twistFeedback": "Check whether past events with guest visits drew more sign-ups. That tells you how hard to lean on it.",
           "reflectiveQuestion": "Did digging into the sign-up data feel satisfying or slow?",
-          "chooseLine": "Ooh, smart! Last year's sign-up list is in the shared drive."
+          "chooseLine": "Ooh, smart! Last year's sign-up list is in the shared drive.",
+          "result": {
+            "title": "Last year's volunteer day sign-ups",
+            "kind": "table",
+            "rows": [
+              [
+                "Front Office",
+                "14"
+              ],
+              [
+                "Food & Beverage",
+                "9"
+              ],
+              [
+                "Housekeeping",
+                "3"
+              ],
+              [
+                "Finance",
+                "1"
+              ],
+              [
+                "Security",
+                "0"
+              ]
+            ],
+            "note": "Most sign-ups came in the final week. Night-shift teams barely joined."
+          }
         },
         {
           "id": "B",
@@ -221,7 +248,17 @@
           "feedback": "Stories move people more than reminders do. You're giving them a reason, not just a date.",
           "twistFeedback": "A guest gives your story a hook, but keep the seniors at the centre of it, not the celebrity.",
           "reflectiveQuestion": "Would you enjoy writing for an audience every week?",
-          "chooseLine": "I love that! I've got some lovely photos from last year you can use."
+          "chooseLine": "I love that! I've got some lovely photos from last year you can use.",
+          "result": {
+            "title": "Story material from last year's visit",
+            "kind": "notes",
+            "items": [
+              "\"I looked forward to it all month.\" (Mdm Tan, 78)",
+              "Photo: volunteers teaching seniors to video-call their grandchildren",
+              "Three volunteers called it the best day of their year"
+            ],
+            "note": "The seniors remember the people, not the activities."
+          }
         },
         {
           "id": "C",
@@ -239,7 +276,38 @@
           "feedback": "Uncertainty stops people from signing up. Clear roles make saying yes easy.",
           "twistFeedback": "Add a role for welcoming the guest, so the visit feels planned rather than squeezed in.",
           "reflectiveQuestion": "Do you like being the person who makes plans run smoothly?",
-          "chooseLine": "Good call! People hesitate when they don't know what they're signing up for."
+          "chooseLine": "Good call! People hesitate when they don't know what they're signing up for.",
+          "result": {
+            "title": "Draft volunteer roles",
+            "kind": "table",
+            "rows": [
+              [
+                "Welcome desk",
+                "4 people"
+              ],
+              [
+                "Games",
+                "10 people"
+              ],
+              [
+                "Lunch helpers",
+                "8 people"
+              ],
+              [
+                "Photos",
+                "2 people"
+              ],
+              [
+                "Befrienders",
+                "16 people"
+              ],
+              [
+                "Time slots",
+                "9am to 12pm, 1pm to 4pm"
+              ]
+            ],
+            "note": "Last year's most-asked question was \"What will I actually do?\""
+          }
         }
       ],
       "reactions": {
@@ -326,7 +394,22 @@
           "feedback": "That's the core of this job. Official documents often say less than they seem to at first.",
           "twistFeedback": "Now the close reading matters even more. Check what our tracker actually said before anyone quotes it again.",
           "reflectiveQuestion": "Did reading closely through official documents hold your attention?",
-          "chooseLine": "Good. Read the footnotes too. That's where the detail hides."
+          "chooseLine": "Good. Read the footnotes too. That's where the detail hides.",
+          "result": {
+            "title": "What each source actually says",
+            "kind": "table",
+            "rows": [
+              [
+                "Government report",
+                "\"Authorisation issued 3 March for up to 1 million credits.\""
+              ],
+              [
+                "Public registry",
+                "\"Status: authorised. Transferred: 0.\""
+              ]
+            ],
+            "note": "The report confirms approval, not that a transfer has happened."
+          }
         },
         {
           "id": "B",
@@ -344,7 +427,26 @@
           "feedback": "Being open about uncertainty builds trust. Our readers rely on us to say what we don't know.",
           "twistFeedback": "A clear correction note protects the tracker's credibility. Accuracy beats speed here.",
           "reflectiveQuestion": "How did it feel to explain something unresolved to a public audience?",
-          "chooseLine": "Sensible. Our readers would rather wait than be misled."
+          "chooseLine": "Sensible. Our readers would rather wait than be misled.",
+          "result": {
+            "title": "Current tracker entry",
+            "kind": "table",
+            "rows": [
+              [
+                "Agreement signed",
+                "Yes"
+              ],
+              [
+                "Authorisation issued",
+                "Reported by government"
+              ],
+              [
+                "Transfer",
+                "Not yet recorded"
+              ]
+            ],
+            "note": "Two news outlets quoted our tracker last month."
+          }
         },
         {
           "id": "C",
@@ -362,7 +464,30 @@
           "feedback": "Seeing the pattern tells us if this is a red flag or just how slow the process usually is.",
           "twistFeedback": "The pipeline view helps you show the news site where this deal really stands.",
           "reflectiveQuestion": "Do you enjoy turning lots of records into one clear picture?",
-          "chooseLine": "Nice. The pipeline view is quietly one of the most useful things we publish."
+          "chooseLine": "Nice. The pipeline view is quietly one of the most useful things we publish.",
+          "result": {
+            "title": "Where the deals stand",
+            "kind": "table",
+            "rows": [
+              [
+                "Agreements signed",
+                "42"
+              ],
+              [
+                "Authorisations issued",
+                "18"
+              ],
+              [
+                "Transfers recorded",
+                "6"
+              ],
+              [
+                "Typical time from approval to first transfer",
+                "About 9 months"
+              ]
+            ],
+            "note": "A gap between approval and transfer is normal."
+          }
         }
       ],
       "reactions": {
@@ -451,7 +576,34 @@
           "feedback": "Attendance is a start, but outcomes are the real question. You're looking in the right place.",
           "twistFeedback": "Comparing two programmes fairly means using the same measures for both. Check that you can.",
           "reflectiveQuestion": "How did it feel to judge a programme by its numbers?",
-          "chooseLine": "That's a good place to start. The survey team sent the follow-up data last week."
+          "chooseLine": "That's a good place to start. The survey team sent the follow-up data last week.",
+          "result": {
+            "title": "Programme numbers",
+            "kind": "table",
+            "rows": [
+              [
+                "Attended",
+                "300"
+              ],
+              [
+                "Finished all 6 weeks",
+                "180"
+              ],
+              [
+                "Answered the follow-up survey",
+                "90"
+              ],
+              [
+                "Felt more confident with digital tools",
+                "61 of 90"
+              ],
+              [
+                "Used the skills in a job or internship",
+                "22 of 90"
+              ]
+            ],
+            "note": "There is no data on the 120 people who left early."
+          }
         },
         {
           "id": "B",
@@ -469,7 +621,17 @@
           "feedback": "People's experiences explain what the data can't. It takes time, but it adds depth.",
           "twistFeedback": "Stories from both programmes help leadership see the human side of a hard choice.",
           "reflectiveQuestion": "Did you enjoy the idea of listening to people's stories more than reading reports?",
-          "chooseLine": "Lovely. The partner charity has offered to connect us with a few participants."
+          "chooseLine": "Lovely. The partner charity has offered to connect us with a few participants.",
+          "result": {
+            "title": "Interview notes",
+            "kind": "notes",
+            "items": [
+              "\"I can finally help my mum with online forms.\" (Aisyah, 17)",
+              "\"The sessions clashed with my part-time job, so I stopped going.\" (participant, 19)",
+              "Partner charity: \"Numbers dropped when exams started.\""
+            ],
+            "note": "What changed depends a lot on who stayed and why others left."
+          }
         },
         {
           "id": "C",
@@ -487,7 +649,26 @@
           "feedback": "Leaders need a clear, honest picture. Naming what we don't know is a strength, not a weakness.",
           "twistFeedback": "Your note now needs to compare two programmes, not just describe one. Keep it balanced.",
           "reflectiveQuestion": "Would you rather be the one who finds the evidence or the one who explains it?",
-          "chooseLine": "I like that. Leadership always appreciates something honest they can read in five minutes."
+          "chooseLine": "I like that. Leadership always appreciates something honest they can read in five minutes.",
+          "result": {
+            "title": "Impact note outline",
+            "kind": "table",
+            "rows": [
+              [
+                "What we know",
+                "300 attended, 180 finished"
+              ],
+              [
+                "What we don't know",
+                "What changed for most people, and why 120 left"
+              ],
+              [
+                "What to measure next",
+                "Skills before and after, and a check-in after 3 months"
+              ]
+            ],
+            "note": "An honest gap is easier to fix than a hidden one."
+          }
         }
       ],
       "reactions": {
@@ -575,7 +756,18 @@
           "feedback": "A good scan is the foundation. Leaders trust a briefing that's built on solid sources.",
           "twistFeedback": "Look for surveys or interviews with workers themselves, not just expert reports.",
           "reflectiveQuestion": "Did sifting through lots of reports energise you or tire you out?",
-          "chooseLine": "Good start. I'll send you the reading list we used last quarter."
+          "chooseLine": "Good start. I'll send you the reading list we used last quarter.",
+          "result": {
+            "title": "Trend scan",
+            "kind": "list",
+            "items": [
+              "AI tools now handle routine drafting and data entry",
+              "Employers want AI skills in junior hires",
+              "New rules on using AI responsibly at work",
+              "Training programmes lag demand by about a year"
+            ],
+            "note": "Most sources are expert reports. Few include workers' own views."
+          }
         },
         {
           "id": "B",
@@ -593,7 +785,26 @@
           "feedback": "Prioritising is what turns information into strategy. That's what leaders need from us.",
           "twistFeedback": "Add a column showing how workers feel about each change. It may shift your priorities.",
           "reflectiveQuestion": "How did it feel to make calls about what matters most?",
-          "chooseLine": "Sharp. Leaders always ask: so what do we do first?"
+          "chooseLine": "Sharp. Leaders always ask: so what do we do first?",
+          "result": {
+            "title": "Who is affected, and how soon",
+            "kind": "table",
+            "rows": [
+              [
+                "Soonest",
+                "Admin assistants, data entry, customer service"
+              ],
+              [
+                "Next",
+                "Junior analysts, marketing coordinators"
+              ],
+              [
+                "Least",
+                "Care roles, skilled trades"
+              ]
+            ],
+            "note": "The roles affected soonest are common first jobs for graduates."
+          }
         },
         {
           "id": "C",
@@ -611,7 +822,34 @@
           "feedback": "Bringing the right people into the room is half the work in this team.",
           "twistFeedback": "Consider a short panel or video of workers. It changes the tone of the whole session.",
           "reflectiveQuestion": "Do you enjoy organising events where different groups meet?",
-          "chooseLine": "Great. The right voices in the room matter as much as the slides."
+          "chooseLine": "Great. The right voices in the room matter as much as the slides.",
+          "result": {
+            "title": "Draft session plan",
+            "kind": "table",
+            "rows": [
+              [
+                "Opening",
+                "10 min"
+              ],
+              [
+                "Trends",
+                "20 min"
+              ],
+              [
+                "Panel: business, government, union",
+                "30 min"
+              ],
+              [
+                "Discussion",
+                "20 min"
+              ],
+              [
+                "Invites",
+                "2 business leaders confirmed, government rep tentative, union rep not yet invited"
+              ]
+            ],
+            "note": "The union voice isn't confirmed yet."
+          }
         }
       ],
       "reactions": {
