@@ -27,6 +27,9 @@ export interface AiReply {
 
 export const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 
+/** Skip the retry if the first try was already slow, so the student isn't left waiting. */
+const RETRY_ONLY_IF_FASTER_THAN_MS = 8000;
+
 const BANNED = [/\bscore\b/i, /\bgrade[ds]?\b/i, /\bmarks?\b(?! of)/i, /\b\d+\s*\/\s*10\b/, /\bout of (5|10|100)\b/i, /best (match|fit)/i, /correct answer/i, /\bwrong answer\b/i, /```/, /https?:\/\//i, /<\/?[a-z_]+>/i];
 
 function ok(text: unknown, max: number, mustAsk = false): text is string {
@@ -70,7 +73,7 @@ export function createAiCore(opts: AiCoreOptions) {
     if (!apiKey) return { status: 503, body: { error: 'AI is off' } };
     if (method !== 'POST') return { status: 405, body: { error: 'POST only' } };
 
-    try {
+    const attempt = async (): Promise<AiReply> => {
       if (route === 'coach') {
         const s = findScenario(body.scenarioId);
         const text = clean(body.text);
@@ -108,9 +111,24 @@ export function createAiCore(opts: AiCoreOptions) {
         return { status: 200, body: { paragraphs: paras } };
       }
       return { status: 404, body: { error: 'Unknown AI route' } };
-    } catch (err) {
-      log(`[ai] ${route} fell back to scripted: ${(err as Error).message}`);
-      return { status: 502, body: { error: 'AI unavailable' } };
+    };
+
+    // One automatic retry for hiccups: a timeout, a server error, an empty reply or a reply that
+    // fails the checks. Never for a rejected key, the free-tier limit or our own call caps.
+    const started = Date.now();
+    for (let n = 1; ; n++) {
+      try {
+        return await attempt();
+      } catch (err) {
+        const msg = (err as Error).message;
+        const retryable = !/HTTP (400|401|403|404|429)|limit reached|Too many/.test(msg);
+        if (n >= 2 || !retryable || Date.now() - started > RETRY_ONLY_IF_FASTER_THAN_MS) {
+          log(`[ai] ${route} fell back to scripted: ${msg}`);
+          return { status: 502, body: { error: 'AI unavailable' } };
+        }
+        log(`[ai] ${route} hiccup, retrying once: ${msg}`);
+        await new Promise((r) => setTimeout(r, 400));
+      }
     }
   }
 

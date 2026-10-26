@@ -7,7 +7,7 @@ import type { Attempt, ChoiceId, ScenarioId, SelfCheck } from '../types';
  * Every call returns null on any problem, and the caller uses the scripted line instead.
  */
 
-const TIMEOUT_MS = 15000;
+const TIMEOUT_MS = 22000;
 
 async function post<T>(route: string, body: unknown): Promise<T | null> {
   if (!__AI_ROUTES__) return null;
