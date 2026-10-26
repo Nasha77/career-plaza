@@ -1,8 +1,19 @@
-import content from '../src/content/scenarios.json';
+import type contentFile from '../src/content/scenarios.json';
 
-/** Builds the prompts for each AI route from the same content file the game uses. */
+/**
+ * Builds the prompts for each AI route from the same content file the game uses.
+ * The content is passed in with useContent(): Vite imports the JSON directly, while the
+ * Vercel function reads it from disk (Node can't load a bare .json import at runtime).
+ */
 
-type Scenario = (typeof content.scenarios)[number];
+export type Content = typeof contentFile;
+type Scenario = Content['scenarios'][number];
+
+let content: Content = { scenarios: [] } as unknown as Content;
+
+export function useContent(c: Content) {
+  content = c;
+}
 
 export const MAX_INPUT = 400;
 

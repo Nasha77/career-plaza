@@ -6,3 +6,4 @@ dist-single
 .env
 .env.*
 !.env.example
+.vercel

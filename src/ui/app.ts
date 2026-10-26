@@ -85,7 +85,7 @@ export class App {
     this.webglFailed = opts.webglFailed;
     this.bindWorld();
     this.world.setVisited(exploredIds(this.save.attempts));
-    if (import.meta.env.DEV) {
+    if (__AI_ROUTES__) {
       void aiAvailable().then((on) => {
         if (!on) return;
         this.ai = true;

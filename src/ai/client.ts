@@ -2,15 +2,15 @@ import type { CoachResult } from '../feedback/coach';
 import type { Attempt, ChoiceId, ScenarioId, SelfCheck } from '../types';
 
 /**
- * Talks to the local AI routes that exist only under `npm run dev`.
- * In a production build `import.meta.env.DEV` is false, so none of this runs.
+ * Talks to the AI routes: the local dev server under `npm run dev`, or the Vercel function on the live site.
+ * Builds without AI routes (anything but `npm run dev` and Vercel) set __AI_ROUTES__ to false, so none of this runs.
  * Every call returns null on any problem, and the caller uses the scripted line instead.
  */
 
 const TIMEOUT_MS = 15000;
 
 async function post<T>(route: string, body: unknown): Promise<T | null> {
-  if (!import.meta.env.DEV) return null;
+  if (!__AI_ROUTES__) return null;
   const controller = new AbortController();
   const timer = window.setTimeout(() => controller.abort(), TIMEOUT_MS);
   try {
@@ -30,7 +30,7 @@ async function post<T>(route: string, body: unknown): Promise<T | null> {
 }
 
 export async function aiAvailable(): Promise<boolean> {
-  if (!import.meta.env.DEV) return false;
+  if (!__AI_ROUTES__) return false;
   try {
     const res = await fetch('/api/ai/status');
     if (!res.ok) return false;

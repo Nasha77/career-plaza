@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [{ "source": "/api/ai/:route", "destination": "/api/ai?route=:route" }],
+  "functions": {
+    "api/ai.ts": {
+      "includeFiles": "src/content/scenarios.json",
+      "maxDuration": 30
+    }
+  }
+}
