@@ -1,5 +1,5 @@
-import { CONTENT, SCENARIO_IDS, SKILL_NAMES, getScenario, skillHint } from './content';
-import type { Attempt, ScenarioId, SelfCheck, SkillName } from './types';
+import { CONTENT, SCENARIO_IDS, SKILL_NAMES, getScenario, getTask, skillHint, taskCount } from './content';
+import type { Attempt, ScenarioId, SelfCheck, SkillName, TaskIndex } from './types';
 
 export interface BuildingSummary {
   id: ScenarioId;
@@ -32,10 +32,16 @@ export function exploredIds(attempts: Attempt[]): ScenarioId[] {
   return SCENARIO_IDS.filter((id) => attempts.some((a) => a.scenarioId === id));
 }
 
-/** Buildings where some option makes this skill the main one. */
+/** Every task a building offers. */
+const tasksOf = (id: ScenarioId) => Array.from({ length: taskCount(id) }, (_, t) => getTask(id, t as TaskIndex));
+
+/** The task an attempt was for (older saves have no taskIndex, which means the first task). */
+export const taskOf = (a: Attempt) => getTask(a.scenarioId, a.taskIndex ?? 0);
+
+/** Buildings where some option, in any of their tasks, makes this skill the main one. */
 function buildingsOffering(skill: SkillName): ScenarioId[] {
   return SCENARIO_IDS.filter((id) =>
-    getScenario(id).options.some((o) => o.skills.some((s) => s.skill === skill && s.weight === 2)),
+    tasksOf(id).some((t) => t.options.some((o) => o.skills.some((s) => s.skill === skill && s.weight === 2))),
   );
 }
 
@@ -90,10 +96,10 @@ export function buildRecord(all: Attempt[]): GrowthRecord {
       };
     });
 
-  return { attempts, explored, buildings, skills, gaps, tryNext: tryNext(buildings, explored) };
+  return { attempts, explored, buildings, skills, gaps, tryNext: tryNext(buildings, explored, attempts) };
 }
 
-function tryNext(buildings: BuildingSummary[], explored: ScenarioId[]): string[] {
+function tryNext(buildings: BuildingSummary[], explored: ScenarioId[], attempts: Attempt[]): string[] {
   const out: string[] = [];
   const suggested = new Set<ScenarioId>();
 
@@ -106,8 +112,9 @@ function tryNext(buildings: BuildingSummary[], explored: ScenarioId[]): string[]
       .sort((x, y) => Number(explored.includes(x)) - Number(explored.includes(y)))[0];
     if (!partner) continue;
     suggested.add(partner);
+    const liked = [...attempts].reverse().find((a) => a.scenarioId === b.id && a.enjoyment >= 4) ?? attempts.find((a) => a.scenarioId === b.id);
     out.push(
-      `You enjoyed the ${b.name}. If you liked ${getScenario(b.id).likePhrase}, the ${nameOf(partner)} uses the same skills in a different setting.`,
+      `You enjoyed the ${b.name}. If you liked ${(liked ? taskOf(liked) : getScenario(b.id)).likePhrase}, the ${nameOf(partner)} uses the same skills in a different setting.`,
     );
   }
 
@@ -116,7 +123,7 @@ function tryNext(buildings: BuildingSummary[], explored: ScenarioId[]): string[]
     if (out.length >= 3 || out.some((t) => t.startsWith("You said you'd like more"))) break;
     if (!b.wantsMore || suggested.has(b.id)) continue;
     suggested.add(b.id);
-    out.push(`You said you'd like more like the ${b.name}. Go back in: the situation changes a little each time you return.`);
+    out.push(`You said you'd like more like the ${b.name}. Go back in: there's a second role to try, and the situation changes when you return.`);
   }
 
   // Places not yet visited.
@@ -143,9 +150,9 @@ export function recordAsText(r: GrowthRecord, then?: ThenAndNow): string {
   lines.push(`Career map: ${r.explored.length} of 4 explored`, '');
   lines.push('WHAT I TRIED');
   for (const a of r.attempts) {
-    const s = getScenario(a.scenarioId);
+    const s = taskOf(a);
     const opt = s.options.find((o) => o.id === a.choiceId);
-    lines.push(`- ${s.building}${a.isRevisit ? ' (revisit)' : ''}, ${new Date(a.startedAt).toLocaleString()}`);
+    lines.push(`- ${s.building}, ${s.internRole}${a.isRevisit ? ' (revisit)' : ''}, ${new Date(a.startedAt).toLocaleString()}`);
     if (opt) lines.push(`  Chose: ${opt.text}`);
     if (a.firstDraft) lines.push(`  First draft: "${a.firstDraft}"`);
     if (a.writtenResponse) lines.push(`  ${a.firstDraft ? 'Revised words' : 'My words'}: "${a.writtenResponse}"`);

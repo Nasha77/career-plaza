@@ -75,7 +75,7 @@ export function createAiCore(opts: AiCoreOptions) {
 
     const attempt = async (): Promise<AiReply> => {
       if (route === 'coach') {
-        const s = findScenario(body.scenarioId);
+        const s = findScenario(body.scenarioId, body.taskIndex);
         const text = clean(body.text);
         if (!s || !text) return { status: 400, body: { error: 'Missing scenario or text' } };
         const out = await call('coach', coachPrompt(s, body.choiceId, text), 250);
@@ -85,7 +85,7 @@ export function createAiCore(opts: AiCoreOptions) {
         return { status: 200, body: { status: out.status, whatWorks: out.whatWorks || undefined, tip: solid ? '' : out.tip } };
       }
       if (route === 'followup') {
-        const s = findScenario(body.scenarioId);
+        const s = findScenario(body.scenarioId, body.taskIndex);
         const text = clean(body.text);
         if (!s || !text) return { status: 400, body: { error: 'Missing scenario or text' } };
         const out = await call('followup', followupPrompt(s, body.choiceId, text), 120);
@@ -93,7 +93,7 @@ export function createAiCore(opts: AiCoreOptions) {
         return { status: 200, body: { question: out.question } };
       }
       if (route === 'feedback') {
-        const s = findScenario(body.scenarioId);
+        const s = findScenario(body.scenarioId, body.taskIndex);
         if (!s) return { status: 400, body: { error: 'Missing scenario' } };
         const out = await call('feedback', feedbackPrompt(s, body), 400);
         if (!ok(out.npcReaction, 480) || !optional(out.acknowledgement, 260) || !ok(out.reflectiveQuestion, 200, true)) {

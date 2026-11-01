@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { ScenarioId } from '../../types';
-import { fade, reducedMotion, type World } from '../types';
+import { fade, reducedMotion, type RoomSetup, type World } from '../types';
 import { buildAtmosphere, type Atmosphere } from './atmosphere';
 import { buildInterior, type Interior } from './interiors';
 import { Kit } from './kit';
@@ -262,7 +262,7 @@ export class World3D implements World {
     return { x: clamp(((v.x + 1) / 2) * w, 90, w - 90), y: clamp(((1 - v.y) / 2) * h, 110, h * 0.6) };
   }
 
-  async enter(id: ScenarioId, midway?: () => void): Promise<void> {
+  async enter(id: ScenarioId, room: RoomSetup, midway?: () => void): Promise<void> {
     const b = this.plaza.buildings.get(id);
     if (!b || this.state !== 'plaza') {
       midway?.();
@@ -294,7 +294,7 @@ export class World3D implements World {
     this.scene.fog = null;
     this.scene.background = new THREE.Color(this.dark ? SKY.dark.interior : SKY.light.interior);
     const kit = new Kit();
-    const data = buildInterior(kit, id, this.visited.has(id));
+    const data = buildInterior(kit, id, room);
     prepareForLighting(data.group);
     this.scene.add(data.group);
     this.renderer.shadowMap.needsUpdate = true;

@@ -1,7 +1,8 @@
-import type { ChoiceId, SkillName } from '../types';
+import type { ChoiceId, SkillName, TaskIndex } from '../types';
 
 export interface FeedbackInput {
   scenarioId: string;
+  taskIndex: TaskIndex;
   choiceId: ChoiceId;
   writtenResponse?: string;
   isRevisit: boolean;

@@ -99,7 +99,18 @@ export interface Scenario {
   invite: string;
   resources: Resource[];
   options: ScenarioOption[];
+  /** The second task, offered on the next visit: a different role with one of the colleagues. */
+  taskB?: TaskB;
 }
+
+/** Everything that changes between a building's two tasks. The building and its people stay. */
+export type TaskB = Omit<Scenario, 'id' | 'building' | 'colleagues' | 'taskB'> & {
+  /** Which colleague runs this task (their index in `colleagues`). */
+  managerColleague: number;
+};
+
+/** 0 is the building's first task, 1 its second. */
+export type TaskIndex = 0 | 1;
 
 export interface SelfCheckContent {
   intro: string;
@@ -134,6 +145,8 @@ export interface ContentFile {
 export type Attempt = {
   id: string;
   scenarioId: ScenarioId;
+  /** Which of the building's tasks this was. Missing on older saves, which means 0. */
+  taskIndex?: TaskIndex;
   startedAt: string;
   choiceId: ChoiceId;
   writtenResponse?: string;

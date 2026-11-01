@@ -1,5 +1,5 @@
 import type { ScenarioId } from '../types';
-import { fade, type World } from './types';
+import { fade, type RoomSetup, type World } from './types';
 
 /** Flat 2D fallback: the plaza is the HTML building grid, so this only handles fades. */
 export class SimpleWorld implements World {
@@ -20,7 +20,7 @@ export class SimpleWorld implements World {
   npcAnchor() {
     return null;
   }
-  enter(_id: ScenarioId, midway?: () => void): Promise<void> {
+  enter(_id: ScenarioId, _room: RoomSetup, midway?: () => void): Promise<void> {
     return this.swap(midway);
   }
   exit(midway?: () => void): Promise<void> {

@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import type { ScenarioId } from '../../types';
-import { getScenario } from '../../content';
+import { getScenario, taskManagerIndex } from '../../content';
+import type { RoomSetup } from '../types';
 import { CHARACTERS, COLLEAGUE_LOOKS, makeCharacter, type Character } from './characters';
 import { DISPLAY_FONT, FONT, roundRect, type Kit } from './kit';
 
 export interface Interior {
   group: THREE.Group;
   npc: Character;
-  /** The building's other colleagues, in the same order as in the content file. */
+  /** The building's colleagues, indexed as in the content file (a gap where one is running the task). */
   people: Character[];
   /** Invisible, generous click targets for the colleagues (userData.person = index). */
   personHits: THREE.Mesh[];
@@ -489,12 +490,28 @@ function buildWorkforce(kit: Kit, g: THREE.Group, revisit: boolean) {
 }
 
 const BUILDERS = { resort: buildResort, policy: buildPolicy, foundation: buildFoundation, workforce: buildWorkforce };
+const BUILDERS_B = { resort: buildResortB, policy: buildPolicyB, foundation: buildFoundationB, workforce: buildWorkforceB };
+
+/** Where each room's manager stands, so task B's manager takes the same spot. */
+const MANAGER_SPOTS: Record<ScenarioId, [number, number]> = { resort: [2.7, 1.2], policy: [2.8, 1.4], foundation: [2.7, 1.0], workforce: [2.7, 1.4] };
+
+const colleagueLook = (id: ScenarioId, i: number) => COLLEAGUE_LOOKS[(LOOK_OFFSET[id] + i) % COLLEAGUE_LOOKS.length];
 
 /** A small cutaway room on a plinth, built fresh on entry and disposed on exit. */
-export function buildInterior(kit: Kit, id: ScenarioId, revisit: boolean): Interior {
+export function buildInterior(kit: Kit, id: ScenarioId, setup: RoomSetup): Interior {
   const group = new THREE.Group();
   room(kit, group, ROOMS[id], FLOORS[id]);
-  const npc = BUILDERS[id](kit, group, revisit);
+  const manager = taskManagerIndex(id, setup.task);
+  let npc: Character;
+  if (manager === null) {
+    npc = BUILDERS[id](kit, group, setup.twist);
+  } else {
+    // Task B: a different corner of the building, run by one of the colleagues.
+    BUILDERS_B[id](kit, group, setup.twist);
+    npc = makeCharacter(kit, colleagueLook(id, manager));
+    faceCamera(npc, ...MANAGER_SPOTS[id]);
+    group.add(npc.group);
+  }
 
   const people: Character[] = [];
   const personHits: THREE.Mesh[] = [];
@@ -502,11 +519,11 @@ export function buildInterior(kit: Kit, id: ScenarioId, revisit: boolean): Inter
   hitMat.visible = false;
   getScenario(id).colleagues.forEach((_, i) => {
     const spot = PERSON_SPOTS[id][i];
-    if (!spot) return;
-    const person = makeCharacter(kit, COLLEAGUE_LOOKS[(LOOK_OFFSET[id] + i) % COLLEAGUE_LOOKS.length]);
+    if (!spot || i === manager) return;
+    const person = makeCharacter(kit, colleagueLook(id, i));
     faceCamera(person, spot[0], spot[1]);
     group.add(person.group);
-    people.push(person);
+    people[i] = person;
     const hit = kit.box(1.3, 3.2, 1.3, hitMat, spot[0], 1.6, spot[1]);
     hit.userData.person = i;
     group.add(hit);
@@ -514,4 +531,254 @@ export function buildInterior(kit: Kit, id: ScenarioId, revisit: boolean): Inter
   });
 
   return { group, npc, people, personHits, target: new THREE.Vector3(0.4, 2.0, 0) };
+}
+
+// ---- Task B rooms ----------------------------------------------------------------
+
+function twistNote(kit: Kit, g: THREE.Group, lines: string[], x: number, y: number, tilt: number) {
+  const n = stickyNote(kit, lines, 1.3, 1.0);
+  n.position.set(x, y, -4.13);
+  n.rotation.z = tilt;
+  g.add(n);
+}
+
+/** Marketing office: the festive campaign board, a banner stand and a planning table. */
+function buildResortB(kit: Kit, g: THREE.Group, twist: boolean) {
+  const board = kit.canvasTexture(640, 400, (ctx, w) => {
+    ctx.fillStyle = '#1d2b3a';
+    ctx.fillRect(0, 0, w, 400);
+    ctx.fillStyle = '#ffd86b';
+    for (let i = 0; i < 26; i++) {
+      ctx.beginPath();
+      ctx.arc(30 + i * 23.5, 22 + (i % 2) * 10, 6, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `800 54px ${DISPLAY_FONT}`;
+    ctx.fillText('Festive Weekend', 36, 112);
+    ctx.font = `700 26px ${FONT}`;
+    ctx.fillStyle = '#c9d6e2';
+    ctx.fillText('At the mall · in 3 weeks', 38, 156);
+    const day = (x: number, label: string, items: string[], faint: boolean) => {
+      ctx.fillStyle = faint ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.16)';
+      roundRect(ctx, x, 190, 270, 180, 16);
+      ctx.fill();
+      ctx.fillStyle = '#ffd86b';
+      ctx.font = `800 30px ${DISPLAY_FONT}`;
+      ctx.fillText(label, x + 18, 232);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 22px ${FONT}`;
+      items.forEach((t, i) => ctx.fillText(t, x + 18, 272 + i * 32));
+    };
+    day(36, 'Saturday', ['Lights on', 'Media visit', 'Choir on the plaza'], false);
+    day(330, 'Sunday', ['Crafts at 4pm', 'Morning: ?'], true);
+  });
+  wallScreen(kit, g, board, 4.2, 2.6, -0.8, 3.2, 0xc4462a);
+
+  // Roll-up banner stand
+  g.add(kit.box(0.9, 0.12, 0.35, kit.lambert(0x3a3f45), -4.4, 0.12, -2.6));
+  const banner = kit.canvasTexture(200, 520, (ctx, w, h) => {
+    const grd = ctx.createLinearGradient(0, 0, 0, h);
+    grd.addColorStop(0, '#c4462a');
+    grd.addColorStop(1, '#7c2a1a');
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#ffd86b';
+    ctx.font = `800 40px ${DISPLAY_FONT}`;
+    ctx.fillText('Joy', 30, 110);
+    ctx.fillText('awaits', 30, 156);
+    ctx.font = `700 22px ${FONT}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('Festive', 30, 440);
+    ctx.fillText('Weekend', 30, 470);
+  });
+  const b = plane(kit, banner, 0.8, 2.6);
+  b.position.set(-4.4, 1.5, -2.55);
+  g.add(b);
+
+  table(kit, g, 3.6, 1.6, 1.4, -0.8, 0.6, kit.lambert(0x9a7656));
+  for (const [x, z, r] of [
+    [-1.8, -0.5, 0],
+    [0.2, -0.5, 0],
+    [-1.8, 1.9, Math.PI],
+  ] as const)
+    chair(kit, g, x, z, r, kit.lambert(0xc4462a));
+  // Laptop, the run-sheet and a box of fairy lights
+  g.add(kit.box(0.9, 0.05, 0.6, kit.lambert(0x3a3f45), -0.2, 1.5, 0.5));
+  const lid = kit.box(0.9, 0.6, 0.04, kit.lambert(0x3a3f45), -0.2, 1.8, 0.2);
+  lid.rotation.x = -0.25;
+  g.add(lid);
+  g.add(kit.box(0.5, 0.03, 0.7, kit.lambert(0xffffff), -1.5, 1.49, 0.6));
+  g.add(kit.box(0.7, 0.35, 0.5, kit.lambert(0x2f6f6a), -2.2, 1.65, 0.4));
+  const bulb = kit.lambert(0xffd86b, { emissive: 0xffc65a, emissiveIntensity: 0.8 });
+  for (let i = 0; i < 4; i++) g.add(kit.sphere(0.07, 0, bulb, -2.45 + i * 0.16, 1.86, 0.4));
+  plant(kit, g, 4.6, -3.4);
+  if (twist) twistNote(kit, g, ['Rain Sat 2pm!', 'Choir?'], 2.5, 3.6, 0.05);
+}
+
+/** Research corner: a map of Southeast Asia with one coastline circled. */
+function buildPolicyB(kit: Kit, g: THREE.Group, twist: boolean) {
+  const map = kit.canvasTexture(640, 420, (ctx, w, h) => {
+    ctx.fillStyle = '#bfe0ee';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#9fc98f';
+    const land = (pts: [number, number][]) => {
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      pts.slice(1).forEach(([x, y]) => ctx.lineTo(x, y));
+      ctx.closePath();
+      ctx.fill();
+    };
+    land([[60, 20], [250, 20], [230, 120], [180, 170], [200, 260], [160, 300], [140, 200], [90, 140]]);
+    land([[260, 230], [380, 210], [420, 250], [330, 290], [270, 280]]);
+    land([[440, 120], [520, 90], [560, 150], [500, 200], [450, 180]]);
+    land([[300, 330], [460, 320], [600, 350], [590, 380], [320, 370]]);
+    land([[560, 40], [600, 30], [610, 90], [575, 100]]);
+    ctx.strokeStyle = '#2f7d4f';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.ellipse(330, 262, 66, 36, -0.2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    roundRect(ctx, 300, 40, 240, 80, 12);
+    ctx.fill();
+    ctx.fillStyle = '#1d2b3a';
+    ctx.font = `800 28px ${DISPLAY_FONT}`;
+    ctx.fillText('Mangrove project', 314, 74);
+    ctx.font = `700 20px ${FONT}`;
+    ctx.fillText('Early view by Thursday', 316, 104);
+  });
+  wallScreen(kit, g, map, 4.4, 2.9, -0.4, 3.2, 0x34465e);
+
+  const seat = kit.lambert(0x34465e);
+  table(kit, g, 2.6, 1.2, 1.0, -0.6, 0.8, kit.lambert(0x6f5440));
+  chair(kit, g, -0.6, 1.7, Math.PI, seat);
+  g.add(kit.box(0.9, 0.6, 0.06, kit.lambert(0x26323a), -0.6, 1.45, 0.45));
+  g.add(kit.box(0.8, 0.5, 0.02, kit.lambert(0xdfe8f2, { emissive: 0x9fb7cf, emissiveIntensity: 0.5 }), -0.6, 1.45, 0.49));
+  // Reports and a globe
+  g.add(kit.box(0.7, 0.3, 0.9, kit.lambert(0xf7f5ef), -1.6, 1.22, 0.8));
+  g.add(kit.cyl(0.08, 0.2, 0.15, 8, kit.lambert(0x6f5440), 0.4, 1.15, 0.9));
+  g.add(kit.sphere(0.3, 1, kit.lambert(0x3d7ea6), 0.4, 1.5, 0.9));
+  // Bookshelf by the window
+  g.add(kit.box(0.7, 3.2, 2.0, kit.lambert(0x7a5a3e), -5.3, 1.6, -2.6));
+  [0x5b7db1, 0x5f9e6e, 0xe3a21a].forEach((c, r) => g.add(kit.box(0.5, 0.7, 1.7, kit.lambert(c), -5.1, 0.75 + r * 1.0, -2.6)));
+  plant(kit, g, 4.6, -3.3);
+  if (twist) twistNote(kit, g, ['New rules on', 'selling abroad'], 2.9, 4.2, -0.05);
+}
+
+/** A cosy corner: a pinboard of sticky notes about young givers, an armchair and a reading pile. */
+function buildFoundationB(kit: Kit, g: THREE.Group, twist: boolean) {
+  const board = kit.canvasTexture(640, 400, (ctx, w, h) => {
+    ctx.fillStyle = '#c9a073';
+    ctx.fillRect(0, 0, w, h);
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    for (let i = 0; i < 600; i++) {
+      ctx.fillStyle = `rgba(90,60,30,${0.08 + rnd() * 0.1})`;
+      ctx.fillRect(rnd() * w, rnd() * h, 3, 3);
+    }
+    ctx.fillStyle = '#fbf7ef';
+    roundRect(ctx, 30, 24, 300, 64, 10);
+    ctx.fill();
+    ctx.fillStyle = '#8c3b4a';
+    ctx.font = `800 36px ${DISPLAY_FONT}`;
+    ctx.fillText('Young givers', 46, 68);
+    const notes: [string, string, number, number][] = [
+      ['#ffd86b', 'Online', 40, 120],
+      ['#f2a7a0', 'Time + skills', 230, 110],
+      ['#9fd4e6', 'Show change', 430, 130],
+      ['#b7e0a5', 'Trust', 60, 260],
+      ['#ffd86b', 'Mental health', 250, 270],
+      ['#f2a7a0', 'Event idea', 450, 260],
+    ];
+    notes.forEach(([c, t, x, y], i) => {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(((i % 3) - 1) * 0.05);
+      ctx.fillStyle = c;
+      ctx.fillRect(0, 0, 160, 110);
+      ctx.fillStyle = '#3a2a00';
+      ctx.font = `700 24px ${FONT}`;
+      ctx.fillText(t, 12, 48);
+      ctx.fillStyle = '#c4462a';
+      ctx.beginPath();
+      ctx.arc(80, 10, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+  });
+  wallScreen(kit, g, board, 4.6, 2.8, -0.2, 3.2, 0x6e4a32);
+
+  // Armchair, a low table with tea and a reading pile
+  const fabric = kit.lambert(0x8c3b4a);
+  g.add(kit.box(1.4, 0.6, 1.3, fabric, -2.6, 0.5, 0.6), kit.box(1.4, 1.1, 0.3, fabric, -2.6, 1.2, 0.05));
+  g.add(kit.box(0.3, 0.9, 1.3, fabric, -3.3, 0.85, 0.6), kit.box(0.3, 0.9, 1.3, fabric, -1.9, 0.85, 0.6));
+  table(kit, g, 1.6, 1.1, 0.7, -0.4, 1.0, kit.lambert(0xb08a62));
+  g.add(kit.cyl(0.12, 0.1, 0.25, 8, kit.lambert(0xffffff), -0.1, 0.9, 1.1));
+  [0x5b7db1, 0xe3a21a, 0x5f9e6e].forEach((c, i) => g.add(kit.box(0.7, 0.1, 0.5, kit.lambert(c), -0.7, 0.82 + i * 0.1, 0.9)));
+  chair(kit, g, 0.9, 1.4, -Math.PI / 2, fabric);
+  // Floor lamp
+  g.add(kit.cyl(0.05, 0.05, 2.2, 6, kit.lambert(0x3a3f45), -4.4, 1.1, -0.8));
+  g.add(kit.cyl(0.25, 0.4, 0.4, 10, kit.lambert(0xfbe9c4, { emissive: 0xffd9a0, emissiveIntensity: 0.6 }), -4.4, 2.3, -0.8));
+  plant(kit, g, 4.6, -3.3);
+  plant(kit, g, 4.9, 3.2);
+  if (twist) twistNote(kit, g, ['Co-host:', 'family fdn?'], 3.4, 4.0, 0.05);
+}
+
+/** Focus-group room: chairs in a circle, a flipchart and the sign-up sheet. */
+function buildWorkforceB(kit: Kit, g: THREE.Group, twist: boolean) {
+  const sheet = kit.canvasTexture(400, 300, (ctx, w, h) => {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#1f4e5a';
+    ctx.fillRect(0, 0, w, 50);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `800 26px ${DISPLAY_FONT}`;
+    ctx.fillText('Focus groups: AI at work', 18, 35);
+    ctx.fillStyle = '#e4ddd2';
+    roundRect(ctx, 20, 84, 360, 40, 20);
+    ctx.fill();
+    ctx.fillStyle = '#c4462a';
+    roundRect(ctx, 20, 84, 360 * (6 / 20), 40, 20);
+    ctx.fill();
+    ctx.fillStyle = '#1d2b3a';
+    ctx.font = `800 34px ${DISPLAY_FONT}`;
+    ctx.fillText('6 of 20 seats', 20, 176);
+    textLines(ctx, 20, 210, 340, 3, 26, '#c3cbd3');
+  });
+  wallScreen(kit, g, sheet, 2.8, 2.1, -1.6, 3.3, 0x1f4e5a);
+
+  // Flipchart on an easel
+  const easel = kit.lambert(0x7a5a3e);
+  for (const dx of [-0.5, 0.5]) {
+    const leg = kit.box(0.08, 3.0, 0.08, easel, 1.8 + dx, 1.5, -3.3);
+    leg.rotation.z = -dx * 0.12;
+    g.add(leg);
+  }
+  const flip = kit.canvasTexture(256, 320, (ctx, w, h) => {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#3d7ea6';
+    ctx.font = `800 30px ${DISPLAY_FONT}`;
+    ctx.fillText('Questions', 20, 50);
+    ctx.fillStyle = '#1d2b3a';
+    ctx.font = `700 22px ${FONT}`;
+    ['1. Your week?', '2. New tools?', '3. Training?', '4. Who pays?'].forEach((t, i) => ctx.fillText(t, 20, 104 + i * 48));
+  });
+  const fp = plane(kit, flip, 1.2, 1.5);
+  fp.position.set(1.8, 2.3, -3.2);
+  g.add(fp);
+
+  // Chairs in a circle around a low table
+  const seat = kit.lambert(0x26323a);
+  const [cx, cz] = [-1.0, 0.9];
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2;
+    chair(kit, g, cx + Math.sin(a) * 1.8, cz + Math.cos(a) * 1.5, a + Math.PI, seat);
+  }
+  const top = kit.lambert(0x4a4f57);
+  g.add(kit.cyl(0.6, 0.6, 0.08, 16, top, cx, 0.7, cz), kit.cyl(0.08, 0.08, 0.7, 6, top, cx, 0.35, cz));
+  g.add(kit.box(0.5, 0.06, 0.4, kit.lambert(0xf7f5ef), cx, 0.77, cz));
+  plant(kit, g, 4.9, 3.2);
+  if (twist) twistNote(kit, g, ["Minister's", 'office joining'], 3.9, 4.3, -0.05);
 }

@@ -1,4 +1,10 @@
-import type { ScenarioId } from '../types';
+import type { ScenarioId, TaskIndex } from '../types';
+
+/** Which task the room is set up for, and whether to show the "new this time" detail. */
+export interface RoomSetup {
+  task: TaskIndex;
+  twist: boolean;
+}
 
 /**
  * The visual layer. The game logic only talks to this interface, so the 3D plaza
@@ -8,8 +14,8 @@ export interface World {
   readonly mode: '3d' | 'simple';
   setVisited(ids: ScenarioId[]): void;
   setHover(id: ScenarioId | null): void;
-  /** Move from the plaza into a building's interior. `midway` runs while the screen is veiled. */
-  enter(id: ScenarioId, midway?: () => void): Promise<void>;
+  /** Move from the plaza into a building's interior, set up for one task. `midway` runs while the screen is veiled. */
+  enter(id: ScenarioId, room: RoomSetup, midway?: () => void): Promise<void>;
   /** Move from an interior back out to the plaza. `midway` runs while the screen is veiled. */
   exit(midway?: () => void): Promise<void>;
   setTalking(who: 'guide' | 'npc' | null): void;

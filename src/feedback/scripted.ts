@@ -1,4 +1,4 @@
-import { CONTENT, getScenario } from '../content';
+import { CONTENT, getTask } from '../content';
 import type { ScenarioId } from '../types';
 import type { FeedbackInput, FeedbackProvider, FeedbackResult } from './provider';
 
@@ -16,7 +16,7 @@ export function acknowledge(written?: string): string | undefined {
 /** Reads everything from the content file. Resolves instantly and works offline. */
 export class ScriptedProvider implements FeedbackProvider {
   getFeedback(input: FeedbackInput): Promise<FeedbackResult> {
-    const scenario = getScenario(input.scenarioId as ScenarioId);
+    const scenario = getTask(input.scenarioId as ScenarioId, input.taskIndex);
     const option = scenario.options.find((o) => o.id === input.choiceId);
     if (!option) return Promise.reject(new Error(`Unknown choice ${input.choiceId}`));
     const npcReaction = input.isRevisit ? `${option.feedback} ${option.twistFeedback}` : option.feedback;

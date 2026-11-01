@@ -380,7 +380,215 @@
           ],
           "openRole": "Partnership roles usually come after a year or two in events or comms."
         }
-      ]
+      ],
+      "taskB": {
+        "managerColleague": 0,
+        "internRole": "Marketing & Events Intern",
+        "npc": {
+          "name": "Wei Ling",
+          "role": "Events Coordinator"
+        },
+        "persona": {
+          "personality": "Organised, practical and calm under pressure. Thinks in checklists and timings, and has a dry sense of humour about everything that can go wrong on an event day.",
+          "voice": "Brisk and friendly. Short, practical sentences, mentions times and places, the occasional joke about 8am load-ins."
+        },
+        "setting": "The marketing team's office. A festive campaign board is pinned up next to a rolling banner stand.",
+        "intro": "Our festive weekend at the mall is in three weeks. Last year Sunday visitor numbers dipped, and this year a media visit is booked for Saturday.",
+        "chat": [
+          {
+            "npc": "Hi! Wei Ling, events. Remember me? I said I'd borrow you one day."
+          },
+          {
+            "you": "I remember! What's the event?"
+          },
+          {
+            "npc": "Our festive weekend at the mall, three weeks from now. Lights, a choir, kids' crafts, the works."
+          },
+          {
+            "you": "Sounds busy. What's the catch?"
+          },
+          {
+            "npc": "Last year Sunday visitor numbers dipped. And this year a media visit is booked for Saturday. No pressure."
+          }
+        ],
+        "twistLine": "Bad news: rain is forecast for Saturday afternoon, right when the outdoor choir is on.",
+        "brief": "A festive weekend event at the resort's mall is in three weeks. Last year Sunday visitor numbers dipped, and a media visit is booked for Saturday. Help make the weekend work.",
+        "question": "Where would you start?",
+        "twist": "Wei Ling adds: rain is forecast for Saturday afternoon, right when the outdoor choir is on.",
+        "writePrompt": "Write the caption for the first Instagram Story announcing the weekend.",
+        "writeGuide": {
+          "points": [
+            "Grabs attention in the first few words",
+            "Says what's happening and when",
+            "Gives people a reason to come"
+          ],
+          "tip": "Good start. Could you add when it's happening, and one detail that makes people want to come?",
+          "keywords": [
+            "festive",
+            "weekend",
+            "mall",
+            "choir",
+            "lights",
+            "join",
+            "come",
+            "sunday",
+            "saturday",
+            "kids",
+            "craft"
+          ]
+        },
+        "likePhrase": "bringing an event to life",
+        "invite": "It's a chance to see how marketing and events teams plan, promote and run a big weekend.",
+        "resources": [
+          {
+            "title": "Singapore Tourism Board",
+            "url": "https://www.stb.gov.sg/",
+            "why": "How Singapore promotes its attractions and events, the bigger picture behind resort marketing."
+          },
+          {
+            "title": "SACEOS (events industry association)",
+            "url": "https://www.saceos.org.sg/",
+            "why": "Singapore's association for event and exhibition professionals, with industry news and courses."
+          },
+          {
+            "title": "SkillsFuture Skills Framework",
+            "url": "https://www.skillsfuture.gov.sg/skills-framework",
+            "why": "Look up marketing and events roles, and the skills each one needs."
+          }
+        ],
+        "options": [
+          {
+            "id": "A",
+            "text": "Check last year's visitor numbers and what nearby malls did for the festive season.",
+            "skills": [
+              {
+                "skill": "Research",
+                "weight": 2
+              },
+              {
+                "skill": "Analysis",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Smart. The visitor reports are in the shared drive, in the folder called 'Festive'.",
+            "result": {
+              "title": "Last year's festive weekend",
+              "kind": "table",
+              "rows": [
+                [
+                  "Saturday visitors",
+                  "18,400"
+                ],
+                [
+                  "Sunday visitors",
+                  "11,200"
+                ],
+                [
+                  "Nearby mall A",
+                  "Late-night shopping on Sunday"
+                ],
+                [
+                  "Nearby mall B",
+                  "Free kids' workshop on Sunday morning"
+                ]
+              ],
+              "note": "Sunday crowds went to malls that offered something for families on Sunday."
+            },
+            "studyLink": "Like comparing sources to explain why something happened, as in a history essay.",
+            "feedback": "Good thinking. Knowing why people stayed away on Sunday tells us what to fix, not just what to promote.",
+            "twistFeedback": "Check whether rain hit last year's numbers too. It tells us how much a covered backup matters.",
+            "reflectiveQuestion": "Did digging into the numbers feel more interesting than planning the fun parts?"
+          },
+          {
+            "id": "B",
+            "text": "Draft the run-sheet: timings, booths, the photo-shoot slot, and who's where.",
+            "skills": [
+              {
+                "skill": "Organisation",
+                "weight": 2
+              },
+              {
+                "skill": "Communication",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Yes please. A good run-sheet saves me ten phone calls on the day.",
+            "result": {
+              "title": "Draft run-sheet, Saturday",
+              "kind": "table",
+              "rows": [
+                [
+                  "10:00",
+                  "Doors open, lights switched on"
+                ],
+                [
+                  "11:30",
+                  "Media visit and photo shoot in the atrium"
+                ],
+                [
+                  "14:00",
+                  "Outdoor choir on the plaza"
+                ],
+                [
+                  "16:00",
+                  "Kids' craft corner opens"
+                ],
+                [
+                  "Sunday",
+                  "Nothing planned for the morning yet"
+                ]
+              ],
+              "note": "Sunday morning is empty, and that is when families shop."
+            },
+            "studyLink": "Like planning a group project timeline so nothing clashes.",
+            "feedback": "That's the backbone of any event. When everyone knows where to be, the media visit runs smoothly.",
+            "twistFeedback": "Add a wet-weather line: where the choir moves if it rains.",
+            "reflectiveQuestion": "Do you enjoy being the person who knows where everything is?"
+          },
+          {
+            "id": "C",
+            "text": "Pitch three Instagram Story ideas to build buzz before the weekend.",
+            "skills": [
+              {
+                "skill": "Communication",
+                "weight": 2
+              },
+              {
+                "skill": "Analysis",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Love it. Arjun on socials always wants more ideas.",
+            "result": {
+              "title": "How our last festive posts did",
+              "kind": "list",
+              "items": [
+                "Behind-the-scenes of the lights going up: the most shared post",
+                "A plain 'event this weekend' poster: the fewest views",
+                "A sneak peek of the kids' craft corner: the most saves from parents"
+              ],
+              "note": "People engaged most with behind-the-scenes and family moments."
+            },
+            "studyLink": "Like choosing the most persuasive examples to open a presentation.",
+            "feedback": "Buzz before the day is what fills a Sunday. You're thinking about why people would actually come.",
+            "twistFeedback": "A 'rain or shine, we've got you covered' story could turn the forecast into a reason to visit indoors.",
+            "reflectiveQuestion": "Did coming up with ideas feel energising, or would you rather someone else made the content?"
+          }
+        ],
+        "reactions": {
+          "skipWrite": "No problem. I'll pencil it in for later.",
+          "revise": "Good. Second drafts are where captions get good.",
+          "keep": "Fine by me. Let's keep moving.",
+          "reflected": "Thanks. That's useful to know before the weekend.",
+          "skippedReflect": "All good. Think about it on the way home.",
+          "rateHigh": "Great. You'd survive an event weekend.",
+          "rateMid": "Fair. Events aren't for everyone, every day.",
+          "rateLow": "Thanks for being honest. Better to know before an 8am load-in.",
+          "wantsMore": "Noted. I'll put you on the list for the next one.",
+          "studied": "Nice. Same skill, louder setting.",
+          "skippedStudies": "No worries. It might click next time you plan a project."
+        }
+      }
     },
     {
       "id": "policy",
@@ -615,7 +823,204 @@
             "Policy work is half research, half translating it for people who are busy."
           ]
         }
-      ]
+      ],
+      "taskB": {
+        "managerColleague": 1,
+        "internRole": "Carbon Markets Research Intern (Asia-Pacific)",
+        "npc": {
+          "name": "Kenji",
+          "role": "APAC Markets Researcher"
+        },
+        "persona": {
+          "personality": "Curious, quietly enthusiastic and well travelled. Loves a good source, especially one not in English, and thinks out loud.",
+          "voice": "Thoughtful and friendly. Medium-length sentences, the odd 'interesting', and mentions of places and languages."
+        },
+        "setting": "A quiet research corner. A map of Southeast Asia is pinned up, with one coastline circled in green.",
+        "intro": "A mangrove restoration project in Southeast Asia wants to sell carbon credits. We need an early view on whether it's worth a closer look before Thursday's meeting.",
+        "chat": [
+          {
+            "npc": "Hey, it's Kenji from the Asia-Pacific team. Welcome to the research corner."
+          },
+          {
+            "you": "Hi Kenji. What are we looking at?"
+          },
+          {
+            "npc": "A mangrove restoration project in Southeast Asia. They want to sell carbon credits from it."
+          },
+          {
+            "you": "Is that a good idea?"
+          },
+          {
+            "npc": "That's the question. We need an early view on whether it's worth a closer look, before Thursday's meeting."
+          }
+        ],
+        "twistLine": "Interesting news: the host country just announced new rules on which credits can be sold abroad.",
+        "brief": "A mangrove restoration project in Southeast Asia wants to sell carbon credits. Give the team an early view on whether it's worth a closer look, before Thursday.",
+        "question": "How would you start?",
+        "twist": "Kenji adds: the host country just announced new rules on which credits can be sold abroad.",
+        "writePrompt": "Write the one-sentence recommendation that opens your brief.",
+        "writeGuide": {
+          "points": [
+            "Makes a clear recommendation",
+            "Gives the main reason",
+            "Is honest about what's still unknown"
+          ],
+          "tip": "This is a start. Could you say clearly whether to look further, and the main reason why?",
+          "keywords": [
+            "recommend",
+            "worth",
+            "look",
+            "further",
+            "mangrove",
+            "credit",
+            "risk",
+            "standard",
+            "because",
+            "unknown",
+            "project"
+          ]
+        },
+        "likePhrase": "researching a question before anyone decides",
+        "invite": "It's a chance to see how climate researchers help decide which projects are worth backing.",
+        "resources": [
+          {
+            "title": "Conservation International Singapore",
+            "url": "https://www.conservation.org/singapore",
+            "why": "A conservation organisation working on nature-based climate projects across Asia-Pacific."
+          },
+          {
+            "title": "Blue carbon explained (Wikipedia)",
+            "url": "https://en.wikipedia.org/wiki/Blue_carbon",
+            "why": "A plain-language guide to the carbon stored by mangroves and other coastal ecosystems."
+          },
+          {
+            "title": "UNFCCC: Article 6 of the Paris Agreement",
+            "url": "https://unfccc.int/process-and-meetings/the-paris-agreement/article-6",
+            "why": "The international rules on trading carbon credits between countries."
+          }
+        ],
+        "options": [
+          {
+            "id": "A",
+            "text": "Review which carbon standards would apply, and what the project needs to qualify.",
+            "skills": [
+              {
+                "skill": "Research",
+                "weight": 2
+              },
+              {
+                "skill": "Analysis",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Good. Start with the rulebook. Everything else depends on it.",
+            "result": {
+              "title": "What the project would need",
+              "kind": "list",
+              "items": [
+                "Proof the mangroves wouldn't have been restored anyway",
+                "A plan to monitor the stored carbon for decades",
+                "Agreement from the local communities who use the coast",
+                "Proof the credits aren't counted twice"
+              ],
+              "note": "The project's documents don't mention the local communities yet."
+            },
+            "studyLink": "Like reading the marking rubric before an assignment, then checking your evidence against it.",
+            "feedback": "That's the foundation. If a project can't meet the standard, nothing else matters.",
+            "twistFeedback": "Check how the new rules change who can buy these credits. The standard might be met, but the market could shrink.",
+            "reflectiveQuestion": "Did working through the rules feel satisfying or slow?"
+          },
+          {
+            "id": "B",
+            "text": "Compare it with similar mangrove projects in the region to spot risks.",
+            "skills": [
+              {
+                "skill": "Analysis",
+                "weight": 2
+              },
+              {
+                "skill": "Research",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Interesting choice. Other projects tell you a lot about what goes wrong.",
+            "result": {
+              "title": "Similar projects in the region",
+              "kind": "table",
+              "rows": [
+                [
+                  "Project 1",
+                  "Credits sold, but storm damage set it back two years"
+                ],
+                [
+                  "Project 2",
+                  "Paused because of a land rights dispute"
+                ],
+                [
+                  "Project 3",
+                  "Going well, with a strong community partner"
+                ]
+              ],
+              "note": "The projects that struggled had problems with land or local support, not the science."
+            },
+            "studyLink": "Like comparing case studies in a policy or geography module to find what they share.",
+            "feedback": "Patterns from similar projects are often the best early warning we have.",
+            "twistFeedback": "Look for neighbouring projects that faced rule changes too. How they adapted is useful evidence.",
+            "reflectiveQuestion": "Did spotting patterns across cases hold your attention?"
+          },
+          {
+            "id": "C",
+            "text": "Turn what we know into a one-page brief with open questions for Thursday.",
+            "skills": [
+              {
+                "skill": "Communication",
+                "weight": 2
+              },
+              {
+                "skill": "Organisation",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Nice. A clear page keeps the meeting short.",
+            "result": {
+              "title": "What we know so far",
+              "kind": "table",
+              "rows": [
+                [
+                  "Known",
+                  "Size of the site, the restoration plan, a willing buyer"
+                ],
+                [
+                  "Unknown",
+                  "Agreement from local communities, long-term monitoring"
+                ],
+                [
+                  "Deadline",
+                  "Thursday's team meeting"
+                ]
+              ],
+              "note": "Two of the biggest questions are still open."
+            },
+            "studyLink": "Like an essay plan: your main claim, the evidence, and the questions you still need to answer.",
+            "feedback": "A brief that's honest about its gaps helps the team decide what to check next.",
+            "twistFeedback": "Add the new rules as an open question near the top. It could change the recommendation.",
+            "reflectiveQuestion": "How did it feel to recommend something while some answers are still missing?"
+          }
+        ],
+        "reactions": {
+          "skipWrite": "That's okay. We can shape the sentence together later.",
+          "revise": "Sure, take another look. Good briefs usually need two goes.",
+          "keep": "Fair enough. Let's go with it.",
+          "reflected": "Thanks, that's interesting to hear.",
+          "skippedReflect": "No problem. Maybe on the train home.",
+          "rateHigh": "Nice. I think research suits you.",
+          "rateMid": "That's fair. Research has slow days and exciting days.",
+          "rateLow": "Thanks for being honest. Not everyone loves a long report, and that's fine.",
+          "wantsMore": "I'll save you a seat in the research corner.",
+          "studied": "Interesting. So you've been doing this kind of research already.",
+          "skippedStudies": "That's okay. You might spot it in your next assignment."
+        }
+      }
     },
     {
       "id": "foundation",
@@ -852,7 +1257,215 @@
           ],
           "openRole": "Research interns join our sprints. It's a great fit if you like writing essays."
         }
-      ]
+      ],
+      "taskB": {
+        "managerColleague": 2,
+        "internRole": "Research & Programmes Intern (Philanthropy in Asia)",
+        "npc": {
+          "name": "Rachel",
+          "role": "Research Associate"
+        },
+        "persona": {
+          "personality": "Bookish, warm and precise. Loves turning a pile of reading into something useful, and always asks what the evidence really shows.",
+          "voice": "Gentle and clear. Medium-length sentences, talks about reading and writing, quietly encouraging."
+        },
+        "setting": "A cosy corner of the foundation's office. A pinboard is covered in sticky notes about young donors.",
+        "intro": "Our next newsletter is about how young people in Asia give differently. Leadership wants a short piece and an idea for an event.",
+        "chat": [
+          {
+            "npc": "Hi, I'm Rachel from the research team. I'm so glad you're joining one of our sprints."
+          },
+          {
+            "you": "Hi Rachel. What's the sprint about?"
+          },
+          {
+            "npc": "Young givers in Asia. People our age seem to give quite differently from their parents."
+          },
+          {
+            "you": "Differently how?"
+          },
+          {
+            "npc": "That's what we need to find out. Leadership wants a short newsletter piece, and an idea for an event."
+          }
+        ],
+        "twistLine": "Some news: a well-known family foundation wants to co-host the event with us.",
+        "brief": "The foundation's next newsletter is about how young people in Asia give. Leadership wants a short piece and an idea for an event.",
+        "question": "Where would you begin?",
+        "twist": "Rachel mentions that a well-known family foundation wants to co-host the event.",
+        "writePrompt": "Write the headline and the first line of the newsletter piece.",
+        "writeGuide": {
+          "points": [
+            "Makes the reader curious",
+            "Says something specific about young givers",
+            "Is easy to read in a few seconds"
+          ],
+          "tip": "Nice start. Could you add one specific thing about how young people give, so readers want to keep going?",
+          "keywords": [
+            "young",
+            "giving",
+            "give",
+            "donor",
+            "asia",
+            "generation",
+            "cause",
+            "online",
+            "volunteer",
+            "charity"
+          ]
+        },
+        "likePhrase": "turning research into stories people read",
+        "invite": "It's a chance to see how philanthropy teams research giving and share what they learn.",
+        "resources": [
+          {
+            "title": "Asia Philanthropy Circle",
+            "url": "https://asiaphilanthropycircle.org/",
+            "why": "A Singapore-based network that researches and shares what is changing in philanthropy across Asia."
+          },
+          {
+            "title": "National Volunteer & Philanthropy Centre (NVPC)",
+            "url": "https://nvpc.org.sg/",
+            "why": "Research on how people in Singapore give and volunteer."
+          },
+          {
+            "title": "Giving.sg",
+            "url": "https://www.giving.sg/",
+            "why": "See the causes and charities people give to today."
+          }
+        ],
+        "options": [
+          {
+            "id": "A",
+            "text": "Gather recent reports and surveys on how young people in Asia give.",
+            "skills": [
+              {
+                "skill": "Research",
+                "weight": 2
+              },
+              {
+                "skill": "Analysis",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Lovely. I'll send you my reading list to start.",
+            "result": {
+              "title": "What the reports say",
+              "kind": "list",
+              "items": [
+                "Young givers prefer giving online, in small regular amounts",
+                "Many give time and skills, not just money",
+                "They want to see what their gift changed",
+                "Trust in a charity matters more than its size"
+              ],
+              "note": "Most reports cover Singapore and Hong Kong. Little is known about the rest of the region."
+            },
+            "studyLink": "Like a literature review: reading widely and pulling out the main findings.",
+            "feedback": "Good research starts with what's already known. Now we can say something with confidence.",
+            "twistFeedback": "Check what the co-host has published on young givers. It might fill a gap in our reading.",
+            "reflectiveQuestion": "Did reading and summarising reports feel like your kind of work?"
+          },
+          {
+            "id": "B",
+            "text": "Map which causes young donors fund most, using our own grant records.",
+            "skills": [
+              {
+                "skill": "Analysis",
+                "weight": 2
+              },
+              {
+                "skill": "Organisation",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Good idea. Mei can help you get the data out.",
+            "result": {
+              "title": "Gifts from donors under 30, last year",
+              "kind": "table",
+              "rows": [
+                [
+                  "Mental health",
+                  "34%"
+                ],
+                [
+                  "Climate and environment",
+                  "27%"
+                ],
+                [
+                  "Education",
+                  "21%"
+                ],
+                [
+                  "Animal welfare",
+                  "11%"
+                ],
+                [
+                  "Other",
+                  "7%"
+                ]
+              ],
+              "note": "Gifts to mental health causes have doubled in two years."
+            },
+            "studyLink": "Like using data to back up an argument in a social science essay.",
+            "feedback": "Our own data tells a story no one else has. That's what makes a newsletter worth reading.",
+            "twistFeedback": "Comparing our data with the co-host's could make the event even more interesting.",
+            "reflectiveQuestion": "How did it feel to find the story in a set of numbers?"
+          },
+          {
+            "id": "C",
+            "text": "Plan a small evening that brings young givers and charities together.",
+            "skills": [
+              {
+                "skill": "Organisation",
+                "weight": 2
+              },
+              {
+                "skill": "Communication",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Ooh, Farhan will love this. He runs our networking events.",
+            "result": {
+              "title": "Draft plan",
+              "kind": "table",
+              "rows": [
+                [
+                  "Who",
+                  "30 young donors and 6 charities"
+                ],
+                [
+                  "Format",
+                  "Short talks, then small-group conversations"
+                ],
+                [
+                  "Where",
+                  "Our office, after work"
+                ],
+                [
+                  "Gap",
+                  "No young donors on the planning group yet"
+                ]
+              ],
+              "note": "Planning an evening for young givers without asking any of them is a risk."
+            },
+            "studyLink": "Like organising a seminar or society event that brings people together.",
+            "feedback": "Bringing people together turns research into relationships. That's where giving grows.",
+            "twistFeedback": "A co-host brings reach, but agree early whose voice leads, so the evening still feels like ours.",
+            "reflectiveQuestion": "Do you enjoy organising events where different groups meet?"
+          }
+        ],
+        "reactions": {
+          "skipWrite": "That's alright. Sometimes the headline comes last.",
+          "revise": "Take your time. Good writing is mostly rewriting.",
+          "keep": "That's fine. We can polish it together later.",
+          "reflected": "Thank you. That's really helpful to hear.",
+          "skippedReflect": "No problem. Come back to it whenever you like.",
+          "rateHigh": "I'm so glad. Research can be really rewarding.",
+          "rateMid": "Thank you. It's good to notice what you'd keep.",
+          "rateLow": "Thank you for being honest. Research isn't for everyone, and that's useful to know.",
+          "wantsMore": "Lovely. There's always another sprint.",
+          "studied": "That's lovely. Your essays are already good practice for this.",
+          "skippedStudies": "That's alright. It might come to you while you're writing."
+        }
+      }
     },
     {
       "id": "workforce",
@@ -1088,7 +1701,198 @@
             "Confidentiality matters here. Half of what I hear can't leave the room."
           ]
         }
-      ]
+      ],
+      "taskB": {
+        "managerColleague": 0,
+        "internRole": "Engagement Intern (Tripartite Conversations)",
+        "npc": {
+          "name": "Nadia",
+          "role": "Events & Engagement Lead"
+        },
+        "persona": {
+          "personality": "Warm, diplomatic and organised. Good at getting people who disagree into one room, and calm about last-minute changes.",
+          "voice": "Friendly and steady. Clear, practical sentences, often mentions people and who needs to be heard."
+        },
+        "setting": "A small meeting room set up for focus groups: chairs in a circle, a flipchart and a sign-up sheet.",
+        "intro": "Before this year's tripartite conversation, we're running focus groups on AI at work with young workers, employers and union reps. They're two weeks away, and only 6 of 20 seats are confirmed.",
+        "chat": [
+          {
+            "npc": "Hi, I'm Nadia from engagement. Thanks for helping out, we really need you."
+          },
+          {
+            "you": "Happy to help. What's coming up?"
+          },
+          {
+            "npc": "Focus groups on AI at work, before this year's tripartite conversation. Young workers, employers and union reps."
+          },
+          {
+            "you": "When are they?"
+          },
+          {
+            "npc": "In two weeks. And only 6 of 20 seats are confirmed, so there's work to do."
+          }
+        ],
+        "twistLine": "Just heard: a minister's office has asked to sit in on one of the sessions.",
+        "brief": "Focus groups on AI at work are in two weeks, with young workers, employers and union reps. Only 6 of 20 seats are confirmed. Help get them ready.",
+        "question": "Where would you start?",
+        "twist": "Nadia mentions that a minister's office has asked to sit in on one session.",
+        "writePrompt": "Write the first line of the invitation to young workers.",
+        "writeGuide": {
+          "points": [
+            "Speaks directly to young workers",
+            "Says why their view matters",
+            "Makes it easy to say yes"
+          ],
+          "tip": "Good start. Could you add why their voice matters, and what you'd like them to do next?",
+          "keywords": [
+            "ai",
+            "work",
+            "voice",
+            "join",
+            "young",
+            "worker",
+            "job",
+            "session",
+            "share",
+            "view",
+            "invite"
+          ]
+        },
+        "likePhrase": "making sure different voices are heard",
+        "invite": "It's a chance to see how engagement teams bring business, government and unions to the same table.",
+        "resources": [
+          {
+            "title": "MOM: What is tripartism?",
+            "url": "https://www.mom.gov.sg/employment-practices/tripartism-in-singapore/what-is-tripartism",
+            "why": "How government, unions and employers work together in Singapore."
+          },
+          {
+            "title": "NTUC (National Trades Union Congress)",
+            "url": "https://www.ntuc.org.sg/",
+            "why": "The workers' side of the table: Singapore's labour movement."
+          },
+          {
+            "title": "SNEF (Singapore National Employers Federation)",
+            "url": "https://snef.org.sg/",
+            "why": "The employers' side of the table."
+          }
+        ],
+        "options": [
+          {
+            "id": "A",
+            "text": "Write a discussion guide: five questions that will get honest answers.",
+            "skills": [
+              {
+                "skill": "Communication",
+                "weight": 2
+              },
+              {
+                "skill": "Research",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Good. The questions decide what we learn.",
+            "result": {
+              "title": "Notes for the guide",
+              "kind": "list",
+              "items": [
+                "Last year, people opened up most when asked about real examples from their week",
+                "Yes-or-no questions got short, polite answers",
+                "Workers spoke less when their managers were in the same group"
+              ],
+              "note": "Mixing workers and their managers may keep people quiet."
+            },
+            "studyLink": "Like preparing interview questions for a research project or an oral history.",
+            "feedback": "Good questions are half the work. They decide whether people say what they really think.",
+            "twistFeedback": "With an observer in the room, open with an easy question so people relax first.",
+            "reflectiveQuestion": "Did writing questions for other people feel natural to you?"
+          },
+          {
+            "id": "B",
+            "text": "Sort out attendance: invitations, replies, and a fair balance of workers, employers and unions.",
+            "skills": [
+              {
+                "skill": "Organisation",
+                "weight": 2
+              },
+              {
+                "skill": "Communication",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Thank you. The sign-up sheet needs a hero.",
+            "result": {
+              "title": "Confirmed so far",
+              "kind": "table",
+              "rows": [
+                [
+                  "Young workers",
+                  "1 of 8"
+                ],
+                [
+                  "Employers",
+                  "4 of 6"
+                ],
+                [
+                  "Union reps",
+                  "1 of 6"
+                ],
+                [
+                  "Most replies came from",
+                  "Reminder emails sent on Monday mornings"
+                ]
+              ],
+              "note": "Young workers are the group we're hearing from least."
+            },
+            "studyLink": "Like organising a group project or society event so every member is included.",
+            "feedback": "A balanced room is what makes the findings fair. That's careful, important work.",
+            "twistFeedback": "Let everyone know an observer is coming. People should know before they agree to attend.",
+            "reflectiveQuestion": "How did it feel to be the person making sure everyone has a seat?"
+          },
+          {
+            "id": "C",
+            "text": "Review notes from last year's sessions to see which topics sparked real discussion.",
+            "skills": [
+              {
+                "skill": "Analysis",
+                "weight": 2
+              },
+              {
+                "skill": "Research",
+                "weight": 1
+              }
+            ],
+            "chooseLine": "Smart. Last year's notes are a goldmine.",
+            "result": {
+              "title": "Last year's notes",
+              "kind": "list",
+              "items": [
+                "Most discussed: whether AI tools change what 'entry-level' means",
+                "Least discussed: training budgets (people's eyes glazed over)",
+                "Strongest disagreement: who pays for reskilling"
+              ],
+              "note": "Disagreement sparked the best conversations."
+            },
+            "studyLink": "Like analysing interview transcripts or field notes for themes.",
+            "feedback": "Learning from last year saves everyone's time. Now we know where the real conversation is.",
+            "twistFeedback": "Flag the topics that might feel sensitive with an observer present, so we handle them with care.",
+            "reflectiveQuestion": "Did looking for patterns in notes feel interesting or tedious?"
+          }
+        ],
+        "reactions": {
+          "skipWrite": "That's fine. We'll draft it together before it goes out.",
+          "revise": "Good. Invitations deserve a second look.",
+          "keep": "Okay, let's go with it for now.",
+          "reflected": "Thank you for sharing that. It helps.",
+          "skippedReflect": "That's okay. Maybe think about it later.",
+          "rateHigh": "Wonderful. You'd be great in a room full of different views.",
+          "rateMid": "Thanks. Engagement work has its ups and downs.",
+          "rateLow": "Thanks for being honest. It's good to know what doesn't suit you.",
+          "wantsMore": "I'll remember that. We always need help before big sessions.",
+          "studied": "Lovely. You've been practising this already.",
+          "skippedStudies": "That's okay. You might notice it next time you work in a group."
+        }
+      }
     }
   ]
 }

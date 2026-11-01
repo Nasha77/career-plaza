@@ -1,5 +1,5 @@
 import type { CoachResult } from '../feedback/coach';
-import type { Attempt, ChoiceId, ScenarioId, SelfCheck } from '../types';
+import type { Attempt, ChoiceId, ScenarioId, SelfCheck, TaskIndex } from '../types';
 
 /**
  * Talks to the AI routes: the local dev server under `npm run dev`, or the Vercel function on the live site.
@@ -41,17 +41,18 @@ export async function aiAvailable(): Promise<boolean> {
   }
 }
 
-export function aiCoach(scenarioId: ScenarioId, choiceId: ChoiceId, text: string) {
-  return post<CoachResult>('coach', { scenarioId, choiceId, text });
+export function aiCoach(scenarioId: ScenarioId, taskIndex: TaskIndex, choiceId: ChoiceId, text: string) {
+  return post<CoachResult>('coach', { scenarioId, taskIndex, choiceId, text });
 }
 
-export async function aiFollowup(scenarioId: ScenarioId, choiceId: ChoiceId, text: string): Promise<string | null> {
-  const r = await post<{ question: string }>('followup', { scenarioId, choiceId, text });
+export async function aiFollowup(scenarioId: ScenarioId, taskIndex: TaskIndex, choiceId: ChoiceId, text: string): Promise<string | null> {
+  const r = await post<{ question: string }>('followup', { scenarioId, taskIndex, choiceId, text });
   return r?.question ?? null;
 }
 
 export interface AiFeedbackInput {
   scenarioId: string;
+  taskIndex: TaskIndex;
   choiceId: ChoiceId;
   text?: string;
   followupQuestion?: string;

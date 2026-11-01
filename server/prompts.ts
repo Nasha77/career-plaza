@@ -17,8 +17,13 @@ export function useContent(c: Content) {
 
 export const MAX_INPUT = 400;
 
-export function findScenario(id: unknown): Scenario | null {
-  return content.scenarios.find((s) => s.id === id) ?? null;
+/** A building's task: the first one, or (taskIndex 1) its second task laid over the building. */
+export function findScenario(id: unknown, taskIndex?: unknown): Scenario | null {
+  const s = content.scenarios.find((x) => x.id === id);
+  if (!s) return null;
+  if (taskIndex !== 1 || !s.taskB) return s;
+  const { managerColleague: _, ...task } = s.taskB;
+  return { ...s, ...task } as Scenario;
 }
 
 /** Trim, cap length and drop control characters from anything the student typed. */
@@ -170,7 +175,7 @@ export function summaryPrompt(body: { attempts?: unknown; selfCheck?: unknown })
   const attempts = Array.isArray(body.attempts) ? body.attempts.slice(-12) : [];
   const lines = attempts.map((a, i) => {
     const x = (a ?? {}) as Record<string, unknown>;
-    const s = findScenario(x.scenarioId);
+    const s = findScenario(x.scenarioId, x.taskIndex);
     const opt = s?.options.find((o) => o.id === x.choiceId);
     return [
       `${i + 1}. ${s?.internRole ?? 'Internship'} at ${s?.building ?? 'unknown'}`,

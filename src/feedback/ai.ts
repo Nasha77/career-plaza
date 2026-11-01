@@ -13,6 +13,7 @@ export class AiProvider implements FeedbackProvider {
     const base = await this.scripted.getFeedback(input);
     const ai = await aiFeedback({
       scenarioId: input.scenarioId,
+      taskIndex: input.taskIndex,
       choiceId: input.choiceId,
       text: input.writtenResponse,
       followupQuestion: input.followupQuestion,

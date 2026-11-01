@@ -16,6 +16,8 @@ and build a growth record of what they used, what they enjoyed, and what to try 
 | | |
 |---|---|
 | **Four internships** | Communications Intern at Harbourfront Resort (Priya) · International Policy Intern at Climate Policy Association (Daniel) · Programme Intern at Community Foundation (Grace) · Policy & Research Intern at Workforce Strategy Hub (Marcus). Each is based on a real posting, with the employer renamed. |
+| **A second role in each building** | Your next visit is a different role with one of the colleagues: Marketing & Events with Wei Ling, Carbon Markets Research with Kenji, Research & Programmes with Rachel, and Engagement with Nadia. Visits go first role, second role, then each again with a twist. These are also based on real postings. |
+| **Colleagues** | Two or three more people in every room. Click them (or use "Meet the team") to hear about their team and the roles there. |
 | **Self-check** | A short, skippable check at the start: how confident you feel in four skills, and what draws you. It can be retaken later. |
 | **Scenarios** | The manager sets a task, you pick one of three approaches, see **what you found** (practice data for that approach), and write a short answer. |
 | **Coaching** | A clearly weak answer gets one specific tip and an optional chance to revise (up to two times). Both drafts are kept. |
@@ -106,6 +108,9 @@ All the words live in **`src/content/scenarios.json`**. No code changes are need
 | Field | What it holds |
 |---|---|
 | `scenarios[]` | The four internships: building, intern role, manager, setting, intro, question, twist, writing prompt |
+| `taskB` | Each building's second role, with the same fields as the first, plus `managerColleague` (which colleague runs it) |
+| `chat` / `twistLine` | The intro as a short conversation, and the twist as the manager says it |
+| `colleagues` | The other people in each building: role, team, what they say, and the roles there |
 | `persona` | Each manager's personality and voice (also used as the AI's character brief) |
 | `reactions` | Each manager's lines for smaller actions: skipping, revising, rating and so on |
 | `options[]` | The three approaches, each with `chooseLine`, `result` (the findings), feedback, revisit feedback and a reflective question |

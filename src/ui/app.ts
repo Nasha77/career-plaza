@@ -1,4 +1,4 @@
-import { CONTENT, SCENARIO_IDS, getScenario } from '../content';
+import { CONTENT, SCENARIO_IDS, getScenario, getTask, taskCount, taskManagerIndex } from '../content';
 import type { FeedbackProvider, FeedbackResult } from '../feedback/provider';
 import { aiAvailable, aiCoach, aiFollowup, aiSummary } from '../ai/client';
 import { AiProvider } from '../feedback/ai';
@@ -6,7 +6,7 @@ import { MAX_REVISIONS, coachWriting, type CoachResult } from '../feedback/coach
 import { ScriptedProvider } from '../feedback/scripted';
 import { buildRecord, exploredIds, guideLine, joinList, ratingWord, recordAsText, thenAndNow, type GrowthRecord, type ThenAndNow } from '../record';
 import { clearState, loadState, saveState } from '../store';
-import type { Attempt, ChatLine, ChoiceId, Rating, Resource, SaveState, Scenario, ScenarioId, SelfCheck, SkillName } from '../types';
+import type { Attempt, ChatLine, ChoiceId, Rating, Resource, SaveState, Scenario, ScenarioId, SelfCheck, SkillName, TaskIndex } from '../types';
 import { reducedMotion, type World } from '../world/types';
 import {
   buildingIcon,
@@ -26,6 +26,7 @@ type Step = 'brief' | 'intro' | 'choose' | 'write' | 'coach' | 'followup' | 'fee
 
 interface Run {
   scenario: Scenario;
+  taskIndex: TaskIndex;
   isRevisit: boolean;
   startedAt: string;
   step: Step;
@@ -254,15 +255,18 @@ export class App {
     const line = guideLine(this.attempts);
 
     const buttons = SCENARIO_IDS.map((id) => {
-      const s = getScenario(id);
+      const next = nextTask(this.attempts, id);
+      const s = getTask(id, next);
       const visited = explored.includes(id);
+      const fresh = !this.attempts.some((a) => a.scenarioId === id && (a.taskIndex ?? 0) === next);
+      const inside = fresh ? 'new task inside' : 'new twist inside';
       return h(
         'button',
         {
           class: `bbtn b-${id} ${visited ? 'visited' : ''}`,
           type: 'button',
           'data-id': id,
-          'aria-label': `${s.building}: ${s.internRole}, with ${s.npc.name}. ${visited ? 'Explored. Enter again for a new twist.' : 'Not explored yet.'}`,
+          'aria-label': `${s.building}: ${s.internRole}, with ${s.npc.name}. ${visited ? `Explored. Enter again: ${inside}.` : 'Not explored yet.'}`,
           onclick: () => void this.enterBuilding(id),
           onmouseenter: () => this.world.setHover(id),
           onmouseleave: () => this.world.setHover(null),
@@ -275,7 +279,7 @@ export class App {
           { class: 'btext' },
           h('span', { class: 'bname' }, s.building),
           simple ? h('span', { class: 'bdesc' }, `You: ${s.internRole}. Working with ${s.npc.name}, ${s.npc.role}.`) : null,
-          h('span', { class: 'bstatus' }, visited ? (simple ? '✓ Explored · new twist inside' : '✓ Explored') : 'New'),
+          h('span', { class: 'bstatus' }, visited ? `✓ Explored · ${inside}` : 'New'),
         ),
       );
     });
@@ -326,10 +330,14 @@ export class App {
   private async enterBuilding(id: ScenarioId) {
     if (this.busy) return;
     this.busy = true;
-    const scenario = getScenario(id);
+    // Visits alternate between the building's tasks: A, B, then A and B again with their twists.
+    const taskIndex = nextTask(this.attempts, id);
+    const scenario = getTask(id, taskIndex);
+    const isRevisit = this.attempts.some((a) => a.scenarioId === id && (a.taskIndex ?? 0) === taskIndex);
     this.run = {
       scenario,
-      isRevisit: this.attempts.some((a) => a.scenarioId === id),
+      taskIndex,
+      isRevisit,
       startedAt: new Date().toISOString(),
       step: 'brief',
       revisions: 0,
@@ -339,7 +347,7 @@ export class App {
     this.world.setTalking(null);
     this.els.stage.replaceChildren();
     try {
-      await this.world.enter(id, () => {
+      await this.world.enter(id, { task: taskIndex, twist: isRevisit }, () => {
         this.setScreen('scenario');
         this.renderStep();
       });
@@ -382,7 +390,7 @@ export class App {
       h(
         'div',
         { class: 'speaker' },
-        h('span', { class: 'avatar', style: `--c:${NPC_COLOR[s.id]}`, 'aria-hidden': 'true' }, s.npc.name.replace('Professor ', '')[0]),
+        h('span', { class: 'avatar', style: `--c:${managerColor(run)}`, 'aria-hidden': 'true' }, s.npc.name.replace('Professor ', '')[0]),
         h('span', null, h('strong', { id: 'npc-name' }, s.npc.name), h('span', { class: 'role' }, `${s.npc.role} · ${s.building}`)),
         h('span', { class: 'steps', 'aria-label': `Step ${stepIndex(run.step) + 1} of ${STEPS.length}` }, STEPS.map((st) => h('span', { class: `sdot ${stepIndex(st) <= stepIndex(run.step) ? 'on' : ''}` }))),
       ),
@@ -731,7 +739,7 @@ export class App {
       let c: CoachResult | null = null;
       if (this.ai) {
         this.showThinking(run, `${run.scenario.npc.name} is reading your answer…`);
-        c = await aiCoach(run.scenario.id, run.choiceId, run.written);
+        c = await aiCoach(run.scenario.id, run.taskIndex, run.choiceId, run.written);
         if (this.run !== run) return;
       }
       c = c ?? coachWriting(run.scenario, run.written);
@@ -756,7 +764,7 @@ export class App {
     if (!run || !run.choiceId) return;
     if (this.ai && run.written && !run.followupQuestion) {
       this.showThinking(run, `${run.scenario.npc.name} is thinking…`);
-      const q = await aiFollowup(run.scenario.id, run.choiceId, run.written);
+      const q = await aiFollowup(run.scenario.id, run.taskIndex, run.choiceId, run.written);
       if (this.run !== run) return;
       if (q) {
         run.followupQuestion = q;
@@ -800,6 +808,7 @@ export class App {
     const pending = run.pendingLine;
     run.feedback = await this.provider.getFeedback({
       scenarioId: run.scenario.id,
+      taskIndex: run.taskIndex,
       choiceId: run.choiceId,
       writtenResponse: run.written,
       isRevisit: run.isRevisit,
@@ -807,7 +816,7 @@ export class App {
       followupQuestion: run.followupQuestion,
       followupAnswer: run.followupAnswer,
       earlier: this.attempts.slice(-4).map((a) => {
-        const sc = getScenario(a.scenarioId);
+        const sc = getTask(a.scenarioId, a.taskIndex ?? 0);
         return { building: sc.building, choice: sc.options.find((o) => o.id === a.choiceId)?.text ?? '' };
       }),
     });
@@ -869,7 +878,8 @@ export class App {
   /** "Meet the team": the building's other colleagues, each a button that opens a short conversation. */
   private meetTeam(run: Run): HTMLElement | null {
     const people = run.scenario.colleagues;
-    if (!people.length) return null;
+    const manager = taskManagerIndex(run.scenario.id, run.taskIndex);
+    if (!people.some((_, i) => i !== manager)) return null;
     return h(
       'div',
       { class: 'meet-team' },
@@ -878,7 +888,7 @@ export class App {
         'div',
         { class: 'meet-row' },
         people.map((c, i) =>
-          h(
+          i === manager ? null : h(
             'button',
             { class: 'person-btn', type: 'button', 'data-person': i, onclick: (e: Event) => this.openColleague(i, e.currentTarget as HTMLElement) },
             h('span', { class: 'avatar small', style: `--c:${personColor(run.scenario.id, i)}`, 'aria-hidden': 'true' }, c.name[0]),
@@ -893,14 +903,17 @@ export class App {
   private openColleague(i: number, from?: HTMLElement | null) {
     const run = this.run;
     const c = run?.scenario.colleagues[i];
-    if (!run || !c) return;
+    if (!run || !c || i === taskManagerIndex(run.scenario.id, run.taskIndex)) return;
+    // In task A, the colleague who runs task B hints at it.
+    const leadsNext = run.taskIndex === 0 && getScenario(run.scenario.id).taskB?.managerColleague === i;
+    const openRole = c.openRole && leadsNext ? `${c.openRole} That's the role you'd try on your next visit.` : c.openRole;
     this.els.stage.querySelector('.colleague-wrap')?.remove();
     const lines = c.lines.map(() => h('p', { class: 'say', onclick: skipTyping }));
     const back = h('button', { class: 'btn primary', type: 'button' }, 'Back');
     const after = h(
       'div',
       { class: 'block' },
-      c.openRole ? h('p', { class: 'open-role' }, h('strong', null, 'Roles here: '), c.openRole) : null,
+      openRole ? h('p', { class: 'open-role' }, h('strong', null, 'Roles here: '), openRole) : null,
       h('div', { class: 'actions' }, back),
     );
     const card = h(
@@ -935,7 +948,7 @@ export class App {
     this.els.stage.append(wrap);
     after.hidden = true;
     this.world.setPersonTalking(i);
-    this.announce(`${c.name}, ${c.role}: ${c.lines.join(' ')}${c.openRole ? ` ${c.openRole}` : ''}`);
+    this.announce(`${c.name}, ${c.role}: ${c.lines.join(' ')}${openRole ? ` ${openRole}` : ''}`);
     void (async () => {
       const instant = reducedMotion();
       for (let k = 0; k < lines.length; k++) {
@@ -972,6 +985,7 @@ export class App {
     const attempt: Attempt = {
       id: uid(),
       scenarioId: run.scenario.id,
+      taskIndex: run.taskIndex || undefined,
       startedAt: run.startedAt,
       choiceId: run.choiceId,
       writtenResponse: run.written,
@@ -1047,6 +1061,17 @@ export class App {
   }
 }
 
+/** The task the next visit to a building offers. */
+function nextTask(attempts: Attempt[], id: ScenarioId): TaskIndex {
+  return (attempts.filter((a) => a.scenarioId === id).length % taskCount(id)) as TaskIndex;
+}
+
+/** The manager's avatar colour: the building's colour, or the colleague's when they run task B. */
+function managerColor(run: { scenario: Scenario; taskIndex: TaskIndex }): string {
+  const m = taskManagerIndex(run.scenario.id, run.taskIndex);
+  return m === null ? NPC_COLOR[run.scenario.id] : personColor(run.scenario.id, m);
+}
+
 const STEPS: Step[] = ['brief', 'intro', 'choose', 'write', 'feedback', 'reflect', 'studies', 'rate', 'resources'];
 /** Coaching is part of the writing step, so it shares its dot. */
 const stepIndex = (s: Step) => STEPS.indexOf(s === 'coach' || s === 'followup' ? 'write' : s);
@@ -1070,7 +1095,7 @@ function renderRecord(
     'ol',
     { class: 'attempts' },
     [...r.attempts].reverse().map((a) => {
-      const s = getScenario(a.scenarioId);
+      const s = getTask(a.scenarioId, a.taskIndex ?? 0);
       const opt = s.options.find((o) => o.id === a.choiceId);
       return h(
         'li',
@@ -1080,6 +1105,7 @@ function renderRecord(
           { class: 'attempt-head' },
           h('span', { class: `bicon-wrap b-${a.scenarioId}` }, buildingIcon(a.scenarioId)),
           h('strong', null, s.building),
+          h('span', { class: 'soft small' }, s.internRole),
           a.isRevisit ? h('span', { class: 'tag' }, 'Revisit') : null,
           h('time', { datetime: a.startedAt }, formatWhen(a.startedAt)),
         ),
@@ -1190,7 +1216,7 @@ function renderRecord(
       section('rs-gaps', 'Skills to grow', null, h('ul', { class: 'plain' }, r.gaps.map((g) => h('li', { class: skillClass(g.skill) }, skillGlyph(g.skill), h('span', null, g.text))))),
       section('rs-next', 'Try next', null, h('ul', { class: 'plain next' }, r.tryNext.map((t) => h('li', null, h('span', { class: 'arrow', 'aria-hidden': 'true' }, '→'), h('span', null, t))))),
       section('rs-compare', 'Compare the work', 'A side-by-side look at the buildings you tried.', compare),
-      section('rs-learn', 'Learn more about these roles', 'Links open in a new tab.', learnMore(r.explored)),
+      section('rs-learn', 'Learn more about these roles', 'Links open in a new tab.', learnMore(r.attempts)),
       h(
         'section',
         { class: 'rsec card actions-sec', 'aria-label': 'Record actions' },
@@ -1314,12 +1340,16 @@ function resourceList(items: Resource[], primary: boolean): HTMLElement {
   );
 }
 
-function learnMore(explored: ScenarioId[]): HTMLElement {
+/** Resources for each role tried, in plaza order. */
+function learnMore(attempts: Attempt[]): HTMLElement {
+  const tried = SCENARIO_IDS.flatMap((id) =>
+    ([0, 1] as TaskIndex[]).filter((t) => attempts.some((a) => a.scenarioId === id && (a.taskIndex ?? 0) === t)).map((t) => ({ id, t })),
+  );
   return h(
     'div',
     { class: 'learn' },
-    explored.map((id) => {
-      const s = getScenario(id);
+    tried.map(({ id, t }) => {
+      const s = getTask(id, t);
       return h(
         'div',
         { class: 'learn-role' },
