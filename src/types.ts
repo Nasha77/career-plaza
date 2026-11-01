@@ -26,6 +26,8 @@ export interface ScenarioOption {
   chooseLine: string;
   /** What the student's action turned up: shown while they write, and given to the AI. */
   result: Finding;
+  /** How this way of working shows up in humanities coursework. */
+  studyLink: string;
   feedback: string;
   twistFeedback: string;
   reflectiveQuestion: string;
@@ -56,6 +58,20 @@ export interface Reactions {
   rateMid: string;
   rateLow: string;
   wantsMore: string;
+  studied: string;
+  skippedStudies: string;
+}
+
+/** One line in the conversational intro: either the manager or the student's reply chip. */
+export type ChatLine = { npc: string } | { you: string };
+
+/** A colleague in the building the student can talk to. */
+export interface Colleague {
+  name: string;
+  role: string;
+  team: string;
+  lines: string[];
+  openRole?: string;
 }
 
 export interface Scenario {
@@ -66,8 +82,13 @@ export interface Scenario {
   /** Personality, used for the scripted lines and as the AI's character brief. */
   persona: { personality: string; voice: string };
   reactions: Reactions;
+  colleagues: Colleague[];
   setting: string;
   intro: string;
+  /** The intro as a short exchange: manager bubbles and the student's reply chips. */
+  chat: ChatLine[];
+  /** The revisit twist, as the manager says it in the chat. */
+  twistLine: string;
   /** One neutral line restating the task, shown while the student writes. */
   brief: string;
   question: string;
@@ -104,6 +125,8 @@ export interface ContentFile {
     otherwise: string;
   };
   selfCheck: SelfCheckContent;
+  /** The optional coursework question after each task. */
+  studies: { question: string; placeholder: string };
   commonResources: Resource[];
   scenarios: Scenario[];
 }
@@ -118,6 +141,8 @@ export type Attempt = {
   firstDraft?: string;
   revisions?: number;
   reflectionNote?: string;
+  /** Where the student says they've used this way of working in their studies. */
+  studyNote?: string;
   enjoyment: Rating;
   confidence: Rating;
   wantsMore: boolean;

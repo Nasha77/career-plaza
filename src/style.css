@@ -1722,3 +1722,190 @@ body:not(.simple) .title-card {
   text-transform: uppercase;
   color: var(--ink-2);
 }
+
+/* ---------- Role card (before each task) ---------- */
+.role-card {
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1.5px solid var(--line);
+}
+.role-title {
+  font-size: 1.3rem;
+  margin: 4px 0 10px;
+  text-wrap: balance;
+}
+.role-facts {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.role-facts div {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 10px;
+}
+.role-facts dt {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  padding-top: 2px;
+}
+.role-facts dd {
+  margin: 0;
+}
+@media (max-width: 420px) {
+  .role-facts div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+/* ---------- Chat intro ---------- */
+.chat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.bubble {
+  max-width: 88%;
+  padding: 9px 13px;
+  border-radius: 16px;
+  line-height: 1.45;
+  animation: bubbleIn 220ms ease-out both;
+}
+.bubble p,
+.bubble .say {
+  margin: 0;
+  font-size: 1rem;
+}
+.bubble.npc {
+  align-self: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 4px;
+}
+.bubble.you {
+  align-self: flex-end;
+  background: var(--brand);
+  color: var(--brand-ink);
+  border-bottom-right-radius: 4px;
+}
+.bubble.twist-bubble {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+.bubble .twist-tag {
+  display: inline-block;
+  margin-bottom: 4px;
+}
+@keyframes bubbleIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.chat-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  min-height: 44px;
+}
+.chat-controls .actions {
+  margin-top: 0;
+  width: 100%;
+}
+.reply-chip {
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1.5px solid var(--brand);
+  background: var(--surface);
+  color: var(--brand);
+  font-weight: 700;
+  cursor: pointer;
+}
+.reply-chip:hover {
+  background: color-mix(in srgb, var(--brand) 10%, var(--surface));
+}
+
+/* ---------- Coursework link ---------- */
+.study-link {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  font-size: 0.93rem;
+}
+
+/* ---------- Colleagues ---------- */
+.meet-team .label {
+  margin-top: 14px;
+}
+.meet-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.person-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.15;
+}
+.person-btn:hover {
+  border-color: var(--brand);
+}
+.person-btn .role {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--ink-2);
+}
+.avatar.small {
+  width: 32px;
+  height: 32px;
+  font-size: 0.9rem;
+}
+.colleague-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 16px 16px;
+  background: rgba(10, 20, 17, 0.35);
+  pointer-events: auto;
+  animation: fadeIn 150ms ease;
+}
+.dialogue.colleague {
+  border: 2px solid var(--brand);
+}
+.open-role {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand) 12%, var(--surface));
+  font-size: 0.95rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble,
+  .colleague-wrap {
+    animation: none !important;
+  }
+}
+/* Keep the room (and the colleagues in it) visible while the chat grows; older bubbles scroll. */
+.dialogue:has(.chat) {
+  max-height: min(100%, 64vh);
+}

@@ -150,6 +150,7 @@ export function recordAsText(r: GrowthRecord, then?: ThenAndNow): string {
     if (a.firstDraft) lines.push(`  First draft: "${a.firstDraft}"`);
     if (a.writtenResponse) lines.push(`  ${a.firstDraft ? 'Revised words' : 'My words'}: "${a.writtenResponse}"`);
     if (a.reflectionNote) lines.push(`  Reflection: "${a.reflectionNote}"`);
+    if (a.studyNote) lines.push(`  In my studies: "${a.studyNote}"`);
   }
   if (then && then.noticed.length) {
     lines.push('', 'THEN AND NOW');

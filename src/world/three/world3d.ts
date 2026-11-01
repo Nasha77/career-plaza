@@ -37,6 +37,7 @@ export class World3D implements World {
   readonly mode = '3d' as const;
   onPick: ((id: ScenarioId) => void) | null = null;
   onHover: ((id: ScenarioId | null) => void) | null = null;
+  onPerson: ((index: number) => void) | null = null;
 
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -62,6 +63,9 @@ export class World3D implements World {
   private pointerHover: ScenarioId | null = null;
   private uiHover: ScenarioId | null = null;
   private talking: 'guide' | 'npc' | null = null;
+  private personTalking: number | null = null;
+  private personHover = -1;
+  private roomDown: { x: number; y: number } | null = null;
   private active = true;
   private raf = 0;
   private last = 0;
@@ -221,6 +225,11 @@ export class World3D implements World {
     this.needsRender = true;
   }
 
+  setPersonTalking(index: number | null): void {
+    this.personTalking = index;
+    this.needsRender = true;
+  }
+
   setTalking(who: 'guide' | 'npc' | null): void {
     this.talking = who;
     this.needsRender = true;
@@ -314,6 +323,10 @@ export class World3D implements World {
       this.interior.kit.dispose();
       this.interior = null;
     }
+    this.personTalking = null;
+    this.personHover = -1;
+    this.roomDown = null;
+    this.canvas.style.cursor = '';
     this.applyLights();
     this.plaza.group.visible = true;
     this.renderer.shadowMap.needsUpdate = true;
@@ -482,6 +495,20 @@ export class World3D implements World {
 
   // ---- Input ------------------------------------------------------------------
 
+  /** Inside a room, the colleagues can be clicked to talk to them. */
+  private inRoom() {
+    return this.state === 'interior' && this.active && !!this.interior;
+  }
+
+  private pickPerson(x: number, y: number): number {
+    if (!this.interior) return -1;
+    const r = this.canvas.getBoundingClientRect();
+    this.ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+    this.raycaster.setFromCamera(this.ndc, this.camera);
+    const hit = this.raycaster.intersectObjects(this.interior.data.personHits, false)[0];
+    return typeof hit?.object.userData.person === 'number' ? hit.object.userData.person : -1;
+  }
+
   private interactive() {
     return this.state === 'plaza' && this.active && document.body.dataset.screen !== 'scenario';
   }
@@ -503,6 +530,10 @@ export class World3D implements World {
   }
 
   private onPointerDown(e: PointerEvent) {
+    if (this.inRoom()) {
+      this.roomDown = { x: e.clientX, y: e.clientY };
+      return;
+    }
     if (!this.interactive()) return;
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (this.pointers.size === 1) {
@@ -521,6 +552,17 @@ export class World3D implements World {
   }
 
   private onPointerMove(e: PointerEvent) {
+    if (this.inRoom()) {
+      if (e.pointerType === 'mouse') {
+        const i = this.pickPerson(e.clientX, e.clientY);
+        if (i !== this.personHover) {
+          this.personHover = i;
+          this.canvas.style.cursor = i >= 0 ? 'pointer' : '';
+          this.needsRender = true;
+        }
+      }
+      return;
+    }
     if (!this.interactive()) return;
     const p = this.pointers.get(e.pointerId);
     if (!p) {
@@ -551,6 +593,15 @@ export class World3D implements World {
   }
 
   private onPointerUp(e: PointerEvent) {
+    if (this.inRoom()) {
+      const down = this.roomDown;
+      this.roomDown = null;
+      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 8) {
+        const i = this.pickPerson(e.clientX, e.clientY);
+        if (i >= 0) this.onPerson?.(i);
+      }
+      return;
+    }
     const had = this.pointers.delete(e.pointerId);
     if (!had || !this.interactive()) return;
     if (!this.moved && this.pointers.size === 0) {
@@ -677,7 +728,14 @@ export class World3D implements World {
       if (Math.abs(lift - this.lastLift) > 0.001) this.renderer.shadowMap.needsUpdate = true;
       this.lastLift = lift;
     }
-    if (this.interior) this.interior.data.npc.update(t, this.talking === 'npc', motion, this.camera);
+    if (this.interior) {
+      this.interior.data.npc.update(t, this.talking === 'npc', motion, this.camera);
+      this.interior.data.people.forEach((p, i) => {
+        p.update(t, this.personTalking === i, motion, this.camera);
+        // A small lift shows which colleague the pointer is over.
+        p.group.position.y = this.personHover === i ? 0.12 : 0;
+      });
+    }
   }
 }
 

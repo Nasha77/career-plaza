@@ -6,7 +6,7 @@ import { MAX_REVISIONS, coachWriting, type CoachResult } from '../feedback/coach
 import { ScriptedProvider } from '../feedback/scripted';
 import { buildRecord, exploredIds, guideLine, joinList, ratingWord, recordAsText, thenAndNow, type GrowthRecord, type ThenAndNow } from '../record';
 import { clearState, loadState, saveState } from '../store';
-import type { Attempt, ChoiceId, Rating, Resource, SaveState, Scenario, ScenarioId, SelfCheck, SkillName } from '../types';
+import type { Attempt, ChatLine, ChoiceId, Rating, Resource, SaveState, Scenario, ScenarioId, SelfCheck, SkillName } from '../types';
 import { reducedMotion, type World } from '../world/types';
 import {
   buildingIcon,
@@ -22,7 +22,7 @@ import {
 } from './dom';
 
 type Screen = 'title' | 'selfcheck' | 'plaza' | 'scenario' | 'record';
-type Step = 'intro' | 'choose' | 'write' | 'coach' | 'followup' | 'feedback' | 'reflect' | 'rate' | 'resources';
+type Step = 'brief' | 'intro' | 'choose' | 'write' | 'coach' | 'followup' | 'feedback' | 'reflect' | 'studies' | 'rate' | 'resources';
 
 interface Run {
   scenario: Scenario;
@@ -40,6 +40,7 @@ interface Run {
   saved?: boolean;
   /** A reaction to the player's last action, said at the start of the next step. */
   pendingLine?: string;
+  studyNote?: string;
   reflection?: string;
   enjoyment?: Rating;
   confidence?: Rating;
@@ -108,6 +109,9 @@ export class App {
   private bindWorld() {
     this.world.onPick = (id) => {
       if (this.screen === 'plaza') void this.enterBuilding(id);
+    };
+    this.world.onPerson = (i) => {
+      if (this.screen === 'scenario' && this.run) this.openColleague(i);
     };
     this.world.onHover = (id) => {
       document.querySelectorAll<HTMLElement>('.bbtn').forEach((b) => {
@@ -327,7 +331,7 @@ export class App {
       scenario,
       isRevisit: this.attempts.some((a) => a.scenarioId === id),
       startedAt: new Date().toISOString(),
-      step: 'intro',
+      step: 'brief',
       revisions: 0,
       wantsMore: false,
     };
@@ -408,18 +412,38 @@ export class App {
     const say = () => h('p', { class: 'say', onclick: skipTyping });
 
     switch (run.step) {
+      case 'brief': {
+        const start = h('button', { class: 'btn primary', type: 'button', onclick: () => this.go('intro') }, 'Start');
+        const card = this.dialogueCard(run, [
+          h(
+            'div',
+            { class: 'role-card' },
+            h('p', { class: 'kicker' }, s.building),
+            h('h2', { class: 'role-title' }, s.internRole),
+            h(
+              'dl',
+              { class: 'role-facts' },
+              h('div', null, h('dt', null, "What you'll do"), h('dd', null, s.brief)),
+              h('div', null, h('dt', null, 'Working with'), h('dd', null, `${s.npc.name}, ${s.npc.role}`)),
+              h('div', null, h('dt', null, 'Time'), h('dd', null, 'About 3 minutes')),
+              run.isRevisit ? h('div', null, h('dt', null, 'This time'), h('dd', null, 'Something new has come up.')) : null,
+            ),
+          ),
+          this.meetTeam(run),
+          h('div', { class: 'actions' }, start),
+        ]);
+        stage.replaceChildren(this.wrapScenario(card));
+        start.focus({ preventScroll: true });
+        this.announce(`${s.building}. Your role: ${s.internRole}. ${s.brief} About 3 minutes.`);
+        break;
+      }
       case 'intro': {
-        const l1 = say();
-        const twist = run.isRevisit ? h('p', { class: 'twist' }, h('span', { class: 'twist-tag' }, 'New this time'), h('span', { class: 'twist-text' })) : null;
-        const controls = h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => this.go('choose') }, 'Continue'));
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [h('p', { class: 'role-line' }, h('span', { class: 'k' }, 'Your role: '), s.internRole), h('p', { class: 'setting' }, s.setting), l1, twist, controls])));
-        const lines: HTMLElement[] = [l1];
-        const texts = [s.intro];
-        if (twist) {
-          lines.push(twist.querySelector('.twist-text') as HTMLElement);
-          texts.push(s.twist);
-        }
-        void this.speak(lines, texts, controls);
+        const log = h('div', { class: 'chat' });
+        const controls = h('div', { class: 'chat-controls' });
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [h('p', { class: 'setting' }, s.setting), log, controls])));
+        const lines: (ChatLine & { twist?: boolean })[] = [...s.chat];
+        if (run.isRevisit) lines.push({ npc: s.twistLine, twist: true });
+        void this.playChat(run, log, controls, lines);
         break;
       }
       case 'choose': {
@@ -528,6 +552,7 @@ export class App {
           { class: 'block' },
           h('p', { class: 'label' }, 'Skills you used here'),
           h('div', { class: 'chips' }, fb.skills.map((sk) => skillChip(sk.skill, sk.weight === 2 ? 'main' : 'also'))),
+          studyLine(run),
           h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => this.go('reflect') }, 'Continue')),
         );
         const reaction = this.takePending(run);
@@ -562,6 +587,30 @@ export class App {
         );
         stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [h('p', { class: 'label soft' }, 'A question to think about'), q, controls])));
         void this.speak([q], [fb.reflectiveQuestion], controls);
+        break;
+      }
+      case 'studies': {
+        const reaction = this.takePending(run);
+        const r0 = reaction ? say() : null;
+        const q = say();
+        q.classList.add('question');
+        const ta = h('textarea', { id: 'studies', rows: 3, maxlength: 400, placeholder: CONTENT.studies.placeholder, 'aria-labelledby': 'studies-l' }) as HTMLTextAreaElement;
+        if (run.studyNote) ta.value = run.studyNote;
+        const controls = h(
+          'div',
+          { class: 'block' },
+          studyLine(run),
+          h('label', { id: 'studies-l', class: 'label', for: 'studies' }, 'Your answer (optional, saved to your growth record)'),
+          ta,
+          h(
+            'div',
+            { class: 'actions' },
+            h('button', { class: 'btn primary', type: 'button', onclick: () => this.saveStudies(ta.value) }, 'Save and continue'),
+            h('button', { class: 'btn ghost', type: 'button', onclick: () => this.saveStudies('') }, 'Skip'),
+          ),
+        );
+        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, h('p', { class: 'label soft' }, 'Linking to your studies'), q, controls])));
+        void this.speak(r0 && reaction ? [r0, q] : [q], reaction ? [reaction, CONTENT.studies.question] : [CONTENT.studies.question], controls);
         break;
       }
       case 'rate': {
@@ -634,6 +683,7 @@ export class App {
           resourceList(s.resources, true),
           h('p', { class: 'label' }, 'For any humanities career'),
           resourceList(CONTENT.commonResources, false),
+          this.meetTeam(run),
           h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => void this.exitToPlaza() }, 'Back to the plaza')),
         );
         stage.replaceChildren(
@@ -775,7 +825,128 @@ export class App {
     if (!this.run) return;
     this.run.reflection = text.trim() || undefined;
     this.run.pendingLine = this.run.reflection ? this.run.scenario.reactions.reflected : this.run.scenario.reactions.skippedReflect;
+    this.go('studies');
+  }
+
+  private saveStudies(text: string) {
+    if (!this.run) return;
+    this.run.studyNote = text.trim() || undefined;
+    this.run.pendingLine = this.run.studyNote ? this.run.scenario.reactions.studied : this.run.scenario.reactions.skippedStudies;
     this.go('rate');
+  }
+
+  /** The intro as a short exchange: manager bubbles typed out, the student taps a reply to go on. */
+  private async playChat(run: Run, log: HTMLElement, controls: HTMLElement, lines: (ChatLine & { twist?: boolean })[]) {
+    const instant = reducedMotion();
+    const still = () => this.run === run && run.step === 'intro';
+    for (const line of lines) {
+      if (!still()) return;
+      if ('npc' in line) {
+        const text = h('p', { class: 'say', onclick: skipTyping });
+        const bubble = h('div', { class: `bubble npc ${line.twist ? 'twist-bubble' : ''}` }, line.twist ? h('span', { class: 'twist-tag' }, 'New this time') : null, text);
+        log.append(bubble);
+        bubble.scrollIntoView({ block: 'nearest' });
+        this.world.setTalking('npc');
+        this.announce(`${run.scenario.npc.name}: ${line.npc}`);
+        await typeText(text, line.npc, instant);
+        this.world.setTalking(null);
+      } else {
+        const chip = h('button', { class: 'reply-chip', type: 'button' }, line.you);
+        controls.replaceChildren(chip);
+        chip.focus({ preventScroll: true });
+        await new Promise<void>((resolve) => chip.addEventListener('click', () => resolve(), { once: true }));
+        if (!still()) return;
+        controls.replaceChildren();
+        log.append(h('div', { class: 'bubble you' }, h('p', null, line.you)));
+      }
+    }
+    if (!still()) return;
+    const next = h('button', { class: 'btn primary', type: 'button', onclick: () => this.go('choose') }, 'Continue');
+    controls.replaceChildren(h('div', { class: 'actions' }, next));
+    next.focus({ preventScroll: true });
+  }
+
+  /** "Meet the team": the building's other colleagues, each a button that opens a short conversation. */
+  private meetTeam(run: Run): HTMLElement | null {
+    const people = run.scenario.colleagues;
+    if (!people.length) return null;
+    return h(
+      'div',
+      { class: 'meet-team' },
+      h('p', { class: 'label' }, 'Meet the team'),
+      h(
+        'div',
+        { class: 'meet-row' },
+        people.map((c, i) =>
+          h(
+            'button',
+            { class: 'person-btn', type: 'button', 'data-person': i, onclick: (e: Event) => this.openColleague(i, e.currentTarget as HTMLElement) },
+            h('span', { class: 'avatar small', style: `--c:${personColor(run.scenario.id, i)}`, 'aria-hidden': 'true' }, c.name[0]),
+            h('span', null, h('strong', null, c.name), h('span', { class: 'role' }, c.role)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /** A colleague's short conversation, shown over the current step so nothing underneath is lost. */
+  private openColleague(i: number, from?: HTMLElement | null) {
+    const run = this.run;
+    const c = run?.scenario.colleagues[i];
+    if (!run || !c) return;
+    this.els.stage.querySelector('.colleague-wrap')?.remove();
+    const lines = c.lines.map(() => h('p', { class: 'say', onclick: skipTyping }));
+    const back = h('button', { class: 'btn primary', type: 'button' }, 'Back');
+    const after = h(
+      'div',
+      { class: 'block' },
+      c.openRole ? h('p', { class: 'open-role' }, h('strong', null, 'Roles here: '), c.openRole) : null,
+      h('div', { class: 'actions' }, back),
+    );
+    const card = h(
+      'section',
+      { class: 'dialogue card colleague', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'colleague-name' },
+      h(
+        'div',
+        { class: 'speaker' },
+        h('span', { class: 'avatar', style: `--c:${personColor(run.scenario.id, i)}`, 'aria-hidden': 'true' }, c.name[0]),
+        h('span', null, h('strong', { id: 'colleague-name' }, c.name), h('span', { class: 'role' }, `${c.role} · ${c.team} team`)),
+      ),
+      ...lines,
+      after,
+    );
+    const wrap = h('div', { class: 'colleague-wrap' }, card);
+    const close = () => {
+      skipTyping();
+      wrap.remove();
+      document.removeEventListener('keydown', onKey, true);
+      this.world.setPersonTalking(null);
+      (from ?? this.els.stage.querySelector<HTMLElement>(`.person-btn[data-person="${i}"]`))?.focus({ preventScroll: true });
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      }
+    };
+    back.addEventListener('click', close);
+    wrap.addEventListener('click', (e) => e.target === wrap && close());
+    document.addEventListener('keydown', onKey, true);
+    this.els.stage.append(wrap);
+    after.hidden = true;
+    this.world.setPersonTalking(i);
+    this.announce(`${c.name}, ${c.role}: ${c.lines.join(' ')}${c.openRole ? ` ${c.openRole}` : ''}`);
+    void (async () => {
+      const instant = reducedMotion();
+      for (let k = 0; k < lines.length; k++) {
+        if (!wrap.isConnected) return;
+        await typeText(lines[k], c.lines[k], instant);
+      }
+      if (!wrap.isConnected) return;
+      this.world.setPersonTalking(null);
+      after.hidden = false;
+      back.focus({ preventScroll: true });
+    })();
   }
 
   private floatSkills(skills: { skill: SkillName; weight: 1 | 2 }[]) {
@@ -807,6 +978,7 @@ export class App {
       firstDraft: run.firstDraft !== undefined && run.firstDraft !== run.written ? run.firstDraft : undefined,
       revisions: run.revisions || undefined,
       reflectionNote: run.reflection,
+      studyNote: run.studyNote,
       enjoyment: run.enjoyment,
       confidence: run.confidence,
       wantsMore: run.wantsMore,
@@ -875,7 +1047,7 @@ export class App {
   }
 }
 
-const STEPS: Step[] = ['intro', 'choose', 'write', 'feedback', 'reflect', 'rate', 'resources'];
+const STEPS: Step[] = ['brief', 'intro', 'choose', 'write', 'feedback', 'reflect', 'studies', 'rate', 'resources'];
 /** Coaching is part of the writing step, so it shares its dot. */
 const stepIndex = (s: Step) => STEPS.indexOf(s === 'coach' || s === 'followup' ? 'write' : s);
 
@@ -917,6 +1089,7 @@ function renderRecord(
           ? h('blockquote', { class: 'sample' }, h('span', { class: 'k' }, a.firstDraft ? 'After revising: ' : 'Your words: '), `“${a.writtenResponse}”`)
           : h('p', { class: 'soft' }, 'No written response this time.'),
         a.reflectionNote ? h('p', { class: 'note' }, h('span', { class: 'k' }, 'Your reflection: '), a.reflectionNote) : null,
+        a.studyNote ? h('p', { class: 'note' }, h('span', { class: 'k' }, 'In your studies: '), a.studyNote) : null,
       );
     }),
   );
@@ -1371,4 +1544,22 @@ function taskCard(run: { scenario: Scenario; choiceId?: ChoiceId; isRevisit: boo
     run.isRevisit ? h('p', null, h('span', { class: 'k' }, 'New this time: '), s.twist) : null,
     option ? h('p', null, h('span', { class: 'k' }, 'Your approach: '), option.text) : null,
   );
+}
+
+// ---- Coursework link and colleague colours --------------------------------------
+
+/** Avatar colours match each colleague's clothes in the 3D room (see COLLEAGUE_LOOKS in characters.ts). */
+const PERSON_COLORS: Record<ScenarioId, string[]> = {
+  resort: ['#2F6F6A', '#C99A1E', '#6B4A8A'],
+  policy: ['#3D7EA6', '#6E7D52', '#D06A50'],
+  foundation: ['#2E6B5E', '#C77F6E', '#5B7DB1'],
+  workforce: ['#B5694A', '#4A5560', '#8C3B4A'],
+};
+const personColor = (id: ScenarioId, i: number) => PERSON_COLORS[id][i % PERSON_COLORS[id].length];
+
+/** "In your studies: …" for the student's chosen approach. */
+function studyLine(run: { scenario: Scenario; choiceId?: ChoiceId }): HTMLElement | null {
+  const option = run.scenario.options.find((o) => o.id === run.choiceId);
+  if (!option?.studyLink) return null;
+  return h('p', { class: 'study-link' }, h('span', { class: 'k' }, 'In your studies: '), option.studyLink);
 }

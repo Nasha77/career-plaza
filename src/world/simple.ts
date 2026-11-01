@@ -6,12 +6,14 @@ export class SimpleWorld implements World {
   readonly mode = 'simple' as const;
   onPick: ((id: ScenarioId) => void) | null = null;
   onHover: ((id: ScenarioId | null) => void) | null = null;
+  onPerson: ((index: number) => void) | null = null;
 
   constructor(private veil: HTMLElement) {}
 
   setVisited(): void {}
   setHover(): void {}
   setTalking(): void {}
+  setPersonTalking(): void {}
   setActive(): void {}
   celebrate(): void {}
   dispose(): void {}

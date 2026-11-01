@@ -117,6 +117,10 @@
       ]
     }
   },
+  "studies": {
+    "question": "Where have you used this way of working in your studies?",
+    "placeholder": "A module, an essay, a project or a CCA…"
+  },
   "commonResources": [
     {
       "title": "NTU School of Humanities: Classroom to careers",
@@ -144,6 +148,24 @@
       },
       "setting": "A busy communications office. A volunteering poster and a sign-up sheet are pinned to the wall.",
       "intro": "Welcome aboard! Our volunteer day at a senior activity centre is in two weeks, but only 12 of 40 spots are filled. We need more of our team members to sign up.",
+      "chat": [
+        {
+          "npc": "Hi, welcome aboard! I'm Priya. I look after our community programmes here."
+        },
+        {
+          "you": "Hi Priya! What are we working on?"
+        },
+        {
+          "npc": "Our volunteer day at a senior activity centre is in two weeks. The seniors are so excited!"
+        },
+        {
+          "you": "That sounds lovely. How's sign-up going?"
+        },
+        {
+          "npc": "Honestly? Only 12 of 40 spots are filled. We need more of our team on board."
+        }
+      ],
+      "twistLine": "Oh, and guess what? A well-known local singer is visiting next week and could join us!",
       "brief": "The volunteer day at a senior activity centre is in two weeks, and only 12 of 40 spots are filled. Your job is to get more team members to sign up.",
       "question": "Where would you start?",
       "twist": "Priya adds: a well-known local singer is visiting next week and could join the volunteer day.",
@@ -231,7 +253,8 @@
               ]
             ],
             "note": "Most sign-ups came in the final week. Night-shift teams barely joined."
-          }
+          },
+          "studyLink": "Like spotting patterns in survey results or records for a research project."
         },
         {
           "id": "B",
@@ -259,7 +282,8 @@
               "Three volunteers called it the best day of their year"
             ],
             "note": "The seniors remember the people, not the activities."
-          }
+          },
+          "studyLink": "Like opening an essay with a vivid example that makes readers care."
         },
         {
           "id": "C",
@@ -308,7 +332,8 @@
               ]
             ],
             "note": "Last year's most-asked question was \"What will I actually do?\""
-          }
+          },
+          "studyLink": "Like organising a group project: who does what, and by when."
         }
       ],
       "reactions": {
@@ -320,8 +345,42 @@
         "rateHigh": "Yay, I'm so glad this one clicked for you!",
         "rateMid": "Thanks! Every task teaches you something about what you like.",
         "rateLow": "Thanks for being honest. Not every task clicks, and that's okay!",
-        "wantsMore": "I'll keep a spot for you. Come back any time!"
-      }
+        "wantsMore": "I'll keep a spot for you. Come back any time!",
+        "studied": "Love that! See, you've been practising this all along.",
+        "skippedStudies": "No worries! Keep an eye out for it in your modules."
+      },
+      "colleagues": [
+        {
+          "name": "Wei Ling",
+          "role": "Events Coordinator",
+          "team": "Community Events",
+          "lines": [
+            "I plan the logistics for our volunteer days: venues, transport, timings.",
+            "On the day, I'm the one with the clipboard. Event work is part planning, part fixing whatever goes wrong at 8am."
+          ],
+          "openRole": "We take event interns too. You'd help run the day itself."
+        },
+        {
+          "name": "Arjun",
+          "role": "Social Media Executive",
+          "team": "Communications",
+          "lines": [
+            "I turn our community stories into posts and short videos.",
+            "The trick is telling someone's story without making it about us."
+          ],
+          "openRole": "There's a content intern role on our team. It's mostly writing and filming."
+        },
+        {
+          "name": "Hui Min",
+          "role": "Partnerships Lead",
+          "team": "Community Partnerships",
+          "lines": [
+            "I look after our relationships with charities and community centres.",
+            "Before any event, I check what our partners actually need, not what we assume they need."
+          ],
+          "openRole": "Partnership roles usually come after a year or two in events or comms."
+        }
+      ]
     },
     {
       "id": "policy",
@@ -337,6 +396,24 @@
       },
       "setting": "A quiet policy office. Two screens are open side by side: a government report and a public registry.",
       "intro": "We keep a public tracker of carbon credit deals between countries. One government's report says it has approved its first credit transfer, but the official registry shows nothing yet. The tracker updates on Friday.",
+      "chat": [
+        {
+          "npc": "Morning. I'm Daniel. We keep a public tracker of carbon credit deals between countries."
+        },
+        {
+          "you": "Okay. What needs doing?"
+        },
+        {
+          "npc": "One government's report says it has approved its first credit transfer. The official registry shows nothing."
+        },
+        {
+          "you": "So the sources disagree?"
+        },
+        {
+          "npc": "Exactly. And the tracker updates on Friday. No pressure."
+        }
+      ],
+      "twistLine": "One more thing. A news site has already reported the transfer as complete. Citing us.",
       "brief": "A government report says a carbon credit transfer has been approved, but the official registry shows nothing yet. The public tracker updates on Friday.",
       "question": "How would you handle this entry?",
       "twist": "Daniel adds: a news site has already reported the transfer as complete, citing our tracker.",
@@ -411,7 +488,8 @@
               ]
             ],
             "note": "The report confirms approval, not that a transfer has happened."
-          }
+          },
+          "studyLink": "This is close reading, like comparing two primary sources in a history or literature essay."
         },
         {
           "id": "B",
@@ -448,7 +526,8 @@
               ]
             ],
             "note": "Two news outlets quoted our tracker last month."
-          }
+          },
+          "studyLink": "Like writing a careful conclusion that says what the evidence does and doesn't show."
         },
         {
           "id": "C",
@@ -489,7 +568,8 @@
               ]
             ],
             "note": "A gap between approval and transfer is normal."
-          }
+          },
+          "studyLink": "Like building a timeline to make sense of events in a history module."
         }
       ],
       "reactions": {
@@ -501,8 +581,41 @@
         "rateHigh": "Good. Not everyone enjoys reading registries. You might be one of us.",
         "rateMid": "Fair. A mixed result is still a result.",
         "rateLow": "Honest answer. Better to know now than three months in.",
-        "wantsMore": "I'll note your interest. Accurately."
-      }
+        "wantsMore": "I'll note your interest. Accurately.",
+        "studied": "Good. Then you've done this before, under a different name.",
+        "skippedStudies": "Fine. You may notice it next time you write an essay."
+      },
+      "colleagues": [
+        {
+          "name": "Sophie",
+          "role": "Data Visualisation Analyst",
+          "team": "Trackers",
+          "lines": [
+            "I turn our tracker data into the charts people actually read.",
+            "A clear chart can stop a whole room from misreading the numbers."
+          ],
+          "openRole": "We sometimes take a data visualisation intern. Excel, Flourish or Power BI skills help."
+        },
+        {
+          "name": "Kenji",
+          "role": "APAC Markets Researcher",
+          "team": "Asia-Pacific",
+          "lines": [
+            "I follow carbon markets across Asia-Pacific, from Singapore to Japan and Korea.",
+            "Speaking more than one language helps. Some of the best sources aren't in English."
+          ],
+          "openRole": "Our team hires research interns for APAC market updates."
+        },
+        {
+          "name": "Amara",
+          "role": "Communications Officer",
+          "team": "Member Communications",
+          "lines": [
+            "I explain policy updates to our members in plain English.",
+            "Policy work is half research, half translating it for people who are busy."
+          ]
+        }
+      ]
     },
     {
       "id": "foundation",
@@ -518,6 +631,24 @@
       },
       "setting": "A bright meeting room. A report on a funded youth programme sits on the table, covered in sticky notes.",
       "intro": "We funded a digital skills programme for young people. Three hundred attended, but leadership is asking what actually changed for them. The renewal decision is next month.",
+      "chat": [
+        {
+          "npc": "Hello, I'm Grace. Thank you for joining us. Can I tell you about a programme we funded?"
+        },
+        {
+          "you": "Of course. What was it?"
+        },
+        {
+          "npc": "A digital skills programme for young people. Three hundred of them came along."
+        },
+        {
+          "you": "That's a lot of people!"
+        },
+        {
+          "npc": "It is. But leadership is asking what actually changed for them, and the renewal decision is next month."
+        }
+      ],
+      "twistLine": "Funding is tighter this year, so leadership wants to compare it with an eldercare programme too.",
       "brief": "A youth digital skills programme had 300 attendees. Leadership wants to know what actually changed for them before next month's renewal decision.",
       "question": "What would you do first?",
       "twist": "Grace mentions that funding is tighter this year, so leadership wants to compare this programme with an eldercare programme.",
@@ -606,7 +737,8 @@
               ]
             ],
             "note": "There is no data on the 120 people who left early."
-          }
+          },
+          "studyLink": "Like using data to support an argument in a sociology or policy essay."
         },
         {
           "id": "B",
@@ -634,7 +766,8 @@
               "Partner charity: \"Numbers dropped when exams started.\""
             ],
             "note": "What changed depends a lot on who stayed and why others left."
-          }
+          },
+          "studyLink": "Like interviews for fieldwork or an oral history project."
         },
         {
           "id": "C",
@@ -671,7 +804,8 @@
               ]
             ],
             "note": "An honest gap is easier to fix than a hidden one."
-          }
+          },
+          "studyLink": "Like writing an abstract: what we know, what we don't, what's next."
         }
       ],
       "reactions": {
@@ -683,8 +817,42 @@
         "rateHigh": "I'm glad. Meaningful work tends to feel that way.",
         "rateMid": "Thank you. Mixed feelings are worth paying attention to.",
         "rateLow": "Thank you for being honest. Knowing what doesn't fit is part of finding what does.",
-        "wantsMore": "I'll remember that. The door is always open."
-      }
+        "wantsMore": "I'll remember that. The door is always open.",
+        "studied": "Thank you. It's lovely to see how your studies carry over.",
+        "skippedStudies": "That's alright. It might come to you later."
+      },
+      "colleagues": [
+        {
+          "name": "Farhan",
+          "role": "Partnerships Manager",
+          "team": "Partnerships",
+          "lines": [
+            "I organise our community networking events and keep in touch with partners.",
+            "Most of my job is listening. Partners tell you a lot if you ask good questions."
+          ],
+          "openRole": "We need an intern to help curate our philanthropy newsletter."
+        },
+        {
+          "name": "Mei",
+          "role": "Knowledge & Data Analyst",
+          "team": "Knowledge Management",
+          "lines": [
+            "I build the tools that track every partner and every dollar we give.",
+            "If our records are messy, nobody can tell the story of our impact."
+          ],
+          "openRole": "We're looking for someone who likes tidy data and isn't afraid of spreadsheets."
+        },
+        {
+          "name": "Rachel",
+          "role": "Research Associate",
+          "team": "Research",
+          "lines": [
+            "I run short research sprints on things like new ways to fund charities.",
+            "I read a lot, then write two pages that leaders can actually use."
+          ],
+          "openRole": "Research interns join our sprints. It's a great fit if you like writing essays."
+        }
+      ]
     },
     {
       "id": "workforce",
@@ -700,6 +868,24 @@
       },
       "setting": "A modern office. A screen shows headlines about AI and jobs, and a briefing deck is open on the table.",
       "intro": "Next week we brief senior leaders on how AI is changing entry-level jobs across the companies we work with. I need you to help us get ahead of the trends.",
+      "chat": [
+        {
+          "npc": "Marcus. Good to have you. No time to waste, so here's the brief."
+        },
+        {
+          "you": "Ready. What's the brief?"
+        },
+        {
+          "npc": "Next week we brief senior leaders on how AI is changing entry-level jobs."
+        },
+        {
+          "you": "Across which companies?"
+        },
+        {
+          "npc": "All the ones we work with. I need us ahead of the trends, not behind them."
+        }
+      ],
+      "twistLine": "Update: the union rep wants workers' own voices in the session.",
       "brief": "Senior leaders get a briefing next week on how AI is changing entry-level jobs. Your job is to help the team get ahead of the trends.",
       "question": "Where would you begin?",
       "twist": "Marcus says the union representative has asked that workers' own voices be part of the session.",
@@ -771,7 +957,8 @@
               "Training programmes lag demand by about a year"
             ],
             "note": "Most sources are expert reports. Few include workers' own views."
-          }
+          },
+          "studyLink": "Like a literature review: reading widely and summarising the main debates."
         },
         {
           "id": "B",
@@ -808,7 +995,8 @@
               ]
             ],
             "note": "The roles affected soonest are common first jobs for graduates."
-          }
+          },
+          "studyLink": "Like building an argument: which points matter most, and in what order."
         },
         {
           "id": "C",
@@ -853,7 +1041,8 @@
               ]
             ],
             "note": "The union voice isn't confirmed yet."
-          }
+          },
+          "studyLink": "Like organising a seminar where different viewpoints get heard."
         }
       ],
       "reactions": {
@@ -865,8 +1054,41 @@
         "rateHigh": "Great. That energy is what this team runs on.",
         "rateMid": "Okay. Now ask yourself which part you'd keep.",
         "rateLow": "Straight answer. That's valuable data.",
-        "wantsMore": "Noted. Next time I'll throw you something bigger."
-      }
+        "wantsMore": "Noted. Next time I'll throw you something bigger.",
+        "studied": "Good. Same skill, new setting. That's the point.",
+        "skippedStudies": "Fine. Look for it next time you're in class."
+      },
+      "colleagues": [
+        {
+          "name": "Nadia",
+          "role": "Events & Engagement Lead",
+          "team": "Engagement",
+          "lines": [
+            "I run our executive briefings and the annual tripartite conversations.",
+            "Getting business, government and unions into one room takes weeks of quiet phone calls."
+          ],
+          "openRole": "Our events team takes interns for the tripartite conversations."
+        },
+        {
+          "name": "Ravi",
+          "role": "AI & Skills Analyst",
+          "team": "Horizon Scanning",
+          "lines": [
+            "I scan new tools and regulations so we're never surprised by them.",
+            "I use AI to help me read faster, but I still check every source myself."
+          ],
+          "openRole": "We need an analyst intern who's curious about AI and good at summarising."
+        },
+        {
+          "name": "Clara",
+          "role": "Stakeholder Manager",
+          "team": "Partnerships",
+          "lines": [
+            "I keep our partners in business, government and the labour movement informed.",
+            "Confidentiality matters here. Half of what I hear can't leave the room."
+          ]
+        }
+      ]
     }
   ]
 }

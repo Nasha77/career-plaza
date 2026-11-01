@@ -183,3 +183,23 @@ export const CHARACTERS: Record<'guide' | 'resort' | 'policy' | 'foundation' | '
   // Marcus, Head of Workforce Strategy: charcoal jacket and a mustard tie
   workforce: { body: 0x3a4148, legs: 0x23282d, skin: 0x7a4e34, hair: 0x15110f, accessory: 'tie', accent: 0xe3a21a },
 };
+
+/** Looks for the colleagues in each room: three per building, all different from the managers. */
+export const COLLEAGUE_LOOKS: CharacterSpec[] = [
+  // Resort: events, social media, partnerships
+  { body: 0x2f6f6a, legs: 0x2a3138, skin: 0xd9a77f, hair: 0x1a1210, accessory: 'lanyard', accent: 0xe3a21a, hairStyle: 'bun' },
+  { body: 0xf2c14e, legs: 0x34465e, skin: 0x8a5a3c, hair: 0x15110f, accessory: 'headphones', accent: 0x26323a },
+  { body: 0x6b4a8a, legs: 0x2b2b30, skin: 0xe8c3a0, hair: 0x3b2a20, accessory: 'glasses', accent: 0x2b2b2b, hairStyle: 'long' },
+  // Policy: data visualisation, APAC research, communications
+  { body: 0x3d7ea6, legs: 0x26303f, skin: 0xe2b38f, hair: 0x6b4a2e, accessory: 'glasses', accent: 0x2b2b2b, hairStyle: 'long' },
+  { body: 0x7a8a5c, legs: 0x2a3138, skin: 0xd9a77f, hair: 0x15110f, accessory: 'backpack', accent: 0x3d4a3a },
+  { body: 0xe07a5f, legs: 0x3d3a3a, skin: 0x6e4630, hair: 0x15110f, accessory: 'lanyard', accent: 0x34465e, hairStyle: 'bun' },
+  // Foundation: partnerships, data, research
+  { body: 0x2e6b5e, legs: 0x26303f, skin: 0xa86d4c, hair: 0x1f1714, accessory: 'tie', accent: 0xe3a21a },
+  { body: 0xd98c7a, legs: 0x34465e, skin: 0xe8c3a0, hair: 0x1a1210, accessory: 'headphones', accent: 0x2b2b2b, hairStyle: 'bun' },
+  { body: 0x5b7db1, legs: 0x2b2b30, skin: 0xe2b38f, hair: 0x8a6a48, accessory: 'glasses', accent: 0x2b2b2b, hairStyle: 'long' },
+  // Workforce: events, AI analysis, stakeholders
+  { body: 0xb5694a, legs: 0x2a3138, skin: 0x8a5a3c, hair: 0x15110f, accessory: 'lanyard', accent: 0x7ee0d2, hairStyle: 'long' },
+  { body: 0x4a5560, legs: 0x23282d, skin: 0xd9a77f, hair: 0x1a1210, accessory: 'headphones', accent: 0x7ee0d2 },
+  { body: 0x8c3b4a, legs: 0x26303f, skin: 0xe8c3a0, hair: 0x3b2a20, accessory: 'glasses', accent: 0x2b2b2b, hairStyle: 'bun' },
+];

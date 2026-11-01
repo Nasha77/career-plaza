@@ -25,7 +25,7 @@ export interface AiReply {
   body: unknown;
 }
 
-export const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
+export const DEFAULT_MODEL = 'gemini-3.1-flash-lite';
 
 /** Skip the retry if the first try was already slow, so the student isn't left waiting. */
 const RETRY_ONLY_IF_FASTER_THAN_MS = 8000;

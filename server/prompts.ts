@@ -179,6 +179,7 @@ export function summaryPrompt(body: { attempts?: unknown; selfCheck?: unknown })
       `   Enjoyment ${Number(x.enjoyment) || '?'}/5, confidence ${Number(x.confidence) || '?'}/5${x.wantsMore ? ', wants more like this' : ''}`,
       clean(x.writtenResponse) ? `   Their words: ${fenced('student_text', clean(x.writtenResponse))}` : '',
       clean(x.reflectionNote) ? `   Their reflection: ${fenced('student_reflection', clean(x.reflectionNote))}` : '',
+      clean(x.studyNote) ? `   Where they've used this in their studies: ${fenced('student_reflection', clean(x.studyNote))}` : '',
     ]
       .filter(Boolean)
       .join('\n');
@@ -194,7 +195,7 @@ export function summaryPrompt(body: { attempts?: unknown; selfCheck?: unknown })
     system: `You are the friendly guide of Career Plaza, writing a short personal summary for a humanities student's growth record after they tried some internships.
 Write 2 or 3 short paragraphs (each 2 to 3 sentences), speaking to the student as "you":
 1. What they tried and what seemed to energise them, using their own words or reflections where helpful.
-2. Skills that showed up across different internships, and one or two skills to grow, phrased kindly.
+2. Skills that showed up across different internships, and one or two skills to grow, phrased kindly. Where the student said they've used a way of working in their studies, connect that coursework to the work they tried.
 3. One or two concrete, inviting next steps (for example, revisiting a building, or talking to a career coach).
 Never rank careers, never say "best match", "fit", "score" or "grade". Use only the information given. Ratings are the student's own feelings, not results.
 

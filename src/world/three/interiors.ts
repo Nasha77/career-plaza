@@ -1,13 +1,27 @@
 import * as THREE from 'three';
 import type { ScenarioId } from '../../types';
-import { CHARACTERS, makeCharacter, type Character } from './characters';
+import { getScenario } from '../../content';
+import { CHARACTERS, COLLEAGUE_LOOKS, makeCharacter, type Character } from './characters';
 import { DISPLAY_FONT, FONT, roundRect, type Kit } from './kit';
 
 export interface Interior {
   group: THREE.Group;
   npc: Character;
+  /** The building's other colleagues, in the same order as in the content file. */
+  people: Character[];
+  /** Invisible, generous click targets for the colleagues (userData.person = index). */
+  personHits: THREE.Mesh[];
   target: THREE.Vector3;
 }
+
+/** Free floor spots for colleagues in each room, clear of the furniture and the manager. */
+const PERSON_SPOTS: Record<ScenarioId, [number, number][]> = {
+  resort: [[4.3, -1.6], [-4.3, 2.9], [1.6, 3.4]],
+  policy: [[4.4, -1.5], [-0.9, -2.8], [1.7, 3.3]],
+  foundation: [[-4.2, -2.6], [3.6, -2.0], [-3.8, 2.9]],
+  workforce: [[3.8, -2.4], [-3.4, -2.8], [0.8, 3.0]],
+};
+const LOOK_OFFSET: Record<ScenarioId, number> = { resort: 0, policy: 3, foundation: 6, workforce: 9 };
 
 interface RoomColors {
   floor: number;
@@ -481,5 +495,23 @@ export function buildInterior(kit: Kit, id: ScenarioId, revisit: boolean): Inter
   const group = new THREE.Group();
   room(kit, group, ROOMS[id], FLOORS[id]);
   const npc = BUILDERS[id](kit, group, revisit);
-  return { group, npc, target: new THREE.Vector3(0.4, 2.0, 0) };
+
+  const people: Character[] = [];
+  const personHits: THREE.Mesh[] = [];
+  const hitMat = kit.basic(0xffffff);
+  hitMat.visible = false;
+  getScenario(id).colleagues.forEach((_, i) => {
+    const spot = PERSON_SPOTS[id][i];
+    if (!spot) return;
+    const person = makeCharacter(kit, COLLEAGUE_LOOKS[(LOOK_OFFSET[id] + i) % COLLEAGUE_LOOKS.length]);
+    faceCamera(person, spot[0], spot[1]);
+    group.add(person.group);
+    people.push(person);
+    const hit = kit.box(1.3, 3.2, 1.3, hitMat, spot[0], 1.6, spot[1]);
+    hit.userData.person = i;
+    group.add(hit);
+    personHits.push(hit);
+  });
+
+  return { group, npc, people, personHits, target: new THREE.Vector3(0.4, 2.0, 0) };
 }
