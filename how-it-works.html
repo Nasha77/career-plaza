@@ -1,0 +1,780 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How Career Plaza Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet" />
+<style>
+  /* Layout: one readable column, with diagrams that break out a little wider. Palette borrowed from the game itself. */
+  :root {
+    --bg: #eef2ee;
+    --surface: #ffffff;
+    --surface-2: #f3f6f3;
+    --ink: #14302a;
+    --ink-2: #4b615a;
+    --line: #cbd7d0;
+    --brand: #1d5c50;
+    --brand-soft: #dcece7;
+    --accent: #e3a21a;
+    --accent-soft: #fbedc8;
+    --coral: #c4462a;
+    --sky: #2f6f9a;
+    --font-body: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-display: 'Bricolage Grotesque', 'Atkinson Hyperlegible', system-ui, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --bg: #0f1a17;
+      --surface: #17251f;
+      --surface-2: #1e2f29;
+      --ink: #e6f0eb;
+      --ink-2: #a9bdb5;
+      --line: #2f463e;
+      --brand: #7fd0bb;
+      --brand-soft: #1f3a33;
+      --accent: #f2b634;
+      --accent-soft: #3a3016;
+      --coral: #ff8f70;
+      --sky: #7cc0ec;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme='dark'] {
+    --bg: #0f1a17; --surface: #17251f; --surface-2: #1e2f29; --ink: #e6f0eb; --ink-2: #a9bdb5;
+    --line: #2f463e; --brand: #7fd0bb; --brand-soft: #1f3a33; --accent: #f2b634; --accent-soft: #3a3016;
+    --coral: #ff8f70; --sky: #7cc0ec; color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.6;
+    padding-inline: 16px;
+  }
+  main { max-width: 760px; margin: 0 auto; padding-block: 48px 72px; display: grid; gap: 56px; }
+  h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(2.2rem, 7vw, 3.2rem); font-weight: 800; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.5rem, 4.5vw, 1.9rem); font-weight: 800; }
+  h3 { font-size: 1.12rem; font-weight: 600; }
+  p { margin: 0; }
+  section { display: grid; gap: 16px; }
+  .kicker { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brand); }
+  .lead { font-size: 1.15rem; color: var(--ink-2); max-width: 62ch; }
+  .muted { color: var(--ink-2); }
+  .small { font-size: 0.9rem; }
+  strong { color: var(--ink); }
+
+  /* The one-sentence idea */
+  .idea {
+    padding: 22px 22px 20px;
+    border-radius: 18px;
+    background: var(--brand);
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: clamp(1.25rem, 4vw, 1.6rem);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) .idea { color: #0f1a17; } }
+  :root[data-theme='dark'] .idea { color: #0f1a17; }
+
+  /* Loop diagram */
+  .loop { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; counter-reset: step; }
+  .loop li {
+    list-style: none;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 14px;
+    padding: 14px 12px;
+    display: grid;
+    gap: 6px;
+    position: relative;
+  }
+  .loop li::before {
+    counter-increment: step;
+    content: counter(step);
+    display: grid; place-items: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #241a02; font-weight: 700;
+  }
+  .loop ol { margin: 0; padding: 0; display: contents; }
+  .loop-wrap { display: grid; gap: 10px; }
+  .loop-back {
+    text-align: center; font-size: 0.92rem; color: var(--ink-2);
+    border: 1.5px dashed var(--line); border-radius: 14px; padding: 8px 12px;
+  }
+  @media (max-width: 640px) { .loop { grid-template-columns: 1fr 1fr; } }
+
+  /* Scenario walkthrough */
+  .steps { display: grid; gap: 0; margin: 0; padding: 0; }
+  .step { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 14px; }
+  .step .rail { display: flex; flex-direction: column; align-items: center; }
+  .step .dot {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: grid; place-items: center; flex: none;
+    background: var(--surface); border: 2px solid var(--brand); color: var(--brand); font-weight: 700; font-size: 0.9rem;
+  }
+  .step .line { width: 2px; flex: 1; background: var(--line); margin: 4px 0; }
+  .step:last-child .line { display: none; }
+  .step .body { padding-bottom: 22px; display: grid; gap: 6px; min-width: 0; }
+  .say {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px 14px 14px 14px;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+  .say b { color: var(--coral); }
+  .ai-tag {
+    display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 1px 8px; border-radius: 999px; background: var(--brand-soft); color: var(--brand); margin-left: 6px; vertical-align: middle;
+  }
+  .findings {
+    background: var(--surface-2);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    font-variant-numeric: tabular-nums;
+  }
+  .findings table { width: 100%; border-collapse: collapse; }
+  .findings td { padding: 3px 0; border-top: 1px solid var(--line); }
+  .findings td:last-child { text-align: right; font-weight: 700; }
+  .findings .note { margin-top: 6px; padding: 6px 8px; border-radius: 8px; background: var(--accent-soft); }
+
+  /* Parts of the product */
+  .parts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .part {
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    border-radius: 16px;
+    padding: 16px;
+    display: grid;
+    gap: 8px;
+    align-content: start;
+  }
+  .part .tag { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+  .part code { font-size: 0.85rem; }
+  @media (max-width: 640px) { .parts { grid-template-columns: 1fr; } }
+
+  /* Diagram */
+  figure { margin: 0; }
+  .diagram { background: var(--surface); border: 1.5px solid var(--line); border-radius: 18px; padding: 16px; overflow-x: auto; }
+  .diagram svg { display: block; width: 100%; min-width: 560px; height: auto; }
+  .diagram text { font-family: var(--font-body); fill: var(--ink); }
+  .diagram .lbl { font-size: 14px; font-weight: 700; }
+  .diagram .sub { font-size: 12px; fill: var(--ink-2); }
+  .diagram .box { fill: var(--surface-2); stroke: var(--line); stroke-width: 1.5; }
+  .diagram .box-brand { fill: var(--brand-soft); stroke: var(--brand); stroke-width: 1.5; }
+  .diagram .box-ai { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 6 4; }
+  .diagram .arrow { stroke: var(--ink-2); stroke-width: 1.8; fill: none; marker-end: url(#arrowhead); }
+  .diagram .arrow-ai { stroke: var(--accent); stroke-width: 1.8; fill: none; stroke-dasharray: 5 4; marker-end: url(#arrowhead-ai); }
+  .diagram .zone { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 3 5; }
+  .diagram .zone-lbl { font-size: 12px; font-weight: 700; fill: var(--ink-2); letter-spacing: 0.06em; }
+  figcaption { margin-top: 8px; font-size: 0.9rem; color: var(--ink-2); }
+
+  /* Comparison */
+  .compare { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 14px; overflow: hidden; font-size: 0.95rem; }
+  .compare th, .compare td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .compare thead th { background: var(--surface-2); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
+  .compare tr:last-child td, .compare tr:last-child th { border-bottom: 0; }
+  .table-wrap { overflow-x: auto; border: 1.5px solid var(--line); border-radius: 14px; }
+
+  /* Guardrails */
+  .rules { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  .rules li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 10px; align-items: start; }
+  .rules .ico {
+    width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+    background: var(--brand-soft); color: var(--brand); font-weight: 700;
+  }
+
+  /* Q&A */
+  details { background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 0 16px; }
+  details + details { margin-top: 10px; }
+  summary { cursor: pointer; font-weight: 700; padding: 14px 0; min-height: 44px; }
+  details p { padding-bottom: 14px; color: var(--ink-2); }
+  :focus-visible { outline: 3px solid var(--sky); outline-offset: 2px; border-radius: 6px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex; gap: 4px; padding: 4px; border-radius: 14px;
+    background: var(--surface); border: 1.5px solid var(--line);
+    position: sticky; top: 8px; z-index: 5;
+  }
+  .tab {
+    flex: 1; min-height: 44px; border: 0; border-radius: 10px; cursor: pointer;
+    background: transparent; color: var(--ink-2); font: inherit; font-weight: 700;
+  }
+  .tab[aria-selected='true'] { background: var(--brand); color: var(--surface); }
+  .panel { display: grid; gap: 56px; }
+  .panel[hidden] { display: none; }
+  .panel:focus { outline: none; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; color: var(--ink-2); font-weight: 700; }
+  .flow span {
+    padding: 4px 10px; border-radius: 999px; background: var(--brand-soft); color: var(--brand);
+    font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; font-weight: 700;
+  }
+  .flow span.opt { background: var(--accent-soft); color: var(--ink); border: 1px dashed var(--accent); }
+  .code {
+    margin: 0; padding: 14px 16px; border-radius: 14px; overflow-x: auto;
+    background: var(--surface); border: 1.5px solid var(--line);
+    font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; line-height: 1.55;
+  }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 0.88em; }
+  .numbered { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; }
+
+  .parts.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 760px) { .parts.three { grid-template-columns: 1fr; } }
+  .part a { color: var(--brand); font-weight: 700; text-underline-offset: 3px; overflow-wrap: anywhere; }
+
+  footer { color: var(--ink-2); font-size: 0.9rem; border-top: 1px solid var(--line); padding-top: 18px; }
+</style>
+</head>
+<body>
+<main>
+
+  <header style="display:grid;gap:14px">
+    <p class="kicker">Humancareers · Career Plaza</p>
+    <h1>How Career Plaza works</h1>
+    <p class="lead">A plain-language guide to what happens inside the game, from the moment a student opens it to the growth record they leave with.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Choose a view">
+    <button class="tab" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true">How it works</button>
+    <button class="tab" role="tab" id="tab-tech" aria-controls="panel-tech" aria-selected="false" tabindex="-1">Tech side</button>
+  </div>
+
+  <div class="panel" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" tabindex="0">
+
+  <section aria-labelledby="idea-h">
+    <h2 id="idea-h" class="sr" style="position:absolute;left:-9999px">The idea</h2>
+    <p class="idea">Students try a real kind of job for a few minutes, notice what they used and enjoyed, and leave with a record of it. Nothing is graded.</p>
+    <p>Career Plaza is a small 3D town square with four buildings. Each building is an internship based on a real job posting. Inside, a manager gives the student a task, the student does it, and the manager reacts. At the end, everything the student did is collected into a <strong>growth record</strong>.</p>
+  </section>
+
+  <section aria-labelledby="loop-h">
+    <p class="kicker">The big loop</p>
+    <h2 id="loop-h">What a student does, start to finish</h2>
+    <div class="loop-wrap">
+      <ol class="loop">
+        <li><strong>Self-check</strong><span class="muted small">A one-minute check: "How confident am I?" and "What draws me?" Optional.</span></li>
+        <li><strong>Pick a building</strong><span class="muted small">Any of the four, in any order. No wrong choice.</span></li>
+        <li><strong>Do the task</strong><span class="muted small">Choose an approach, look at what it turned up, write a short answer.</span></li>
+        <li><strong>See the record</strong><span class="muted small">What you used, enjoyed, and could try next.</span></li>
+      </ol>
+      <p class="loop-back">↺ Go back to the plaza and try another building. Revisiting a building brings a new twist.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="inside-h">
+    <p class="kicker">Inside one building</p>
+    <h2 id="inside-h">One scenario, step by step</h2>
+    <p class="muted">Example: the Harbourfront Resort, where the student is a Communications Intern working with Priya.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="rail"><span class="dot">1</span><span class="line"></span></div>
+        <div class="body">
+          <h3>The manager sets the scene</h3>
+          <p class="say"><b>Priya:</b> "Welcome aboard! Our volunteer day at a senior activity centre is in two weeks, but only 12 of 40 spots are filled."</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="rail"><span class="dot">2</span><span class="line"></span></div>
+        <div class="body">
+          <h3>The student picks an approach</h3>
+          <p>Three options, each leaning on a different skill. For example, "Look at last year's volunteer data" uses <strong>Analysis</strong>. The manager reacts straight away in their own voice, and every later action (skipping, revising, rating) gets a reaction too.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="rail"><span class="dot">3</span><span class="line"></span></div>
+        <div class="body">
+          <h3>They see what their approach turned up</h3>
+          <div class="findings">
+            <table>
+              <tr><td>Front Office</td><td>14</td></tr>
+              <tr><td>Food &amp; Beverage</td><td>9</td></tr>
+              <tr><td>Housekeeping</td><td>3</td></tr>
+              <tr><td>Security</td><td>0</td></tr>
+            </table>
+            <p class="note"><strong>Worth noticing:</strong> night-shift teams barely joined.</p>
+          </div>
+          <p class="muted small">Practice data. A <strong>"Your task"</strong> box above it keeps the situation, any new twist and the chosen approach on screen while the student writes, so nobody loses track.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="rail"><span class="dot">4</span><span class="line"></span></div>
+        <div class="body">
+          <h3>They write a short answer</h3>
+          <p>For example, the first line of a message to staff. This becomes a <strong>work sample</strong> in the growth record.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="rail"><span class="dot">5</span><span class="line"></span></div>
+        <div class="body">
+          <h3>Coaching, only if it's clearly weak <span class="ai-tag">Smarter with AI</span></h3>
+          <p>If the answer is only a few words or off-topic, Priya gives <strong>one</strong> tip and offers "Revise my answer" or "Keep it and continue". Revising is always optional, and both drafts are kept.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="rail"><span class="dot">6</span><span class="line"></span></div>
+        <div class="body">
+          <h3>A follow-up question <span class="ai-tag">AI only</span></h3>
+          <p class="say"><b>Priya:</b> "Why did you lead with the seniors rather than the date?"</p>
+          <p class="muted small">Like a real manager asking about your thinking. The student can reply or skip.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="rail"><span class="dot">7</span><span class="line"></span></div>
+        <div class="body">
+          <h3>Feedback and skill tags</h3>
+          <p>Priya reacts to the choice. Skill tags float up, like <strong>+ Analysis</strong>, to show which skills the student just used.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="rail"><span class="dot">8</span><span class="line"></span></div>
+        <div class="body">
+          <h3>A reflective question, then ratings</h3>
+          <p>"Did digging into the data feel satisfying or slow?" Then the student rates how much they <strong>enjoyed</strong> it and how <strong>confident</strong> they felt, from 1 to 5. These are feelings, not marks.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="rail"><span class="dot">9</span><span class="line"></span></div>
+        <div class="body">
+          <h3>Learn more</h3>
+          <p>A short list of real links about this kind of work, plus NTU's career office. Then back to the plaza, where the building lights up on the career map.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="record-h">
+    <p class="kicker">The output</p>
+    <h2 id="record-h">The growth record</h2>
+    <p>Every finished scenario is saved. The growth record turns them into a picture of the student, built only from what they did and said:</p>
+    <div class="parts">
+      <div class="part"><span class="tag">What you tried</span><p>Each internship, the approach chosen, and the student's own words (first draft and revision).</p></div>
+      <div class="part"><span class="tag">Then and now</span><p>The start self-check next to what actually happened. For example: "You rated yourself lower on Analysis than you felt when using it."</p></div>
+      <div class="part"><span class="tag">Skills across fields</span><p>Which of the four skills (Research, Communication, Organisation, Analysis) showed up, and in which buildings. One skill can work in very different jobs.</p></div>
+      <div class="part"><span class="tag">What's next</span><p>Skills to grow, ideas to try next, links to learn more, and (with AI) a short personal summary.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="parts-h">
+    <p class="kicker">Under the hood</p>
+    <h2 id="parts-h">The four parts that make it work</h2>
+    <p>Think of the product as four separate pieces that each do one job. Keeping them separate is what makes the game easy to change.</p>
+
+    <figure class="diagram" aria-label="Diagram of the four parts of Career Plaza">
+      <svg viewBox="0 0 720 360" role="img" aria-labelledby="dg-t">
+        <title id="dg-t">The content file feeds the game logic, which drives the visuals and the saved record. An optional AI server connects to the game logic.</title>
+        <defs>
+          <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill: var(--ink-2)"/></marker>
+          <marker id="arrowhead-ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill: var(--accent)"/></marker>
+        </defs>
+
+        <rect class="zone" x="10" y="14" width="530" height="332" rx="16"/>
+        <text class="zone-lbl" x="26" y="38">IN THE STUDENT'S BROWSER</text>
+
+        <!-- Content -->
+        <rect class="box" x="30" y="60" width="160" height="96" rx="12"/>
+        <text class="lbl" x="110" y="96" text-anchor="middle">1. Content file</text>
+        <text class="sub" x="110" y="118" text-anchor="middle">All the words: jobs,</text>
+        <text class="sub" x="110" y="134" text-anchor="middle">lines, findings, links</text>
+
+        <!-- Logic -->
+        <rect class="box-brand" x="220" y="60" width="160" height="96" rx="12"/>
+        <text class="lbl" x="300" y="96" text-anchor="middle">2. Game logic</text>
+        <text class="sub" x="300" y="118" text-anchor="middle">The steps, coaching,</text>
+        <text class="sub" x="300" y="134" text-anchor="middle">the growth record</text>
+
+        <!-- Visuals -->
+        <rect class="box" x="400" y="60" width="128" height="96" rx="12"/>
+        <text class="lbl" x="464" y="96" text-anchor="middle">3. Visuals</text>
+        <text class="sub" x="464" y="118" text-anchor="middle">3D plaza, or</text>
+        <text class="sub" x="464" y="134" text-anchor="middle">Simple mode</text>
+
+        <!-- Save -->
+        <rect class="box" x="220" y="220" width="160" height="96" rx="12"/>
+        <text class="lbl" x="300" y="256" text-anchor="middle">4. Saved record</text>
+        <text class="sub" x="300" y="278" text-anchor="middle">Kept in this browser</text>
+        <text class="sub" x="300" y="294" text-anchor="middle">only, never uploaded</text>
+
+        <!-- AI -->
+        <rect class="box-ai" x="566" y="60" width="140" height="96" rx="12"/>
+        <text class="lbl" x="636" y="92" text-anchor="middle">Optional AI</text>
+        <text class="sub" x="636" y="114" text-anchor="middle">On a server, with a</text>
+        <text class="sub" x="636" y="130" text-anchor="middle">private key</text>
+
+        <path class="arrow" d="M190 108 H214"/>
+        <path class="arrow" d="M380 108 H394"/>
+        <path class="arrow" d="M300 156 V214"/>
+        <path class="arrow-ai" d="M636 156 V190 H340 V164"/>
+        <text class="sub" x="488" y="184" text-anchor="middle">asks for the manager's words</text>
+      </svg>
+      <figcaption>The arrows show which part uses which. The dashed AI box is optional: without it, the game uses the written lines from the content file.</figcaption>
+    </figure>
+
+    <div class="parts">
+      <div class="part">
+        <span class="tag">1 · Content file</span>
+        <h3>The script</h3>
+        <p>One file holds every word in the game: the four jobs, what each manager says, the options, the findings, the coaching tips and the links. Changing the words never needs code.</p>
+        <p class="muted small"><code>src/content/scenarios.json</code></p>
+      </div>
+      <div class="part">
+        <span class="tag">2 · Game logic</span>
+        <h3>The rules</h3>
+        <p>Decides what happens next: which step comes after which, when to coach, which skills to award, and how to build the growth record and "Then and now".</p>
+        <p class="muted small"><code>src/ui/app.ts</code>, <code>src/record.ts</code></p>
+      </div>
+      <div class="part">
+        <span class="tag">3 · Visuals</span>
+        <h3>The stage</h3>
+        <p>The 3D plaza, buildings, rooms and characters, all drawn from code. It's swappable: older devices get <strong>Simple mode</strong>, the same game without 3D.</p>
+        <p class="muted small"><code>src/world/</code></p>
+      </div>
+      <div class="part">
+        <span class="tag">4 · Saved record</span>
+        <h3>The memory</h3>
+        <p>Finished scenarios and self-checks are saved in the student's own browser. Nothing is sent to a server, so there are no accounts and no shared database.</p>
+        <p class="muted small"><code>src/store.ts</code></p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="ai-h">
+    <p class="kicker">The AI</p>
+    <h2 id="ai-h">What the AI adds, and how it's kept safe</h2>
+    <p>The game works fully without AI. The AI makes the managers feel like real people: it reads what the student actually wrote and responds to it, in each manager's personality.</p>
+
+    <div class="table-wrap">
+      <table class="compare">
+        <thead><tr><th scope="col">Moment</th><th scope="col">Without AI</th><th scope="col">With AI</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Coaching</th><td>Simple checks: too short, or not about the task</td><td>A tip about the student's own sentence and the findings</td></tr>
+          <tr><th scope="row">Follow-up</th><td>Skipped</td><td>One curious question about their answer</td></tr>
+          <tr><th scope="row">Feedback</th><td>Written lines, in the manager's voice</td><td>A reply to what they wrote, which can mention earlier buildings</td></tr>
+          <tr><th scope="row">Growth record</th><td>All sections except the summary</td><td>Plus a short personal summary</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Each manager has a personality</h3>
+    <div class="parts">
+      <div class="part"><span class="tag">Priya · Resort</span><p>Warm, upbeat, people-first. "Yay, I'm so glad this one clicked for you!"</p></div>
+      <div class="part"><span class="tag">Daniel · Policy</span><p>Calm, precise, dry humour. "I'll note your interest. Accurately."</p></div>
+      <div class="part"><span class="tag">Grace · Foundation</span><p>Thoughtful and gentle. "Knowing what doesn't fit is part of finding what does."</p></div>
+      <div class="part"><span class="tag">Marcus · Workforce</span><p>Fast and direct. "Good. Sharpen it. One clear point."</p></div>
+    </div>
+
+    <h3>The guardrails</h3>
+    <ul class="rules">
+      <li><span class="ico" aria-hidden="true">⌂</span><span><strong>Server side only.</strong> The AI never runs in the student's browser. It runs in a small server function (on Vercel for the live link, or on a laptop for development), and the GitHub Pages copy has no AI at all.</span></li>
+      <li><span class="ico" aria-hidden="true">✦</span><span><strong>The key stays private.</strong> It lives in a private setting on Vercel, or in a hidden file (<code>.env.local</code>) on a laptop. It is never uploaded to GitHub and never sent to the browser.</span></li>
+      <li><span class="ico" aria-hidden="true">✎</span><span><strong>No open chat.</strong> Students only fill in short boxes. Their text is treated as an answer to react to, never as instructions to the AI.</span></li>
+      <li><span class="ico" aria-hidden="true">✓</span><span><strong>Every reply is checked.</strong> Replies must be short, in a fixed format, with no code, links, scores or "best fit". Anything else is thrown away.</span></li>
+      <li><span class="ico" aria-hidden="true">⚑</span><span><strong>Only the game can use it.</strong> The live function refuses requests that don't come from the site itself, and limits each visitor to 30 AI calls per 10 minutes.</span></li>
+      <li><span class="ico" aria-hidden="true">↺</span><span><strong>It never breaks the game.</strong> If an AI reply hiccups, the server tries once more. If that fails too, or the AI is off, or a check fails, the written line from the content file is used instead.</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="where-h">
+    <p class="kicker">Where it runs</p>
+    <h2 id="where-h">Three ways to play</h2>
+    <div class="parts three">
+      <div class="part">
+        <span class="tag">Live, with AI</span>
+        <h3>The link to share</h3>
+        <p>Hosted free on Vercel, with the AI characters on. Updates when the <code>main</code> branch changes.</p>
+        <p class="small"><a href="https://career-plaza-neon.vercel.app/">career-plaza-neon.vercel.app</a></p>
+      </div>
+      <div class="part">
+        <span class="tag">Live, scripted</span>
+        <h3>The no-AI copy</h3>
+        <p>Hosted free on GitHub Pages. The same game with written lines only, so it never uses a key. Updates when <code>main</code> changes.</p>
+        <p class="small"><a href="https://nasha77.github.io/career-plaza/">nasha77.github.io/career-plaza</a></p>
+      </div>
+      <div class="part">
+        <span class="tag">On your laptop</span>
+        <h3>For development</h3>
+        <p>Run <code>npm run dev</code> in the project folder. Add your own free Gemini key in <code>.env.local</code> to turn on the AI.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="faq-h">
+    <p class="kicker">Common questions</p>
+    <h2 id="faq-h">Quick answers</h2>
+    <div>
+      <details><summary>Why are there no scores?</summary><p>The goal is exploration, not judgement. Students should notice what they enjoy and what they're good at, which can be different, without feeling tested. Ratings are their own feelings, and feedback always names what works plus one next step.</p></details>
+      <details><summary>Where is a student's data stored?</summary><p>Progress is saved only in their own browser on their own device. There are no accounts and no database. Clearing the browser or pressing "Start over" removes it. When the AI is on, the text a student types in an answer box is sent through our server function to Google's Gemini to get a reply. The game doesn't save it anywhere else.</p></details>
+      <details><summary>Are the jobs real?</summary><p>Each internship is based on a real job posting, with the employer renamed. The findings in each scenario are made-up practice data, and the game says so on screen.</p></details>
+      <details><summary>How do we change the words or add a job?</summary><p>Edit <code>src/content/scenarios.json</code>. Changing text needs no code. Adding a fifth building would need small code changes, mainly for the 3D building and room.</p></details>
+      <details><summary>Does the AI cost money?</summary><p>Not to students, and not to us while billing stays off. The live link uses one free Gemini key from Google AI Studio, so everyone shares its free daily limit. If it runs out, the game quietly uses its written lines until the limit resets.</p></details>
+      <details><summary>What if the AI fails or someone tries to misuse it?</summary><p>The server retries once for a hiccup, then falls back to the written lines, so students never see an error. Only the game itself can call the AI, each visitor is limited to 30 calls per 10 minutes, and every reply is checked before it is shown.</p></details>
+    </div>
+  </section>
+
+  </div>
+
+  <div class="panel" id="panel-tech" role="tabpanel" aria-labelledby="tab-tech" tabindex="0" hidden>
+
+  <section aria-labelledby="stack-h">
+    <p class="kicker">Tech side</p>
+    <h2 id="stack-h">The stack</h2>
+    <p>A static web app, plus one small serverless function for the optional AI. No database, no accounts. Everything the student sees is built in the browser.</p>
+    <div class="table-wrap">
+      <table class="compare">
+        <thead><tr><th scope="col">Layer</th><th scope="col">Tool</th><th scope="col">Why</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Language</th><td>TypeScript 5.6 (strict mode)</td><td>Catches mistakes before the game runs</td></tr>
+          <tr><th scope="row">Build tool</th><td>Vite 5</td><td>Fast local dev server; bundles to plain static files</td></tr>
+          <tr><th scope="row">3D</th><td>three.js 0.170 (no framework)</td><td>WebGL rendering with full control over performance</td></tr>
+          <tr><th scope="row">Interface</th><td>Plain HTML and CSS over the 3D canvas</td><td>Readable, accessible text; easy to restyle</td></tr>
+          <tr><th scope="row">Saving</th><td>Browser <code>localStorage</code></td><td>No server needed; data stays on the student's device</td></tr>
+          <tr><th scope="row">AI (optional)</th><td>Google Gemini REST API, called from a server function: a Vercel function online, a Vite plugin locally</td><td>Free tier, and the key never reaches the browser</td></tr>
+          <tr><th scope="row">Hosting</th><td>Vercel (the live link with AI) and GitHub Pages (a scripted copy, deployed by GitHub Actions)</td><td>Both free; both redeploy on every push to <code>main</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="arch-h">
+    <p class="kicker">Architecture</p>
+    <h2 id="arch-h">How the code fits together</h2>
+    <p>The app controller is the centre. It reads the content, runs the scenario steps, asks a <em>feedback provider</em> for the manager's words, tells the <em>world</em> what to show, and saves results through the <em>store</em>.</p>
+
+    <figure class="diagram" aria-label="Architecture diagram">
+      <svg viewBox="0 0 720 400" role="img" aria-labelledby="arch-t">
+        <title id="arch-t">The app controller connects content, feedback providers, the world layer, the store and the record builder. The AI provider calls the AI server function, which calls Gemini.</title>
+        <defs>
+          <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill: var(--ink-2)"/></marker>
+          <marker id="ah2ai" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" style="fill: var(--accent)"/></marker>
+        </defs>
+
+        <rect class="zone" x="8" y="10" width="496" height="380" rx="16"/>
+        <text class="zone-lbl" x="24" y="34">BROWSER (the built site)</text>
+        <rect class="zone" x="520" y="10" width="192" height="380" rx="16"/>
+        <text class="zone-lbl" x="536" y="34">SERVER SIDE ONLY</text>
+
+        <rect class="box" x="24" y="56" width="140" height="64" rx="10"/>
+        <text class="lbl" x="94" y="84" text-anchor="middle">content/</text>
+        <text class="sub" x="94" y="104" text-anchor="middle">scenarios.json</text>
+
+        <rect class="box-brand" x="190" y="150" width="140" height="74" rx="10"/>
+        <text class="lbl" x="260" y="182" text-anchor="middle">App controller</text>
+        <text class="sub" x="260" y="202" text-anchor="middle">ui/app.ts</text>
+
+        <rect class="box" x="24" y="268" width="140" height="64" rx="10"/>
+        <text class="lbl" x="94" y="296" text-anchor="middle">Store</text>
+        <text class="sub" x="94" y="316" text-anchor="middle">store.ts</text>
+
+        <rect class="box" x="190" y="300" width="140" height="64" rx="10"/>
+        <text class="lbl" x="260" y="328" text-anchor="middle">Record builder</text>
+        <text class="sub" x="260" y="348" text-anchor="middle">record.ts</text>
+
+        <rect class="box" x="352" y="56" width="140" height="74" rx="10"/>
+        <text class="lbl" x="422" y="84" text-anchor="middle">World</text>
+        <text class="sub" x="422" y="104" text-anchor="middle">World3D or</text>
+        <text class="sub" x="422" y="120" text-anchor="middle">SimpleWorld</text>
+
+        <rect class="box" x="352" y="250" width="140" height="80" rx="10"/>
+        <text class="lbl" x="422" y="276" text-anchor="middle">Feedback</text>
+        <text class="sub" x="422" y="296" text-anchor="middle">Scripted, Coach,</text>
+        <text class="sub" x="422" y="312" text-anchor="middle">AiProvider</text>
+
+        <rect class="box-ai" x="540" y="250" width="152" height="80" rx="10"/>
+        <text class="lbl" x="616" y="276" text-anchor="middle">server/ + api/</text>
+        <text class="sub" x="616" y="296" text-anchor="middle">/api/ai/* routes,</text>
+        <text class="sub" x="616" y="312" text-anchor="middle">prompts, checks</text>
+
+        <rect class="box-ai" x="540" y="80" width="152" height="64" rx="10"/>
+        <text class="lbl" x="616" y="108" text-anchor="middle">Gemini API</text>
+        <text class="sub" x="616" y="128" text-anchor="middle">generateContent</text>
+
+        <path class="arrow" marker-end="url(#ah2)" d="M164 96 C200 100 230 120 246 146"/>
+        <path class="arrow" marker-end="url(#ah2)" d="M330 172 C350 160 360 150 380 134"/>
+        <path class="arrow" marker-end="url(#ah2)" d="M330 206 C350 220 370 236 384 246"/>
+        <path class="arrow" marker-end="url(#ah2)" d="M200 224 C170 250 150 260 140 266"/>
+        <path class="arrow" marker-end="url(#ah2)" d="M260 224 V294"/>
+        <path class="arrow-ai" marker-end="url(#ah2ai)" d="M492 290 H534"/>
+        <path class="arrow-ai" marker-end="url(#ah2ai)" d="M616 250 V150"/>
+      </svg>
+      <figcaption>Solid arrows run in every version. The dashed AI parts run on a server (the Vite plugin locally, or the Vercel function online) and need a key. The GitHub Pages build never contains them.</figcaption>
+    </figure>
+
+    <div class="parts">
+      <div class="part"><span class="tag">Separation</span><p>The game logic never touches three.js directly. It talks to a small <code>World</code> interface (<code>enter</code>, <code>exit</code>, <code>setVisited</code>, <code>setTalking</code>…). That's why Simple mode is a drop-in swap.</p></div>
+      <div class="part"><span class="tag">Providers</span><p>The manager's words come from a <code>FeedbackProvider</code>. <code>ScriptedProvider</code> reads the content file; <code>AiProvider</code> asks the AI server and falls back to the scripted one. Skill tags always come from the content file.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="flow-h">
+    <p class="kicker">Scenario engine</p>
+    <h2 id="flow-h">A small state machine</h2>
+    <p>Each visit to a building is a <code>Run</code> object that moves through fixed steps. Two steps are conditional.</p>
+    <p class="flow"><span>intro</span>→<span>choose</span>→<span>write</span>→<span class="opt">coach?</span>→<span class="opt">follow-up?</span>→<span>feedback</span>→<span>reflect</span>→<span>rate</span>→<span>resources</span></p>
+    <ul class="rules">
+      <li><span class="ico" aria-hidden="true">?</span><span><strong>coach</strong> appears only if the answer is clearly weak (checked by <code>feedback/coach.ts</code>, or by the AI). The student can revise up to two times; the first draft is kept.</span></li>
+      <li><span class="ico" aria-hidden="true">?</span><span><strong>follow-up</strong> appears only when the AI is on and the student wrote something.</span></li>
+      <li><span class="ico" aria-hidden="true">✓</span><span>The attempt is saved at <strong>rate</strong>, so leaving during <strong>resources</strong> loses nothing. Leaving earlier asks for confirmation and discards the run.</span></li>
+      <li><span class="ico" aria-hidden="true">↺</span><span>Each action can queue one manager reaction (<code>pendingLine</code>), which is spoken at the start of the next step.</span></li>
+      <li><span class="ico" aria-hidden="true">▤</span><span>A <strong>task reminder</strong> and the <strong>findings card</strong> for the chosen approach stay on screen during write, coach and follow-up. The same findings are given to the AI.</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="data-h">
+    <p class="kicker">Data</p>
+    <h2 id="data-h">What gets saved</h2>
+    <p>One JSON object in <code>localStorage</code> under the key <code>careerPlaza.v2</code>. Every read and write is wrapped so the game still works (from memory) if storage is blocked. Saves from the first version are cleared on load.</p>
+<pre class="code"><code>SaveState = {
+  version: 2,
+  attempts: Attempt[],      // one per finished scenario
+  selfChecks: SelfCheck[],  // first = start check, later = retakes
+}
+
+Attempt = {
+  scenarioId, choiceId, startedAt, isRevisit,
+  writtenResponse, firstDraft?, revisions?, reflectionNote?,
+  enjoyment: 1-5, confidence: 1-5, wantsMore,
+  skills: [{ skill, weight }]   // weight 2 = main skill, 1 = also used
+}</code></pre>
+    <p class="muted small">The growth record is never stored. <code>record.ts</code> rebuilds it from the attempts each time: skill totals, skills by building, gaps, "try next" and "Then and now".</p>
+  </section>
+
+  <section aria-labelledby="three-h">
+    <p class="kicker">3D engine</p>
+    <h2 id="three-h">How the plaza is drawn</h2>
+    <div class="parts">
+      <div class="part"><span class="tag">Built from code</span><p>No model or image files. Buildings, rooms and characters are boxes, cylinders and spheres. Signs, charts and floors are drawn with the canvas API at runtime.</p></div>
+      <div class="part"><span class="tag">Kept light</span><p>Trees, windows, grass and books use instancing (one draw call for many copies). Geometries and materials are cached by a <code>Kit</code> class and disposed when a room closes.</p></div>
+      <div class="part"><span class="tag">Light and shadow</span><p>Filmic tone mapping, a hemisphere light and one low sun, always in daytime whatever the device's theme. One soft shadow map, re-rendered only when something moves. Pixel ratio capped at 2 for phones.</p></div>
+      <div class="part"><span class="tag">Camera and motion</span><p>Eased camera flights into each door, an iris transition into the room, a slow idle orbit. With reduced motion on, these become quick fades, and the scene only re-renders when something changes.</p></div>
+    </div>
+    <p class="muted small">If WebGL can't start, the game catches the error and switches to Simple mode automatically.</p>
+  </section>
+
+  <section aria-labelledby="aitech-h">
+    <p class="kicker">AI pipeline</p>
+    <h2 id="aitech-h">From a student's sentence to a manager's reply</h2>
+    <ol class="numbered">
+      <li>The browser calls an AI route, for example <code>POST /api/ai/coach</code>, with the scenario, the choice and the student's text. The address is the same locally and online.</li>
+      <li>Something on the server picks it up. Locally, a Vite plugin (<code>server/ai-plugin.ts</code>) does. Online, a Vercel function (<code>api/ai.ts</code>, routed by <code>vercel.json</code>) does. Both run the same shared core, <code>server/ai-core.ts</code>.</li>
+      <li>Online, the function first checks that the request comes from the site itself (the <code>Origin</code> header), applies a per-visitor limit, and caps the request size.</li>
+      <li><code>server/prompts.ts</code> builds the prompt from the content file: the manager's personality, the task, the findings on screen, and the student's text inside tags marked as data.</li>
+      <li><code>server/gemini.ts</code> calls Gemini's <code>generateContent</code> with a <strong>response schema</strong>, so the reply comes back as fixed JSON fields. The key is sent in a header, never in a URL.</li>
+      <li>The reply is checked: field lengths, questions ending in "?", and no code, links, tags, scores or "best fit".</li>
+      <li>If something hiccups (a timeout, a server error, an empty reply or a failed check), the core <strong>retries once</strong>. It never retries a rejected key or the free limit. If it still fails, the route returns an error and the game uses the scripted line.</li>
+    </ol>
+    <div class="table-wrap">
+      <table class="compare">
+        <thead><tr><th scope="col">Route</th><th scope="col">Returns</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><code>GET /api/ai/status</code></th><td>Whether a key is loaded (shows the "AI on" badge)</td></tr>
+          <tr><th scope="row"><code>POST /api/ai/coach</code></th><td><code>status</code> (solid or could_strengthen), <code>whatWorks</code>, <code>tip</code></td></tr>
+          <tr><th scope="row"><code>POST /api/ai/followup</code></th><td>One follow-up <code>question</code></td></tr>
+          <tr><th scope="row"><code>POST /api/ai/feedback</code></th><td><code>npcReaction</code>, <code>acknowledgement</code>, <code>reflectiveQuestion</code></td></tr>
+          <tr><th scope="row"><code>POST /api/ai/summary</code></th><td>2 to 3 <code>paragraphs</code> for the growth record</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="parts">
+      <div class="part"><span class="tag">Limits</span><p>Inputs capped at 400 characters, bodies at 20 KB. Online: 30 AI calls per visitor per 10 minutes. Locally: 120 calls per run, 20 per minute. 12-second Gemini timeout per try; the browser waits up to 22 seconds so a retry fits.</p></div>
+      <div class="part"><span class="tag">Keeping it out of the scripted copy</span><p>A build flag, <code>__AI_ROUTES__</code>, is true under <code>npm run dev</code> and in Vercel builds, and false everywhere else. In the GitHub Pages build the AI calls are removed entirely. No build contains the key.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="deploy-h">
+    <p class="kicker">Build and deploy</p>
+    <h2 id="deploy-h">Getting it online</h2>
+    <div class="table-wrap">
+      <table class="compare">
+        <thead><tr><th scope="col">Command</th><th scope="col">What it does</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><code>npm run dev</code></th><td>Local dev server with live reload, plus the AI routes if a key is in <code>.env.local</code></td></tr>
+          <tr><th scope="row"><code>npm run build</code></th><td>Type-checks, then bundles to static files in <code>dist/</code></td></tr>
+          <tr><th scope="row"><code>npm run build:single</code></th><td>One self-contained HTML file with CSS and JS inlined</td></tr>
+          <tr><th scope="row">Push to <code>main</code></th><td>Two deploys start: Vercel builds the site and the AI function, and GitHub Actions deploys the scripted copy to GitHub Pages</td></tr>
+          <tr><th scope="row">Vercel settings</th><td>Environment Variables hold <code>GEMINI_API_KEY</code> (and optionally <code>GEMINI_MODEL</code>). Settings → Git picks which branch is "production".</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted small">The 3D engine is loaded as a separate chunk (about 150 KB compressed), so the rest of the app appears first.</p>
+  </section>
+
+  <section aria-labelledby="extend-h">
+    <p class="kicker">Changing things</p>
+    <h2 id="extend-h">Common changes and where to make them</h2>
+    <div class="table-wrap">
+      <table class="compare">
+        <thead><tr><th scope="col">To…</th><th scope="col">Edit</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Change any wording, findings, tips or links</th><td><code>src/content/scenarios.json</code> only</td></tr>
+          <tr><th scope="row">Change a manager's personality</th><td><code>persona</code> and <code>reactions</code> in the content file</td></tr>
+          <tr><th scope="row">Change what the AI is told</th><td><code>server/prompts.ts</code></td></tr>
+          <tr><th scope="row">Use a different Gemini model</th><td><code>GEMINI_MODEL</code> in <code>.env.local</code>, or in Vercel's Environment Variables</td></tr>
+          <tr><th scope="row">Change the AI call limits or the retry</th><td><code>server/ai-core.ts</code> (shared) and <code>api/ai.ts</code> (online per-visitor limit)</td></tr>
+          <tr><th scope="row">Add a fifth building</th><td>Content file, the <code>ScenarioId</code> type, and the 3D building, room and character in <code>src/world/three/</code></td></tr>
+          <tr><th scope="row">Use Claude or another AI instead</th><td>Add an engine next to <code>server/gemini.ts</code>; the routes and checks stay the same</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="limits-h">
+    <p class="kicker">Known limits</p>
+    <h2 id="limits-h">Worth knowing</h2>
+    <ul class="rules">
+      <li><span class="ico" aria-hidden="true">!</span><span>Progress lives in one browser on one device. There's no sync, and clearing site data removes it.</span></li>
+      <li><span class="ico" aria-hidden="true">!</span><span>Frame rate on low-end phones hasn't been measured on real devices yet.</span></li>
+      <li><span class="ico" aria-hidden="true">!</span><span>On Google's free tier, prompts may be used to improve Google's products, and the live link sends what players type to Google. Use a paid key or an approved route before a real pilot with students.</span></li>
+      <li><span class="ico" aria-hidden="true">!</span><span>The live link shares one free Gemini key, so everyone uses the same daily limit. When it runs out the game uses its written lines until it resets. Keep billing off for the key so it can never charge.</span></li>
+    </ul>
+  </section>
+
+  </div>
+
+  <footer>Career Plaza is the Part 1 prototype of Humancareers: open-ended career exploration for humanities students. It complements, not replaces, real internships and conversations with a career coach.</footer>
+</main>
+<script>
+  // Two tabs; the tech tab can be opened directly with #tech.
+  const tabs = [...document.querySelectorAll('[role="tab"]')];
+  function select(tab, focus) {
+    for (const t of tabs) {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    }
+    if (focus) tab.focus();
+    history.replaceState(null, '', tab.id === 'tab-tech' ? '#tech' : '#overview');
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t, false));
+    t.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        select(next, true);
+      }
+    });
+  });
+  // Follow the address bar too, so a #tech or #overview link works even when the page is already open.
+  function fromHash() {
+    if (location.hash === '#tech') select(document.getElementById('tab-tech'), false);
+    else if (location.hash === '#overview') select(document.getElementById('tab-overview'), false);
+  }
+  window.addEventListener('hashchange', fromHash);
+  fromHash();
+</script>
+</body>
+</html>

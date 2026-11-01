@@ -4,7 +4,18 @@ import type { ScenarioId, TaskIndex } from '../types';
 export interface RoomSetup {
   task: TaskIndex;
   twist: boolean;
+  /** Which Kenney character the player chose. */
+  look: string;
 }
+
+/** Something in a room you can walk up to: the manager, a colleague (by content index) or a spot. */
+export type ThingId = 'manager' | `person:${number}` | `spot:${string}`;
+/** Who an emote or action is for: anything in the room, or the player. */
+export type Who = ThingId | 'player';
+
+export type Mood = 'happy' | 'excited' | 'surprised' | 'thinking' | 'worried' | 'proud' | 'love' | 'idea';
+export type Marker = '!' | 'A' | 'B' | 'C';
+export type BodyAction = 'look' | 'nod' | 'shake' | 'cheer' | 'pickup';
 
 /**
  * The visual layer. The game logic only talks to this interface, so the 3D plaza
@@ -18,10 +29,9 @@ export interface World {
   enter(id: ScenarioId, room: RoomSetup, midway?: () => void): Promise<void>;
   /** Move from an interior back out to the plaza. `midway` runs while the screen is veiled. */
   exit(midway?: () => void): Promise<void>;
-  setTalking(who: 'guide' | 'npc' | null): void;
-  /** Show the talking indicator on one of the room's colleagues (index into the building's colleagues). */
-  setPersonTalking(index: number | null): void;
-  /** Screen position (CSS px) above the current NPC's head, if there is one. */
+  /** Who is speaking, for the talking bounce (the plaza guide, or someone in the room). */
+  setTalking(who: 'guide' | Who | null): void;
+  /** Screen position (CSS px) above the current speaker's head, if there is one. */
   npcAnchor(): { x: number; y: number } | null;
   /** Pause rendering while a full-screen page covers the scene. */
   setActive(active: boolean): void;
@@ -29,8 +39,22 @@ export interface World {
   dispose(): void;
   onPick: ((id: ScenarioId) => void) | null;
   onHover: ((id: ScenarioId | null) => void) | null;
-  /** Called when a colleague in the current room is clicked. */
-  onPerson: ((index: number) => void) | null;
+
+  // ---- Inside a room ----
+  /** Called after the player clicks something in the room and has walked over to it. */
+  onThing: ((id: ThingId) => void) | null;
+  /** Walk the player up to something and face it. Resolves on arrival (at once in Simple mode). */
+  goTo(id: ThingId): Promise<void>;
+  /** Let the player walk around, or hold still during a conversation. */
+  setFree(free: boolean): void;
+  /** Frame a conversation between the player and someone, or go back to following the player. */
+  focus(id: ThingId | null): void;
+  emote(who: Who, mood: Mood): void;
+  act(who: Who, action: BodyAction): void;
+  /** Lasting markers over things: the manager's "!" or the approach letters. Replaces the previous set. */
+  mark(marks: Partial<Record<ThingId, Marker>>): void;
+  /** Hover labels for the room's things, set by the game from the content. */
+  setLabels(labels: Partial<Record<ThingId, string>>): void;
 }
 
 export const reducedMotion = () =>

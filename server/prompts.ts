@@ -23,7 +23,7 @@ export function findScenario(id: unknown, taskIndex?: unknown): Scenario | null 
   if (!s) return null;
   if (taskIndex !== 1 || !s.taskB) return s;
   const { managerColleague: _, ...task } = s.taskB;
-  return { ...s, ...task } as Scenario;
+  return { ...s, ...task } as unknown as Scenario;
 }
 
 /** Trim, cap length and drop control characters from anything the student typed. */

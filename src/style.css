@@ -1909,3 +1909,453 @@ body:not(.simple) .title-card {
 .dialogue:has(.chat) {
   max-height: min(100%, 64vh);
 }
+
+/* ---------- Walking around a room ---------- */
+.room-ui {
+  position: absolute;
+  inset: 0 0 auto 0;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px;
+  pointer-events: none;
+}
+.room-banner {
+  width: min(720px, 100%);
+  padding: 10px 14px;
+  background: var(--glass);
+  backdrop-filter: blur(8px);
+}
+.rb-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.rb-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.rb-text strong {
+  font-family: var(--font-display);
+  line-height: 1.2;
+}
+.rb-text .small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.room-banner .steps {
+  display: flex;
+  gap: 4px;
+}
+.objective {
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+}
+.things-btn {
+  flex: none;
+}
+.things-list {
+  margin-top: 8px;
+  max-height: 34vh;
+  overflow: auto;
+  display: grid;
+  gap: 8px;
+}
+.things-list[hidden] {
+  display: none;
+}
+.things-group .label {
+  margin: 0 0 4px;
+}
+.things-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.thing-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+.thing-btn:hover {
+  border-color: var(--brand);
+}
+.thing-btn.marked {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.thing-btn .mark {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #1d1a10;
+  font-weight: 800;
+  font-size: 0.8rem;
+}
+.room-label {
+  position: fixed;
+  z-index: 30;
+  transform: translate(-50%, -100%);
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #fffaf0;
+  color: #4a3b2c;
+  font: 700 0.9rem var(--font-body);
+  box-shadow: 0 4px 14px rgba(40, 30, 10, 0.25);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.room-label[hidden] {
+  display: none;
+}
+
+/* ---------- Animal Crossing-style talk box ---------- */
+.talk {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px 14px;
+  pointer-events: none;
+}
+.talk[hidden] {
+  display: none;
+}
+.talk-box {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: min(52vh, 500px);
+  overflow: auto;
+  padding: 26px 26px 18px;
+  background: #fbf5e4;
+  color: #5a4632;
+  border-radius: 46px 52px 44px 50px / 40px 46px 52px 44px;
+  box-shadow: 0 10px 0 rgba(150, 120, 80, 0.18), 0 14px 34px rgba(60, 40, 10, 0.22);
+  pointer-events: auto;
+  cursor: pointer;
+  animation: talk-in 220ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.talk-box.narration {
+  background: #f3f0ea;
+  color: #4b4a48;
+  font-style: italic;
+}
+@keyframes talk-in {
+  from {
+    transform: translateY(16px) scale(0.96);
+    opacity: 0;
+  }
+}
+.talk-tag {
+  position: absolute;
+  top: -16px;
+  left: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 16px 4px 6px;
+  border-radius: 999px;
+  background: var(--c, #e3a21a);
+  color: #fff;
+  font: 800 1rem var(--font-display);
+  transform: rotate(-4deg);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.15);
+  cursor: default;
+}
+.talk-tag[hidden] {
+  display: none;
+}
+.talk-tag img {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  object-fit: cover;
+}
+.talk-text {
+  margin: 4px 0 0;
+  min-height: 2.8em;
+  font: 700 clamp(1.02rem, 2.4vw, 1.2rem) / 1.5 var(--font-body);
+}
+.talk-text span {
+  display: inline;
+  transition: opacity 80ms;
+}
+.talk-text span.pre {
+  opacity: 0;
+}
+.talk-text .key {
+  color: #d04a3a;
+}
+.talk-next {
+  position: absolute;
+  right: 26px;
+  bottom: 8px;
+  border: 0;
+  background: none;
+  color: #e3a21a;
+  font-size: 1.3rem;
+  cursor: pointer;
+  animation: next-bob 0.9s ease-in-out infinite;
+}
+.talk-next[hidden] {
+  display: none;
+}
+@keyframes next-bob {
+  50% {
+    transform: translateY(4px);
+  }
+}
+.talk-extra {
+  cursor: default;
+  color: var(--ink);
+  font-style: normal;
+}
+.talk-extra:empty {
+  display: none;
+}
+.talk-extra > .block {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.75);
+  color: #33291e;
+}
+.talk-extra textarea {
+  width: 100%;
+  min-width: 0;
+}
+.talk-choices {
+  width: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: none;
+}
+.talk-choice {
+  max-width: min(560px, 92%);
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 24px 24px 6px 24px;
+  background: #fffdf6;
+  color: #4a3b2c;
+  font: 700 1rem / 1.35 var(--font-body);
+  text-align: left;
+  box-shadow: 0 4px 0 rgba(150, 120, 80, 0.25), 0 8px 18px rgba(60, 40, 10, 0.18);
+  pointer-events: auto;
+  cursor: pointer;
+  animation: choice-in 240ms both cubic-bezier(0.2, 1.4, 0.4, 1);
+  animation-delay: calc(var(--i) * 60ms);
+}
+.talk-choice:hover,
+.talk-choice:focus-visible {
+  background: #ffe9a8;
+}
+@keyframes choice-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+
+/* ---------- "You found something!" ---------- */
+.found-wrap {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(20, 30, 25, 0.25);
+  z-index: 20;
+  pointer-events: auto;
+}
+.found {
+  width: min(520px, 100%);
+  max-height: 80vh;
+  overflow: auto;
+  padding: 18px;
+  animation: found-in 420ms cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.found-kicker {
+  margin: 0 0 8px;
+  text-align: center;
+  font: 800 1.3rem var(--font-display);
+  color: var(--accent);
+}
+@keyframes found-in {
+  from {
+    transform: translateY(40px) scale(0.6) rotate(-4deg);
+    opacity: 0;
+  }
+}
+
+/* ---------- Character picker and sound ---------- */
+.look-pick {
+  border: 0;
+  margin: 12px 0 0;
+  padding: 0;
+}
+.look-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.look-opt {
+  position: relative;
+  cursor: pointer;
+}
+.look-opt input {
+  position: absolute;
+  opacity: 0;
+}
+.look-opt img {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  border: 2px solid transparent;
+}
+.look-opt input:checked + img {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 18%, var(--surface));
+}
+.look-opt input:focus-visible + img {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sound-btn {
+  min-width: 44px;
+  padding: 6px 10px;
+}
+
+@media (max-width: 600px) {
+  .talk-box {
+    padding: 22px 18px 14px;
+    max-height: 62vh;
+  }
+  .room-banner .steps {
+    display: none;
+  }
+  .objective {
+    font-size: 0.88rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .talk-box,
+  .talk-choice,
+  .found,
+  .talk-next {
+    animation: none;
+  }
+}
+
+/* The talk box is always the cream Animal Crossing blob, so everything inside it uses light colours. */
+.talk-box,
+.found-wrap {
+  color-scheme: light;
+  --surface: #fffdf7;
+  --surface-2: #f6efdd;
+  --glass: rgba(255, 253, 247, 0.9);
+  --ink: #3b2f22;
+  --ink-2: #6b5a45;
+  --line: #e6d9bd;
+  --brand: #1d5c50;
+  --brand-ink: #ffffff;
+  --accent: #c98a0c;
+  --accent-soft: #fbedc8;
+  --focus: #0f6b9a;
+  --skill-research: #17807a;
+  --skill-communication: #c4462a;
+  --skill-organisation: #4f6f22;
+  --skill-analysis: #9a6800;
+  scrollbar-width: thin;
+  scrollbar-color: #d9c7a0 transparent;
+}
+.found {
+  background: #fffdf7;
+  color: #3b2f22;
+}
+.talk-extra .task-card {
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+.talk-extra .task-card p {
+  margin: 2px 0;
+}
+.talk-extra textarea {
+  background: #fff;
+  color: #2b2219;
+  border-color: #d9c7a0;
+}
+.talk-choice {
+  max-width: min(460px, 88%);
+}
+
+/* Small screens: a slimmer banner, and reply bubbles that scroll instead of running off the top. */
+.talk-choices {
+  max-height: 46vh;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+.talk-choices:empty {
+  display: none;
+}
+@media (max-width: 600px) {
+  .room-banner {
+    padding: 8px 10px;
+  }
+  .rb-text strong {
+    font-size: 0.95rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .rb-text .small {
+    display: none;
+  }
+  .room-banner .bicon-wrap {
+    display: none;
+  }
+  .objective {
+    margin-top: 4px;
+    font-size: 0.85rem;
+  }
+  .things-btn {
+    min-height: 38px;
+    padding: 6px 12px;
+  }
+  .talk-choice {
+    max-width: 94%;
+    padding: 8px 14px;
+    font-size: 0.92rem;
+  }
+  .talk-choices {
+    pointer-events: auto;
+  }
+}

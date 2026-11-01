@@ -1,19 +1,28 @@
 import type { ScenarioId } from '../types';
-import { fade, type RoomSetup, type World } from './types';
+import { fade, type RoomSetup, type ThingId, type World } from './types';
 
 /** Flat 2D fallback: the plaza is the HTML building grid, so this only handles fades. */
 export class SimpleWorld implements World {
   readonly mode = 'simple' as const;
   onPick: ((id: ScenarioId) => void) | null = null;
   onHover: ((id: ScenarioId | null) => void) | null = null;
-  onPerson: ((index: number) => void) | null = null;
+  onThing: ((id: ThingId) => void) | null = null;
 
   constructor(private veil: HTMLElement) {}
 
   setVisited(): void {}
   setHover(): void {}
   setTalking(): void {}
-  setPersonTalking(): void {}
+  // No room to walk around in: the "Things here" list does the job.
+  goTo(): Promise<void> {
+    return Promise.resolve();
+  }
+  setFree(): void {}
+  focus(): void {}
+  emote(): void {}
+  act(): void {}
+  mark(): void {}
+  setLabels(): void {}
   setActive(): void {}
   celebrate(): void {}
   dispose(): void {}

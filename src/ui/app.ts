@@ -1,13 +1,16 @@
 import { CONTENT, SCENARIO_IDS, getScenario, getTask, taskCount, taskManagerIndex } from '../content';
 import type { FeedbackProvider, FeedbackResult } from '../feedback/provider';
 import { aiAvailable, aiCoach, aiFollowup, aiSummary } from '../ai/client';
+import { chime, isMuted, setMuted, unlockAudio, voiceFor, type Voice } from '../audio/voice';
 import { AiProvider } from '../feedback/ai';
 import { MAX_REVISIONS, coachWriting, type CoachResult } from '../feedback/coach';
 import { ScriptedProvider } from '../feedback/scripted';
 import { buildRecord, exploredIds, guideLine, joinList, ratingWord, recordAsText, thenAndNow, type GrowthRecord, type ThenAndNow } from '../record';
 import { clearState, loadState, saveState } from '../store';
 import type { Attempt, ChatLine, ChoiceId, Rating, Resource, SaveState, Scenario, ScenarioId, SelfCheck, SkillName, TaskIndex } from '../types';
-import { reducedMotion, type World } from '../world/types';
+import { CAST } from '../world/three/layouts';
+import { reducedMotion, type Marker, type ThingId, type World } from '../world/types';
+import { Talk, type Speaker } from './talk';
 import {
   buildingIcon,
   h,
@@ -22,7 +25,8 @@ import {
 } from './dom';
 
 type Screen = 'title' | 'selfcheck' | 'plaza' | 'scenario' | 'record';
-type Step = 'brief' | 'intro' | 'choose' | 'write' | 'coach' | 'followup' | 'feedback' | 'reflect' | 'studies' | 'rate' | 'resources';
+/** `brief` is roaming before talking to the manager; `look` is going to see the findings; `done` is roaming after. */
+type Step = 'brief' | 'intro' | 'choose' | 'look' | 'write' | 'coach' | 'followup' | 'feedback' | 'reflect' | 'studies' | 'rate' | 'resources' | 'done';
 
 interface Run {
   scenario: Scenario;
@@ -46,6 +50,8 @@ interface Run {
   enjoyment?: Rating;
   confidence?: Rating;
   wantsMore: boolean;
+  /** After the findings card, walk back to the manager once the conversation closes. */
+  backToManager?: boolean;
 }
 
 export interface Elements {
@@ -70,6 +76,30 @@ const NPC_COLOR: Record<ScenarioId | 'guide', string> = {
   workforce: '#3A4148',
 };
 
+/** Each manager's babble voice: bright and quick, low and even, and so on. Others get one from their name. */
+const VOICES: Record<string, Partial<Voice>> = {
+  Priya: { pitch: 470, wave: 'triangle', range: 0.45 },
+  Daniel: { pitch: 210, wave: 'sine', range: 0.15 },
+  Grace: { pitch: 360, wave: 'sine', range: 0.25 },
+  Marcus: { pitch: 250, wave: 'square', range: 0.3 },
+  'Wei Ling': { pitch: 420, wave: 'square', range: 0.25 },
+  Kenji: { pitch: 290, wave: 'triangle', range: 0.35 },
+  Rachel: { pitch: 390, wave: 'sine', range: 0.2 },
+  Nadia: { pitch: 340, wave: 'triangle', range: 0.3 },
+};
+
+const LOOK_KEY = 'careerPlaza.look';
+const PLAYER_LOOKS = [
+  'character-female-f',
+  'character-male-f',
+  'character-female-b',
+  'character-male-a',
+  'character-female-c',
+  'character-male-d',
+  'character-female-a',
+  'character-male-e',
+];
+
 export class App {
   private save: SaveState = loadState();
   private world: World;
@@ -81,10 +111,38 @@ export class App {
   private justFinished: ScenarioId | null = null;
   /** True only under `npm run dev` with a key in .env.local. */
   private ai = false;
+  private talk: Talk;
+  /** The player's chosen character. */
+  private look = (() => {
+    try {
+      const v = localStorage.getItem(LOOK_KEY);
+      if (v && PLAYER_LOOKS.includes(v)) return v;
+    } catch {
+      /* ignore */
+    }
+    return PLAYER_LOOKS[0];
+  })();
+  /** Inside a conversation (the player can't walk), and inside the task's panels with the manager. */
+  private conversing = false;
+  private inPanel = false;
+  /** Who is speaking in the talk box, for the talking bounce and emotes. */
+  private talkWith: ThingId | null = null;
+  private walkedOnce = false;
 
   constructor(private els: Elements, private opts: AppOptions) {
     this.world = opts.world;
     this.webglFailed = opts.webglFailed;
+    this.talk = new Talk({
+      onSpeak: (talking, mood) => {
+        const who = this.talkWith;
+        this.world.setTalking(talking && who ? who : null);
+        if (mood && who) this.world.emote(who, mood);
+      },
+      announce: (t) => this.announce(t),
+    });
+    // Sound can only start after the first click or key press.
+    document.addEventListener('pointerdown', unlockAudio, { once: true });
+    document.addEventListener('keydown', unlockAudio, { once: true });
     this.bindWorld();
     this.world.setVisited(exploredIds(this.save.attempts));
     if (__AI_ROUTES__) {
@@ -111,8 +169,8 @@ export class App {
     this.world.onPick = (id) => {
       if (this.screen === 'plaza') void this.enterBuilding(id);
     };
-    this.world.onPerson = (i) => {
-      if (this.screen === 'scenario' && this.run) this.openColleague(i);
+    this.world.onThing = (id) => {
+      if (this.screen === 'scenario' && this.run) void this.useThing(id);
     };
     this.world.onHover = (id) => {
       document.querySelectorAll<HTMLElement>('.bbtn').forEach((b) => {
@@ -181,7 +239,23 @@ export class App {
       );
       if (!enabled) right = h('div', { class: 'recwrap' }, right, h('span', { id: 'rec-hint', class: 'sr-only' }, 'Finish one building to open your growth record.'));
     }
-    hud.append(left, map, right ?? h('span', { class: 'hud-spacer' }));
+    const sound = h(
+      'button',
+      {
+        class: 'btn small ghost sound-btn',
+        type: 'button',
+        'aria-pressed': String(!isMuted()),
+        title: isMuted() ? 'Voices are off' : 'Voices are on',
+        onclick: () => {
+          setMuted(!isMuted());
+          unlockAudio();
+          this.renderHud();
+        },
+      },
+      h('span', { 'aria-hidden': 'true' }, isMuted() ? '🔇' : '🔊'),
+      h('span', { class: 'sr-only' }, 'Character voices'),
+    );
+    hud.append(left, map, h('div', { class: 'hud-right' }, sound, right));
   }
 
   // ---- Title ----------------------------------------------------------------
@@ -200,6 +274,7 @@ export class App {
       this.webglFailed
         ? h('p', { class: 'notice', role: 'note' }, "3D couldn't start on this device, so you'll play in Simple mode. Everything else works the same.")
         : null,
+      this.lookPicker(),
       h(
         'div',
         { class: 'actions' },
@@ -211,6 +286,42 @@ export class App {
     );
     this.els.stage.replaceChildren(h('div', { class: 'title-wrap' }, card));
     (card.querySelector('.btn.primary') as HTMLElement | null)?.focus();
+  }
+
+  /** Pick who you walk around as. Remembered on this device. */
+  private lookPicker(): HTMLElement | null {
+    if (this.world.mode !== '3d') return null;
+    const base = `${import.meta.env.BASE_URL}models/characters/previews/`;
+    return h(
+      'fieldset',
+      { class: 'look-pick' },
+      h('legend', { class: 'label' }, 'Choose your character'),
+      h(
+        'div',
+        { class: 'look-row' },
+        PLAYER_LOOKS.map((look, i) =>
+          h(
+            'label',
+            { class: 'look-opt' },
+            h('input', {
+              type: 'radio',
+              name: 'look',
+              value: look,
+              checked: this.look === look,
+              onchange: () => {
+                this.look = look;
+                try {
+                  localStorage.setItem(LOOK_KEY, look);
+                } catch {
+                  /* ignore */
+                }
+              },
+            }),
+            h('img', { src: `${base}${look}.png`, alt: `Character ${i + 1}`, width: 48, height: 48 }),
+          ),
+        ),
+      ),
+    );
   }
 
   private switchToSimple() {
@@ -326,6 +437,11 @@ export class App {
   }
 
   // ---- Scenario -------------------------------------------------------------
+  //
+  // Inside a building the player walks around (Pokemon-style) and talks to people in the
+  // Animal Crossing-style talk box. The task moves on when they talk to the manager:
+  //   brief (roam) -> intro chat -> choose an approach -> walk there, see the findings ("look")
+  //   -> back to the manager: write -> feedback -> reflect -> studies -> rate -> resources -> done (roam)
 
   private async enterBuilding(id: ScenarioId) {
     if (this.busy) return;
@@ -347,13 +463,22 @@ export class App {
     this.world.setTalking(null);
     this.els.stage.replaceChildren();
     try {
-      await this.world.enter(id, { task: taskIndex, twist: isRevisit }, () => {
+      await this.world.enter(id, { task: taskIndex, twist: isRevisit, look: this.look }, () => {
         this.setScreen('scenario');
-        this.renderStep();
+        this.renderRoom();
       });
+    } catch (err) {
+      console.error(err);
+      this.run = null;
+      this.showPlaza();
+      return;
     } finally {
       this.busy = false;
     }
+    if (this.run?.scenario.id !== id) return;
+    this.refreshRoom();
+    this.world.setFree(true);
+    this.world.emote('manager', 'excited');
   }
 
   private async leaveScenario() {
@@ -373,7 +498,9 @@ export class App {
   private async exitToPlaza() {
     this.busy = true;
     this.run = null;
+    this.talk.hide();
     this.world.setTalking(null);
+    this.world.setFree(false);
     this.els.floats.replaceChildren();
     try {
       await this.world.exit(() => this.showPlaza());
@@ -382,98 +509,391 @@ export class App {
     }
   }
 
-  private dialogueCard(run: Run, bodyChildren: (Node | null)[]): HTMLElement {
+  // ---- The room: banner, things list and talk box ----
+
+  /** The people and things in the room, with what clicking them does. */
+  private things(run: Run): { id: ThingId; label: string; kind: 'person' | 'spot' | 'look' }[] {
     const s = run.scenario;
-    return h(
-      'section',
-      { class: 'dialogue card', 'aria-labelledby': 'npc-name' },
-      h(
-        'div',
-        { class: 'speaker' },
-        h('span', { class: 'avatar', style: `--c:${managerColor(run)}`, 'aria-hidden': 'true' }, s.npc.name.replace('Professor ', '')[0]),
-        h('span', null, h('strong', { id: 'npc-name' }, s.npc.name), h('span', { class: 'role' }, `${s.npc.role} · ${s.building}`)),
-        h('span', { class: 'steps', 'aria-label': `Step ${stepIndex(run.step) + 1} of ${STEPS.length}` }, STEPS.map((st) => h('span', { class: `sdot ${stepIndex(st) <= stepIndex(run.step) ? 'on' : ''}` }))),
-      ),
-      ...bodyChildren,
-    );
+    const manager = taskManagerIndex(s.id, run.taskIndex);
+    const out: { id: ThingId; label: string; kind: 'person' | 'spot' | 'look' }[] = [{ id: 'manager', label: `Talk to ${s.npc.name}`, kind: 'person' }];
+    s.colleagues.forEach((c, i) => {
+      if (i !== manager) out.push({ id: `person:${i}`, label: `Talk to ${c.name}`, kind: 'person' });
+    });
+    s.options.forEach((o) => out.push({ id: `spot:${o.id}`, label: o.spot, kind: 'spot' }));
+    Object.entries(s.examine).forEach(([k, v]) => out.push({ id: `spot:${k}`, label: v.label, kind: 'look' }));
+    return out;
   }
 
-  /** Types NPC lines one after another, then reveals the controls. */
-  private async speak(lines: HTMLElement[], texts: string[], after: HTMLElement) {
-    after.hidden = true;
-    this.world.setTalking('npc');
-    this.announce(texts.join(' '));
-    const instant = reducedMotion();
-    for (let i = 0; i < lines.length; i++) {
-      await typeText(lines[i], texts[i], instant);
+  /** The banner along the top, the talk box along the bottom; the room stays visible between them. */
+  private renderRoom() {
+    const run = this.run;
+    if (!run) return;
+    const s = run.scenario;
+    const objective = h('p', { class: 'objective', role: 'status' });
+    const list = h('div', { class: 'things-list', hidden: this.world.mode !== 'simple', id: 'things' });
+    const toggle = h(
+      'button',
+      {
+        class: 'btn small things-btn',
+        type: 'button',
+        'aria-controls': 'things',
+        'aria-expanded': String(this.world.mode === 'simple'),
+        onclick: () => {
+          list.hidden = !list.hidden;
+          toggle.setAttribute('aria-expanded', String(!list.hidden));
+          if (!list.hidden) list.querySelector<HTMLElement>('button')?.focus();
+        },
+      },
+      'Things here',
+    );
+    const banner = h(
+      'section',
+      { class: 'room-banner card', 'aria-label': 'Your role' },
+      h(
+        'div',
+        { class: 'rb-head' },
+        h('span', { class: `bicon-wrap b-${s.id}` }, buildingIcon(s.id)),
+        h('div', { class: 'rb-text' }, h('strong', null, s.internRole), h('span', { class: 'soft small' }, `${s.building} · with ${s.npc.name}${run.isRevisit ? ' · something new this time' : ''}`)),
+        h('span', { class: 'steps', 'aria-hidden': 'true' }),
+        toggle,
+      ),
+      objective,
+      list,
+    );
+    this.els.stage.replaceChildren(h('div', { class: 'room-ui' }, banner), this.talk.el);
+    this.refreshRoom();
+  }
+
+  /** Update the objective line, step dots, markers, labels and things list for the current step. */
+  private refreshRoom() {
+    const run = this.run;
+    if (!run || this.screen !== 'scenario') return;
+    const s = run.scenario;
+    const stage = this.els.stage;
+    const simple = this.world.mode === 'simple';
+    const name = s.npc.name;
+    const option = s.options.find((o) => o.id === run.choiceId);
+    const goal: Record<Step, string> = {
+      brief: simple ? `Talk to ${name} to find out what needs doing.` : `Walk over to ${name} (marked !) to find out what needs doing.`,
+      intro: `Talking with ${name}.`,
+      choose: simple ? 'Pick where to start from the list.' : `Pick where to start: walk to a marked spot (A, B or C), or ask ${name}.`,
+      look: option ? `Take what you found back to ${name}.` : 'Have a look.',
+      write: `Working with ${name}.`,
+      coach: `Working with ${name}.`,
+      followup: `Working with ${name}.`,
+      feedback: `Working with ${name}.`,
+      reflect: `Working with ${name}.`,
+      studies: `Working with ${name}.`,
+      rate: `Working with ${name}.`,
+      resources: `Working with ${name}.`,
+      done: 'All done here. Look around, talk to anyone, or head back to the plaza.',
+    };
+    const objective = stage.querySelector<HTMLElement>('.objective');
+    if (objective) {
+      const hint = !simple && run.step === 'brief' && !this.walkedOnce ? ' Click or tap the floor to walk. Arrow keys or WASD work too, and E talks.' : '';
+      objective.textContent = goal[run.step] + hint;
     }
-    this.world.setTalking(null);
-    after.hidden = false;
-    after.querySelector<HTMLElement>('button, textarea, input')?.focus({ preventScroll: true });
+    const dots = stage.querySelector<HTMLElement>('.room-banner .steps');
+    if (dots) {
+      dots.replaceChildren(...STEPS.map((st) => h('span', { class: `sdot ${stepIndex(st) <= stepIndex(run.step) ? 'on' : ''}` })));
+      dots.setAttribute('aria-label', `Step ${Math.min(STEPS.length, stepIndex(run.step) + 1)} of ${STEPS.length}`);
+    }
+
+    // Markers: "!" on whoever moves the task on, letters on the approach spots while choosing.
+    const marks: Partial<Record<ThingId, Marker>> = {};
+    if (run.step === 'brief' || (run.step === 'look' && run.choiceId)) marks.manager = '!';
+    if (run.step === 'choose') s.options.forEach((o) => (marks[`spot:${o.id}`] = o.id));
+    this.world.mark(marks);
+
+    const things = this.things(run);
+    const labels: Partial<Record<ThingId, string>> = {};
+    things.forEach((t) => (labels[t.id] = t.label));
+    this.world.setLabels(labels);
+
+    const list = stage.querySelector<HTMLElement>('.things-list');
+    if (list) {
+      const group = (title: string, items: typeof things) =>
+        items.length
+          ? h(
+              'div',
+              { class: 'things-group' },
+              h('p', { class: 'label' }, title),
+              h(
+                'div',
+                { class: 'things-row' },
+                items.map((t) =>
+                  h(
+                    'button',
+                    {
+                      class: `thing-btn ${marks[t.id] ? 'marked' : ''}`,
+                      type: 'button',
+                      onclick: () => {
+                        if (!simple) list.hidden = true;
+                        stage.querySelector('.things-btn')?.setAttribute('aria-expanded', String(!list.hidden));
+                        void this.useThing(t.id, true);
+                      },
+                    },
+                    marks[t.id] ? h('span', { class: 'mark', 'aria-hidden': 'true' }, marks[t.id]!) : null,
+                    t.label,
+                  ),
+                ),
+              ),
+            )
+          : null;
+      const groups = [
+        group('People', things.filter((t) => t.kind === 'person')),
+        group('Where to start', things.filter((t) => t.kind === 'spot')),
+        group('Look around', things.filter((t) => t.kind === 'look')),
+      ];
+      list.replaceChildren(...groups.filter((x): x is HTMLDivElement => x !== null));
+    }
+  }
+
+  /** Someone or something was picked, by clicking in the room or from the list. */
+  private async useThing(id: ThingId, walk = false) {
+    const run = this.run;
+    if (!run || this.conversing || this.busy) return;
+    this.walkedOnce = true;
+    if (walk) {
+      this.world.setFree(false);
+      await this.world.goTo(id);
+      if (this.run !== run) return;
+    }
+    if (id === 'manager') return this.converse(run, 'manager', () => this.talkToManager(run));
+    if (id.startsWith('person:')) return this.converse(run, id, () => this.talkToColleague(run, Number(id.slice(7))));
+    const key = id.slice(5);
+    if (['A', 'B', 'C'].includes(key)) return this.converse(run, null, () => this.atApproachSpot(run, key as ChoiceId));
+    return this.converse(run, null, () => this.examine(run, key));
+  }
+
+  /**
+   * Hold the player still, frame the conversation, run it, then let them walk again.
+   * `who` null is looking at something (no two-shot).
+   */
+  private async converse(run: Run, who: ThingId | null, body: () => Promise<void>) {
+    this.conversing = true;
+    this.world.setFree(false);
+    this.world.focus(who);
+    this.talkWith = who;
+    try {
+      await body();
+    } finally {
+      if (this.run === run && !this.inPanel) {
+        this.talk.hide();
+        this.world.focus(null);
+        this.world.setTalking(null);
+        this.talkWith = null;
+        this.conversing = false;
+        this.world.setFree(true);
+        this.refreshRoom();
+        if (run.backToManager) {
+          run.backToManager = false;
+          void this.useThing('manager', true);
+        }
+      }
+    }
+  }
+
+  /** The speaker for the talk box: name tag colour, portrait and voice. */
+  private speaker(run: Run, who: ThingId): Speaker {
+    const s = run.scenario;
+    const cast = CAST[s.id];
+    const portrait = (look: string) => `${import.meta.env.BASE_URL}models/characters/previews/${look}.png`;
+    if (who === 'manager') {
+      const m = taskManagerIndex(s.id, run.taskIndex);
+      const look = m === null ? cast.manager : cast.colleagues[m];
+      return { name: s.npc.name, color: managerColor(run), portrait: portrait(look), voice: voiceFor(s.npc.name, VOICES[s.npc.name]) };
+    }
+    const i = Number(who.slice(7));
+    const c = s.colleagues[i];
+    return { name: c.name, color: personColor(s.id, i), portrait: portrait(cast.colleagues[i]), voice: voiceFor(c.name, VOICES[c.name]) };
+  }
+
+  private say(run: Run, who: ThingId | null, line: string, controls?: HTMLElement | null) {
+    this.talkWith = who;
+    return this.talk.say(who ? this.speaker(run, who) : null, line, { controls });
+  }
+
+  private async talkToManager(run: Run) {
+    switch (run.step) {
+      case 'brief':
+        return this.introChat(run);
+      case 'choose':
+        return this.askApproach(run);
+      case 'look':
+        if (run.choiceId) return this.startWork(run);
+        return this.askApproach(run);
+      case 'done': {
+        const r = run.scenario.reactions;
+        await this.say(run, 'manager', `[happy] ${r.wantsMore}`);
+        return;
+      }
+      default:
+        return;
+    }
+  }
+
+  /** The intro as a conversation: the manager's lines, the student's reply bubbles, and the twist. */
+  private async introChat(run: Run) {
+    run.step = 'intro';
+    this.refreshRoom();
+    const lines: (ChatLine & { twist?: boolean })[] = [...run.scenario.chat];
+    if (run.isRevisit) lines.push({ npc: `[surprised] ${run.scenario.twistLine}`, twist: true });
+    for (const line of lines) {
+      if (this.run !== run) return;
+      if ('npc' in line) {
+        if (line.twist) {
+          // Everyone looks up at the news.
+          run.scenario.colleagues.forEach((_, i) => this.world.emote(`person:${i}`, 'surprised'));
+        }
+        await this.say(run, 'manager', line.npc);
+      } else {
+        await this.talk.choose([line.you]);
+      }
+    }
+    if (this.run !== run) return;
+    run.step = 'choose';
+    await this.askApproach(run);
+  }
+
+  /** "Where would you start?": the three approaches as reply bubbles, plus looking around first. */
+  private async askApproach(run: Run) {
+    run.step = 'choose';
+    this.refreshRoom();
+    const s = run.scenario;
+    await this.say(run, 'manager', `[thinking] ${s.question}`);
+    if (this.run !== run) return;
+    const pick = await this.talk.choose([...s.options.map((o) => `${o.id}. ${o.text}`), 'Let me look around first.']);
+    if (this.run !== run) return;
+    if (pick === s.options.length) {
+      await this.say(run, 'manager', `[happy] Sure, take your time. I've marked the places to start: A, B and C. Come back if you want to talk it through.`);
+      return;
+    }
+    await this.chooseApproach(run, s.options[pick].id);
+  }
+
+  /** Walking up to an approach spot. Before the intro it's a hint; while choosing, it's a choice. */
+  private async atApproachSpot(run: Run, id: ChoiceId) {
+    const s = run.scenario;
+    const o = s.options.find((x) => x.id === id)!;
+    this.world.act('player', 'look');
+    if (run.step === 'brief' || run.step === 'intro') {
+      await this.say(run, null, `${o.spot}. Maybe check in with *${s.npc.name}* first to find out what needs doing.`);
+      return;
+    }
+    if (run.step === 'choose') {
+      await this.say(run, null, `${o.spot}. Start here? *${o.text}*`);
+      const yes = (await this.talk.choose(['Start here', 'Not yet'])) === 0;
+      if (yes && this.run === run) await this.chooseApproach(run, id, true);
+      return;
+    }
+    if (run.choiceId === id) {
+      await this.say(run, null, `${o.spot}. This is where you started.`);
+      return this.showFindings(run);
+    }
+    await this.say(run, null, `${o.spot}. You've already started somewhere else this time. You could try this next visit.`);
+  }
+
+  /** The approach is picked: the manager reacts, the player walks there and finds something. */
+  private async chooseApproach(run: Run, id: ChoiceId, alreadyThere = false) {
+    const o = run.scenario.options.find((x) => x.id === id);
+    if (!o) return;
+    run.choiceId = id;
+    run.step = 'look';
+    this.refreshRoom();
+    if (!alreadyThere) {
+      this.world.act('manager', 'nod');
+      await this.say(run, 'manager', o.chooseLine);
+      if (this.run !== run) return;
+      this.talk.hide();
+      this.world.focus(null);
+      await this.world.goTo(`spot:${id}`);
+      if (this.run !== run) return;
+    }
+    this.world.act('player', 'look');
+    await this.say(run, null, `You get stuck in: ${o.text.charAt(0).toLowerCase()}${o.text.slice(1)}`);
+    if (this.run !== run) return;
+    await this.showFindings(run);
+  }
+
+  /** The "you found something!" card, held up to the camera like Animal Crossing's "I got…". */
+  private showFindings(run: Run): Promise<void> {
+    const card = findingsCard(run, true);
+    if (!card) return Promise.resolve();
+    chime();
+    this.world.emote('player', 'idea');
+    this.world.act('player', 'pickup');
+    return new Promise((resolve) => {
+      const go = h('button', { class: 'btn primary', type: 'button' }, `Take it to ${run.scenario.npc.name}`);
+      const wrap = h(
+        'div',
+        { class: 'found-wrap' },
+        h('section', { class: 'found card', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'What you found' }, h('p', { class: 'found-kicker' }, 'You found something!'), card, h('div', { class: 'actions' }, go)),
+      );
+      go.addEventListener('click', () => {
+        wrap.remove();
+        // Once this conversation closes, walk back to the manager and carry on.
+        run.backToManager = true;
+        resolve();
+      });
+      this.els.stage.append(wrap);
+      this.announce('You found something. ' + (card.textContent ?? ''));
+      go.focus();
+    });
+  }
+
+  /** Back with the manager after looking: the writing and the rest of the task happen in the talk box. */
+  private async startWork(run: Run) {
+    this.inPanel = true;
+    run.pendingLine = `[excited] Ooh, what did you find? Show me!`;
+    this.go('write');
+  }
+
+  private async talkToColleague(run: Run, i: number) {
+    const c = run.scenario.colleagues[i];
+    const who: ThingId = `person:${i}`;
+    // In the first task, the colleague who runs the second one hints at it.
+    const leadsNext = run.taskIndex === 0 && getScenario(run.scenario.id).taskB?.managerColleague === i;
+    const lines = [...c.lines];
+    if (c.openRole) lines.push(`${c.openRole}${leadsNext ? " That's the role you'd try on your next visit!" : ''}`);
+    this.world.emote(who, 'happy');
+    for (const line of lines) {
+      if (this.run !== run) return;
+      await this.say(run, who, line);
+    }
+  }
+
+  private async examine(run: Run, key: string) {
+    const item = run.scenario.examine[key];
+    if (!item) return;
+    this.world.act('player', 'look');
+    for (const line of item.lines) {
+      if (this.run !== run) return;
+      await this.say(run, null, line);
+    }
+  }
+
+  // ---- The task's steps, in the talk box with the manager ----
+
+  /** Say the lines, the last with the controls shown in the box underneath. */
+  private async speak(texts: string[], controls: HTMLElement | null) {
+    const run = this.run;
+    if (!run) return;
+    for (let i = 0; i < texts.length; i++) {
+      if (this.run !== run) return;
+      await this.say(run, 'manager', texts[i], i === texts.length - 1 ? controls : null);
+    }
   }
 
   private renderStep() {
     const run = this.run;
     if (!run) return;
     const s = run.scenario;
-    const stage = this.els.stage;
-    const say = () => h('p', { class: 'say', onclick: skipTyping });
+    this.refreshRoom();
+    this.world.focus('manager');
 
     switch (run.step) {
-      case 'brief': {
-        const start = h('button', { class: 'btn primary', type: 'button', onclick: () => this.go('intro') }, 'Start');
-        const card = this.dialogueCard(run, [
-          h(
-            'div',
-            { class: 'role-card' },
-            h('p', { class: 'kicker' }, s.building),
-            h('h2', { class: 'role-title' }, s.internRole),
-            h(
-              'dl',
-              { class: 'role-facts' },
-              h('div', null, h('dt', null, "What you'll do"), h('dd', null, s.brief)),
-              h('div', null, h('dt', null, 'Working with'), h('dd', null, `${s.npc.name}, ${s.npc.role}`)),
-              h('div', null, h('dt', null, 'Time'), h('dd', null, 'About 3 minutes')),
-              run.isRevisit ? h('div', null, h('dt', null, 'This time'), h('dd', null, 'Something new has come up.')) : null,
-            ),
-          ),
-          this.meetTeam(run),
-          h('div', { class: 'actions' }, start),
-        ]);
-        stage.replaceChildren(this.wrapScenario(card));
-        start.focus({ preventScroll: true });
-        this.announce(`${s.building}. Your role: ${s.internRole}. ${s.brief} About 3 minutes.`);
-        break;
-      }
-      case 'intro': {
-        const log = h('div', { class: 'chat' });
-        const controls = h('div', { class: 'chat-controls' });
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [h('p', { class: 'setting' }, s.setting), log, controls])));
-        const lines: (ChatLine & { twist?: boolean })[] = [...s.chat];
-        if (run.isRevisit) lines.push({ npc: s.twistLine, twist: true });
-        void this.playChat(run, log, controls, lines);
-        break;
-      }
-      case 'choose': {
-        const q = say();
-        const opts = h(
-          'div',
-          { class: 'options', role: 'group', 'aria-label': 'Your options' },
-          s.options.map((o) =>
-            h(
-              'button',
-              { class: 'option', type: 'button', onclick: () => this.choose(o.id) },
-              h('span', { class: 'okey', 'aria-hidden': 'true' }, o.id),
-              h('span', null, o.text),
-            ),
-          ),
-        );
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [q, opts])));
-        void this.speak([q], [s.question], opts);
-        break;
-      }
       case 'write': {
-        const p = say();
         const ta = h('textarea', {
           id: 'write',
           rows: 3,
@@ -485,6 +905,8 @@ export class App {
         const controls = h(
           'div',
           { class: 'block' },
+          taskCard(run),
+          findingsCard(run, false),
           h('label', { id: 'write-l', class: 'label', for: 'write' }, 'Your words (saved as a work sample)'),
           ta,
           h(
@@ -495,20 +917,14 @@ export class App {
           ),
         );
         const reaction = this.takePending(run);
-        const r0 = reaction ? say() : null;
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, taskCard(run), findingsCard(run, true), p, controls])));
-        void this.speak(r0 && reaction ? [r0, p] : [p], reaction ? [reaction, s.writePrompt] : [s.writePrompt], controls);
+        void this.speak(reaction ? [reaction, s.writePrompt] : [s.writePrompt], controls);
         break;
       }
       case 'coach': {
         const c = run.coach!;
-        const works = c.whatWorks ? say() : null;
-        const tip = say();
         const controls = h(
           'div',
           { class: 'block' },
-          taskCard(run),
-          findingsCard(run, false),
           h('p', { class: 'label' }, 'What a strong answer does here'),
           h('ul', { class: 'coach-points' }, s.writeGuide.points.map((pt) => h('li', null, pt))),
           h('blockquote', { class: 'sample' }, h('span', { class: 'k' }, 'Your words: '), `“${run.written ?? ''}”`),
@@ -519,21 +935,10 @@ export class App {
             h('button', { class: 'btn ghost', type: 'button', onclick: () => this.keepAnswer() }, 'Keep it and continue'),
           ),
         );
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [works, tip, controls])));
-        const lines: HTMLElement[] = [];
-        const texts: string[] = [];
-        if (works && c.whatWorks) {
-          lines.push(works);
-          texts.push(c.whatWorks);
-        }
-        lines.push(tip);
-        texts.push(c.tip);
-        void this.speak(lines, texts, controls);
+        void this.speak(c.whatWorks ? [`[happy] ${c.whatWorks}`, `[idea] ${c.tip}`] : [`[idea] ${c.tip}`], controls);
         break;
       }
       case 'followup': {
-        const q = say();
-        q.classList.add('question');
         const ta = h('textarea', { id: 'followup', rows: 3, maxlength: 400, placeholder: 'Your reply…', 'aria-labelledby': 'followup-l' }) as HTMLTextAreaElement;
         const controls = h(
           'div',
@@ -547,15 +952,12 @@ export class App {
             h('button', { class: 'btn ghost', type: 'button', onclick: () => void this.answerFollowup('') }, 'Skip'),
           ),
         );
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [q, taskCard(run), findingsCard(run, false), controls])));
-        void this.speak([q], [run.followupQuestion ?? ''], controls);
+        void this.speak([`[thinking] ${run.followupQuestion ?? ''}`], controls);
         break;
       }
       case 'feedback': {
         const fb = run.feedback!;
-        const r = say();
-        const ack = fb.acknowledgement ? say() : null;
-        const chips = h(
+        const controls = h(
           'div',
           { class: 'block' },
           h('p', { class: 'label' }, 'Skills you used here'),
@@ -564,21 +966,13 @@ export class App {
           h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => this.go('reflect') }, 'Continue')),
         );
         const reaction = this.takePending(run);
-        const r0 = reaction ? say() : null;
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, r, ack, chips])));
-        const lines: HTMLElement[] = r0 ? [r0, r] : [r];
-        const texts = reaction ? [reaction, fb.npcReaction] : [fb.npcReaction];
-        if (ack && fb.acknowledgement) {
-          lines.push(ack);
-          texts.push(fb.acknowledgement);
-        }
-        void this.speak(lines, texts, chips).then(() => this.floatSkills(fb.skills));
+        const texts = [...(reaction ? [reaction] : []), `[proud] ${fb.npcReaction}`, ...(fb.acknowledgement ? [fb.acknowledgement] : [])];
+        this.world.act('manager', 'nod');
+        void this.speak(texts, controls).then(() => this.run === run && this.floatSkills(fb.skills));
         break;
       }
       case 'reflect': {
         const fb = run.feedback!;
-        const q = say();
-        q.classList.add('question');
         const ta = h('textarea', { id: 'reflect', rows: 3, maxlength: 400, placeholder: 'A few words for yourself (optional)', 'aria-labelledby': 'reflect-l' }) as HTMLTextAreaElement;
         if (run.reflection) ta.value = run.reflection;
         const controls = h(
@@ -593,15 +987,11 @@ export class App {
             h('button', { class: 'btn ghost', type: 'button', onclick: () => this.saveReflection('') }, 'Skip'),
           ),
         );
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [h('p', { class: 'label soft' }, 'A question to think about'), q, controls])));
-        void this.speak([q], [fb.reflectiveQuestion], controls);
+        void this.speak([`[thinking] ${fb.reflectiveQuestion}`], controls);
         break;
       }
       case 'studies': {
         const reaction = this.takePending(run);
-        const r0 = reaction ? say() : null;
-        const q = say();
-        q.classList.add('question');
         const ta = h('textarea', { id: 'studies', rows: 3, maxlength: 400, placeholder: CONTENT.studies.placeholder, 'aria-labelledby': 'studies-l' }) as HTMLTextAreaElement;
         if (run.studyNote) ta.value = run.studyNote;
         const controls = h(
@@ -617,13 +1007,11 @@ export class App {
             h('button', { class: 'btn ghost', type: 'button', onclick: () => this.saveStudies('') }, 'Skip'),
           ),
         );
-        stage.replaceChildren(this.wrapScenario(this.dialogueCard(run, [r0, h('p', { class: 'label soft' }, 'Linking to your studies'), q, controls])));
-        void this.speak(r0 && reaction ? [r0, q] : [q], reaction ? [reaction, CONTENT.studies.question] : [CONTENT.studies.question], controls);
+        void this.speak(reaction ? [reaction, `[thinking] ${CONTENT.studies.question}`] : [`[thinking] ${CONTENT.studies.question}`], controls);
         break;
       }
       case 'rate': {
         const reaction = this.takePending(run);
-        const r0 = reaction ? say() : null;
         const finish = h('button', { class: 'btn primary', type: 'button', disabled: true, onclick: () => this.finish() }, 'Finish');
         const hint = h('p', { class: 'hint', id: 'rate-hint' }, 'Pick one for each question.');
         const update = () => {
@@ -665,63 +1053,64 @@ export class App {
           h('input', { type: 'checkbox', checked: run.wantsMore, onchange: (e: Event) => (run.wantsMore = (e.target as HTMLInputElement).checked) }),
           h('span', null, "I'd like to try more like this"),
         );
-        const card = this.dialogueCard(run, [
-          r0,
-          h('h2', { class: 'rate-h' }, 'Before you head out'),
-          h('p', { class: 'soft' }, 'Just for you. This is how you felt, not how you did.'),
+        const controls = h(
+          'div',
+          { class: 'block' },
+          h('p', { class: 'soft small' }, 'Just for you. This is how you felt, not how you did.'),
           scale('enjoyment', 'How much did you enjoy this?', '1 not much', '5 a lot'),
           scale('confidence', 'How confident did you feel?', '1 not very', '5 very'),
           more,
           hint,
           h('div', { class: 'actions' }, finish),
-        ]);
-        stage.replaceChildren(this.wrapScenario(card));
+        );
         update();
-        const ratingsBlock = h('div');
-        if (r0 && reaction) void this.speak([r0], [reaction], ratingsBlock);
-        (card.querySelector('input') as HTMLElement | null)?.focus({ preventScroll: true });
-        this.announce(`${reaction ? `${reaction} ` : ''}Rate how much you enjoyed this and how confident you felt.`);
+        const line = 'Before you head out: how did that feel?';
+        void this.speak(reaction ? [reaction, line] : [line], controls);
         break;
       }
       case 'resources': {
-        const line = say();
         const controls = h(
           'div',
           { class: 'block' },
           resourceList(s.resources, true),
           h('p', { class: 'label' }, 'For any humanities career'),
           resourceList(CONTENT.commonResources, false),
-          this.meetTeam(run),
-          h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'button', onclick: () => void this.exitToPlaza() }, 'Back to the plaza')),
-        );
-        stage.replaceChildren(
-          this.wrapScenario(
-            this.dialogueCard(run, [h('h2', { class: 'rate-h' }, `Learn more: ${s.internRole}`), line, controls]),
+          h(
+            'div',
+            { class: 'actions' },
+            h('button', { class: 'btn primary', type: 'button', onclick: () => this.endWork() }, 'Keep looking around'),
+            h('button', { class: 'btn ghost', type: 'button', onclick: () => void this.exitToPlaza() }, 'Back to the plaza'),
           ),
         );
         const reaction = this.takePending(run);
         const resourcesLine = "If you want to know more about this kind of work, here's where I'd start. These links open in a new tab.";
-        void this.speak([line], [reaction ? `${reaction} ${resourcesLine}` : resourcesLine], controls);
+        this.world.emote('manager', 'love');
+        void this.speak(reaction ? [`[happy] ${reaction}`, resourcesLine] : [resourcesLine], controls);
         break;
       }
+      default:
+        break;
     }
   }
 
-  private wrapScenario(card: HTMLElement) {
-    return h('div', { class: 'scenario-wrap' }, card);
+  /** The task is done: close the talk box and let the player wander. */
+  private endWork() {
+    const run = this.run;
+    if (!run) return;
+    run.step = 'done';
+    this.inPanel = false;
+    this.conversing = false;
+    this.talk.hide();
+    this.world.focus(null);
+    this.world.setTalking(null);
+    this.world.setFree(true);
+    this.refreshRoom();
   }
 
   private go(step: Step) {
     if (!this.run) return;
     this.run.step = step;
     this.renderStep();
-  }
-
-  private choose(id: ChoiceId) {
-    if (!this.run) return;
-    this.run.choiceId = id;
-    this.run.pendingLine = this.run.scenario.options.find((o) => o.id === id)?.chooseLine;
-    this.go('write');
   }
 
   private takePending(run: Run): string | undefined {
@@ -782,13 +1171,11 @@ export class App {
     await this.toFeedback();
   }
 
-  /** A short "thinking" card while the AI replies, so the student knows something is happening. */
+  /** "Thinking…" in the talk box while the AI replies, with the manager's head tilted. */
   private showThinking(run: Run, label: string) {
-    this.world.setTalking('npc');
+    this.world.emote('manager', 'thinking');
     this.announce(label);
-    this.els.stage.replaceChildren(
-      this.wrapScenario(this.dialogueCard(run, [h('p', { class: 'say thinking', role: 'status' }, label, h('span', { class: 'dots', 'aria-hidden': 'true' }, h('span'), h('span'), h('span')))])),
-    );
+    void this.say(run, 'manager', '…', h('p', { class: 'soft thinking', role: 'status' }, label, h('span', { class: 'dots', 'aria-hidden': 'true' }, h('span'), h('span'), h('span'))));
   }
 
   /** Revising keeps the first draft so the growth record can show both versions. */
@@ -842,124 +1229,6 @@ export class App {
     this.run.studyNote = text.trim() || undefined;
     this.run.pendingLine = this.run.studyNote ? this.run.scenario.reactions.studied : this.run.scenario.reactions.skippedStudies;
     this.go('rate');
-  }
-
-  /** The intro as a short exchange: manager bubbles typed out, the student taps a reply to go on. */
-  private async playChat(run: Run, log: HTMLElement, controls: HTMLElement, lines: (ChatLine & { twist?: boolean })[]) {
-    const instant = reducedMotion();
-    const still = () => this.run === run && run.step === 'intro';
-    for (const line of lines) {
-      if (!still()) return;
-      if ('npc' in line) {
-        const text = h('p', { class: 'say', onclick: skipTyping });
-        const bubble = h('div', { class: `bubble npc ${line.twist ? 'twist-bubble' : ''}` }, line.twist ? h('span', { class: 'twist-tag' }, 'New this time') : null, text);
-        log.append(bubble);
-        bubble.scrollIntoView({ block: 'nearest' });
-        this.world.setTalking('npc');
-        this.announce(`${run.scenario.npc.name}: ${line.npc}`);
-        await typeText(text, line.npc, instant);
-        this.world.setTalking(null);
-      } else {
-        const chip = h('button', { class: 'reply-chip', type: 'button' }, line.you);
-        controls.replaceChildren(chip);
-        chip.focus({ preventScroll: true });
-        await new Promise<void>((resolve) => chip.addEventListener('click', () => resolve(), { once: true }));
-        if (!still()) return;
-        controls.replaceChildren();
-        log.append(h('div', { class: 'bubble you' }, h('p', null, line.you)));
-      }
-    }
-    if (!still()) return;
-    const next = h('button', { class: 'btn primary', type: 'button', onclick: () => this.go('choose') }, 'Continue');
-    controls.replaceChildren(h('div', { class: 'actions' }, next));
-    next.focus({ preventScroll: true });
-  }
-
-  /** "Meet the team": the building's other colleagues, each a button that opens a short conversation. */
-  private meetTeam(run: Run): HTMLElement | null {
-    const people = run.scenario.colleagues;
-    const manager = taskManagerIndex(run.scenario.id, run.taskIndex);
-    if (!people.some((_, i) => i !== manager)) return null;
-    return h(
-      'div',
-      { class: 'meet-team' },
-      h('p', { class: 'label' }, 'Meet the team'),
-      h(
-        'div',
-        { class: 'meet-row' },
-        people.map((c, i) =>
-          i === manager ? null : h(
-            'button',
-            { class: 'person-btn', type: 'button', 'data-person': i, onclick: (e: Event) => this.openColleague(i, e.currentTarget as HTMLElement) },
-            h('span', { class: 'avatar small', style: `--c:${personColor(run.scenario.id, i)}`, 'aria-hidden': 'true' }, c.name[0]),
-            h('span', null, h('strong', null, c.name), h('span', { class: 'role' }, c.role)),
-          ),
-        ),
-      ),
-    );
-  }
-
-  /** A colleague's short conversation, shown over the current step so nothing underneath is lost. */
-  private openColleague(i: number, from?: HTMLElement | null) {
-    const run = this.run;
-    const c = run?.scenario.colleagues[i];
-    if (!run || !c || i === taskManagerIndex(run.scenario.id, run.taskIndex)) return;
-    // In task A, the colleague who runs task B hints at it.
-    const leadsNext = run.taskIndex === 0 && getScenario(run.scenario.id).taskB?.managerColleague === i;
-    const openRole = c.openRole && leadsNext ? `${c.openRole} That's the role you'd try on your next visit.` : c.openRole;
-    this.els.stage.querySelector('.colleague-wrap')?.remove();
-    const lines = c.lines.map(() => h('p', { class: 'say', onclick: skipTyping }));
-    const back = h('button', { class: 'btn primary', type: 'button' }, 'Back');
-    const after = h(
-      'div',
-      { class: 'block' },
-      openRole ? h('p', { class: 'open-role' }, h('strong', null, 'Roles here: '), openRole) : null,
-      h('div', { class: 'actions' }, back),
-    );
-    const card = h(
-      'section',
-      { class: 'dialogue card colleague', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'colleague-name' },
-      h(
-        'div',
-        { class: 'speaker' },
-        h('span', { class: 'avatar', style: `--c:${personColor(run.scenario.id, i)}`, 'aria-hidden': 'true' }, c.name[0]),
-        h('span', null, h('strong', { id: 'colleague-name' }, c.name), h('span', { class: 'role' }, `${c.role} · ${c.team} team`)),
-      ),
-      ...lines,
-      after,
-    );
-    const wrap = h('div', { class: 'colleague-wrap' }, card);
-    const close = () => {
-      skipTyping();
-      wrap.remove();
-      document.removeEventListener('keydown', onKey, true);
-      this.world.setPersonTalking(null);
-      (from ?? this.els.stage.querySelector<HTMLElement>(`.person-btn[data-person="${i}"]`))?.focus({ preventScroll: true });
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        close();
-      }
-    };
-    back.addEventListener('click', close);
-    wrap.addEventListener('click', (e) => e.target === wrap && close());
-    document.addEventListener('keydown', onKey, true);
-    this.els.stage.append(wrap);
-    after.hidden = true;
-    this.world.setPersonTalking(i);
-    this.announce(`${c.name}, ${c.role}: ${c.lines.join(' ')}${openRole ? ` ${openRole}` : ''}`);
-    void (async () => {
-      const instant = reducedMotion();
-      for (let k = 0; k < lines.length; k++) {
-        if (!wrap.isConnected) return;
-        await typeText(lines[k], c.lines[k], instant);
-      }
-      if (!wrap.isConnected) return;
-      this.world.setPersonTalking(null);
-      after.hidden = false;
-      back.focus({ preventScroll: true });
-    })();
   }
 
   private floatSkills(skills: { skill: SkillName; weight: 1 | 2 }[]) {
@@ -1072,9 +1341,9 @@ function managerColor(run: { scenario: Scenario; taskIndex: TaskIndex }): string
   return m === null ? NPC_COLOR[run.scenario.id] : personColor(run.scenario.id, m);
 }
 
-const STEPS: Step[] = ['brief', 'intro', 'choose', 'write', 'feedback', 'reflect', 'studies', 'rate', 'resources'];
-/** Coaching is part of the writing step, so it shares its dot. */
-const stepIndex = (s: Step) => STEPS.indexOf(s === 'coach' || s === 'followup' ? 'write' : s);
+const STEPS: Step[] = ['brief', 'intro', 'choose', 'look', 'write', 'feedback', 'reflect', 'studies', 'rate', 'resources'];
+/** Coaching is part of the writing step, so it shares its dot; done shares the last one. */
+const stepIndex = (s: Step) => STEPS.indexOf(s === 'coach' || s === 'followup' ? 'write' : s === 'done' ? 'resources' : s);
 
 // ---- Growth record rendering -------------------------------------------------
 
@@ -1578,7 +1847,7 @@ function taskCard(run: { scenario: Scenario; choiceId?: ChoiceId; isRevisit: boo
 
 // ---- Coursework link and colleague colours --------------------------------------
 
-/** Avatar colours match each colleague's clothes in the 3D room (see COLLEAGUE_LOOKS in characters.ts). */
+/** Name-tag colours for each building's colleagues. */
 const PERSON_COLORS: Record<ScenarioId, string[]> = {
   resort: ['#2F6F6A', '#C99A1E', '#6B4A8A'],
   policy: ['#3D7EA6', '#6E7D52', '#D06A50'],

@@ -1,9 +1,14 @@
 import * as THREE from 'three';
 import type { ScenarioId } from '../../types';
-import { fade, reducedMotion, type RoomSetup, type World } from '../types';
+import { fade, reducedMotion, type BodyAction, type Marker, type Mood, type RoomSetup, type ThingId, type Who, type World } from '../types';
+import type { Actor } from './actor';
 import { buildAtmosphere, type Atmosphere } from './atmosphere';
-import { buildInterior, type Interior } from './interiors';
+import { ROOM_D, ROOM_W } from './boards';
+import { Emote } from './emotes';
 import { Kit } from './kit';
+import { modelsFor } from './layouts';
+import { preload } from './models';
+import { buildRoom, disposeRoom, type Room } from './room';
 import { LABEL_H, LABEL_W, buildPlaza, labelY, type BuildingHandle, type Plaza } from './plaza';
 
 interface Tween {
@@ -32,12 +37,14 @@ const SUN_DIR = new THREE.Vector3(-0.72, 0.42, 0.55).normalize();
 const easeInOut = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
 const clamp = THREE.MathUtils.clamp;
 const DEG = Math.PI / 180;
+/** The room camera's angle from the front; conversations are framed from the same side. */
+const TALK_AZ = 28 * DEG;
 
 export class World3D implements World {
   readonly mode = '3d' as const;
   onPick: ((id: ScenarioId) => void) | null = null;
   onHover: ((id: ScenarioId | null) => void) | null = null;
-  onPerson: ((index: number) => void) | null = null;
+  onThing: ((id: ThingId) => void) | null = null;
 
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
@@ -55,17 +62,27 @@ export class World3D implements World {
   private parallax = new THREE.Vector2();
   private parallaxTarget = new THREE.Vector2();
   private lastLift = 0;
-  private interior: { kit: Kit; data: Interior; id: ScenarioId } | null = null;
+  private room: Room | null = null;
   private lastBuilding: BuildingHandle | null = null;
 
   private state: 'plaza' | 'moving' | 'interior' = 'plaza';
   private visited = new Set<ScenarioId>();
   private pointerHover: ScenarioId | null = null;
   private uiHover: ScenarioId | null = null;
-  private talking: 'guide' | 'npc' | null = null;
-  private personTalking: number | null = null;
-  private personHover = -1;
+  private talking: 'guide' | Who | null = null;
   private roomDown: { x: number; y: number } | null = null;
+  // Inside a room
+  private free = false;
+  private focusId: ThingId | null = null;
+  private labels: Partial<Record<ThingId, string>> = {};
+  private hoverThing: ThingId | null = null;
+  private labelEl: HTMLElement;
+  private hoverRing: THREE.Mesh;
+  private spotMarks = new Map<ThingId, Emote>();
+  private keys = new Set<string>();
+  private keyboardLast = false;
+  private walkToken = 0;
+  private shadowTick = 0;
   private active = true;
   private raf = 0;
   private last = 0;
@@ -80,7 +97,6 @@ export class World3D implements World {
   private az = 0; // user nudge, radians
   private pol = 0;
   private zoom = 0;
-  private interiorSway = 0;
 
   // Pointer state
   private pointers = new Map<number, { x: number; y: number }>();
@@ -201,9 +217,27 @@ export class World3D implements World {
       this.needsRender = true;
     });
 
+    // Hover label and ring for things in a room
+    this.labelEl = document.createElement('div');
+    this.labelEl.className = 'room-label';
+    this.labelEl.hidden = true;
+    this.labelEl.setAttribute('aria-hidden', 'true');
+    canvas.parentElement?.append(this.labelEl);
+    this.hoverRing = new THREE.Mesh(
+      this.kit.geo('hoverRing', () => new THREE.RingGeometry(0.95, 1.2, 40).rotateX(-Math.PI / 2)),
+      this.kit.basic(0xffffff, { opacity: 0.85 }),
+    );
+    this.hoverRing.visible = false;
+    this.hoverRing.renderOrder = 2;
+    this.scene.add(this.hoverRing);
+    this.listen(window, 'keydown', (e) => this.onKey(e as KeyboardEvent, true));
+    this.listen(window, 'keyup', (e) => this.onKey(e as KeyboardEvent, false));
+    this.listen(window, 'blur', () => this.keys.clear());
+
     this.placeCamera();
     this.renderer.render(this.scene, this.camera);
     this.start();
+    if (import.meta.env.DEV) (window as unknown as { __world: World3D }).__world = this;
   }
 
   private listen(t: EventTarget, type: string, fn: (e: Event) => void, opts?: AddEventListenerOptions) {
@@ -225,14 +259,123 @@ export class World3D implements World {
     this.needsRender = true;
   }
 
-  setPersonTalking(index: number | null): void {
-    this.personTalking = index;
+  setTalking(who: 'guide' | Who | null): void {
+    this.talking = who;
+    if (this.room) {
+      this.room.player.talking = who === 'player';
+      this.room.actors.forEach((a, id) => (a.talking = who === id));
+    }
     this.needsRender = true;
   }
 
-  setTalking(who: 'guide' | 'npc' | null): void {
-    this.talking = who;
+  // ---- Inside a room ----
+
+  private actorFor(who: Who): Actor | undefined {
+    if (!this.room) return undefined;
+    return who === 'player' ? this.room.player : this.room.actors.get(who as ThingId);
+  }
+
+  setFree(free: boolean): void {
+    this.free = free;
+    if (!free) {
+      this.keys.clear();
+      this.setHoverThing(null);
+    }
+  }
+
+  async goTo(id: ThingId): Promise<void> {
+    const r = this.room;
+    const pos = r?.things.get(id);
+    if (!r || !pos) return;
+    const token = ++this.walkToken;
+    const p = r.player.group.position;
+    // Stand beside a person (left or right as the camera sees it), so a conversation is side by side.
+    let goal: [number, number] = [pos.x, pos.z];
+    if (r.actors.has(id)) {
+      const rx = Math.cos(TALK_AZ);
+      const rz = -Math.sin(TALK_AZ);
+      const sides: [number, number][] = [1, -1]
+        .map((k) => [pos.x + rx * 2.2 * k, pos.z + rz * 2.2 * k] as [number, number])
+        .filter(([x, z]) => r.grid.free(x, z))
+        .sort((a, b) => Math.hypot(a[0] - p.x, a[1] - p.z) - Math.hypot(b[0] - p.x, b[1] - p.z));
+      if (sides[0]) goal = sides[0];
+    }
+    const path = r.grid.path([p.x, p.z], goal);
+    if (path?.length) {
+      const walk = r.player.walk(path);
+      if (reducedMotion()) r.player.finishWalk();
+      await walk;
+    }
+    if (token !== this.walkToken) return;
+    r.player.face(pos.x, pos.z);
+  }
+
+  /** Click on something: walk over, then tell the game (unless another click came first). */
+  private async approach(id: ThingId) {
+    const token = this.walkToken + 1;
+    await this.goTo(id);
+    if (token === this.walkToken && this.free) this.onThing?.(id);
+  }
+
+  private walkToPoint(x: number, z: number) {
+    const r = this.room;
+    if (!r) return;
+    ++this.walkToken;
+    const p = r.player.group.position;
+    const path = r.grid.path([p.x, p.z], [x, z]);
+    if (path?.length) {
+      void r.player.walk(path);
+      if (reducedMotion()) r.player.finishWalk();
+    }
+  }
+
+  focus(id: ThingId | null): void {
+    this.focusId = id;
+    const r = this.room;
+    if (!r) return;
+    const a = id ? r.actors.get(id) : undefined;
+    const pos = id ? r.things.get(id) : undefined;
+    // Face each other, turned partly toward the camera so both faces show, as in Animal Crossing.
+    if (pos) r.player.face(pos.x, pos.z, TALK_AZ, a ? 0.5 : 0);
+    if (a) a.face(r.player.group.position.x, r.player.group.position.z, TALK_AZ, 0.5);
+    if (reducedMotion()) this.snapCamera();
+  }
+
+  emote(who: Who, mood: Mood): void {
+    this.actorFor(who)?.emote(mood, !reducedMotion());
     this.needsRender = true;
+  }
+
+  act(who: Who, action: BodyAction): void {
+    if (reducedMotion()) return;
+    this.actorFor(who)?.act(action);
+  }
+
+  mark(marks: Partial<Record<ThingId, Marker>>): void {
+    const r = this.room;
+    if (!r) return;
+    r.actors.forEach((a, id) => {
+      const m = marks[id];
+      a.setMarker(m === '!' ? 'mark' : (m ?? null));
+    });
+    for (const [id, m] of this.spotMarks) {
+      if (marks[id]) continue;
+      m.sprite.removeFromParent();
+      m.dispose();
+      this.spotMarks.delete(id);
+    }
+    for (const [id, kind] of Object.entries(marks) as [ThingId, Marker][]) {
+      const anchor = r.spotAnchors.get(id);
+      if (!anchor || this.spotMarks.has(id)) continue;
+      const e = new Emote(kind === '!' ? 'mark' : kind, Infinity);
+      anchor.add(e.sprite);
+      this.spotMarks.set(id, e);
+    }
+    this.needsRender = true;
+  }
+
+  setLabels(labels: Partial<Record<ThingId, string>>): void {
+    this.labels = labels;
   }
 
   celebrate(id: ScenarioId): void {
@@ -252,8 +395,10 @@ export class World3D implements World {
   }
 
   npcAnchor(): { x: number; y: number } | null {
-    if (!this.interior) return null;
-    const npc = this.interior.data.npc;
+    if (!this.room) return null;
+    const who = (this.talking && this.talking !== 'guide' ? this.talking : this.focusId) ?? 'manager';
+    const npc = this.actorFor(who as Who);
+    if (!npc) return null;
     const v = new THREE.Vector3(0, npc.topY + 0.4, 0);
     npc.group.localToWorld(v);
     v.project(this.camera);
@@ -273,6 +418,9 @@ export class World3D implements World {
     this.pointerHover = null;
     this.uiHover = null;
     const reduced = reducedMotion();
+    // Load the room's models while the camera flies to the door.
+    preload(modelsFor(id, room.task, room.look));
+    const building = buildRoom(id, room);
 
     if (!reduced) {
       const fromPos = this.camera.position.clone();
@@ -293,17 +441,17 @@ export class World3D implements World {
     this.sky.visible = false;
     this.scene.fog = null;
     this.scene.background = new THREE.Color(this.dark ? SKY.dark.interior : SKY.light.interior);
-    const kit = new Kit();
-    const data = buildInterior(kit, id, room);
+    const data = await building;
     prepareForLighting(data.group);
     this.scene.add(data.group);
     this.renderer.shadowMap.needsUpdate = true;
-    this.interior = { kit, data, id };
+    this.room = data;
+    this.free = false;
+    this.focusId = null;
     this.applyLights();
     this.state = 'interior';
-    this.interiorSway = 0;
     this.applyViewOffset();
-    this.placeCamera();
+    this.snapCamera();
     midway?.();
     this.renderNow();
     await fade(this.veil, false, reduced ? 200 : 380);
@@ -318,13 +466,18 @@ export class World3D implements World {
     const reduced = reducedMotion();
     await fade(this.veil, true, reduced ? 160 : 240);
 
-    if (this.interior) {
-      this.scene.remove(this.interior.data.group);
-      this.interior.kit.dispose();
-      this.interior = null;
+    if (this.room) {
+      this.scene.remove(this.room.group);
+      this.spotMarks.forEach((m) => m.dispose());
+      this.spotMarks.clear();
+      disposeRoom(this.room);
+      this.room = null;
     }
-    this.personTalking = null;
-    this.personHover = -1;
+    this.free = false;
+    this.focusId = null;
+    this.setHoverThing(null);
+    this.hoverRing.visible = false;
+    this.labelEl.hidden = true;
     this.roomDown = null;
     this.canvas.style.cursor = '';
     this.applyLights();
@@ -369,8 +522,9 @@ export class World3D implements World {
     this.stop();
     this.cleanup.forEach((f) => f());
     this.cleanup = [];
-    this.interior?.kit.dispose();
-    this.interior = null;
+    if (this.room) disposeRoom(this.room);
+    this.room = null;
+    this.labelEl.remove();
     this.kit.dispose();
     this.skyMat.dispose();
     this.sky.geometry.dispose();
@@ -399,17 +553,45 @@ export class World3D implements World {
     return { pos, target };
   }
 
+  /**
+   * Inside: follow the player from an angled overhead view, like Pokemon Black and White.
+   * During a conversation, move in to a two-shot of the player and whoever they're talking to.
+   */
   private interiorPose() {
     const aspect = this.camera.aspect;
     const tanH = Math.tan((this.camera.fov * DEG) / 2) * aspect;
-    const radius = clamp(9.2 / tanH, 18, 33);
-    const target = this.interior?.data.target.clone() ?? new THREE.Vector3(0, 1.6, 0);
-    const azimuth = 31 * DEG + (reducedMotion() ? 0 : Math.sin(this.interiorSway) * 3.5 * DEG);
-    const polar = 63 * DEG;
+    const r = this.room;
+    const p = r ? r.player.group.position : new THREE.Vector3();
+    const other = this.focusId && r ? r.things.get(this.focusId) : undefined;
+    if (other) {
+      // Frame the pair a little low, so the talk box along the bottom doesn't cover them.
+      const mid = new THREE.Vector3((p.x + other.x) / 2, -1.2, (p.z + other.z) / 2);
+      const gap = Math.hypot(other.x - p.x, other.z - p.z);
+      const az = TALK_AZ;
+      const radius = clamp((gap * 1.2 + 3.6) / Math.min(tanH, 0.9), 10, 16);
+      const polar = 70 * DEG;
+      const pos = new THREE.Vector3(Math.sin(polar) * Math.sin(az), Math.cos(polar), Math.sin(polar) * Math.cos(az)).multiplyScalar(radius).add(mid);
+      return { pos, target: mid };
+    }
+    // Follow loosely: the camera drifts toward the player but keeps most of the room in view.
+    const halfW = ROOM_W / 2 - 5;
+    const halfD = ROOM_D / 2 - 4;
+    const target = new THREE.Vector3(clamp(p.x * 0.4, -halfW, halfW), 1.2, clamp(p.z * 0.4 - 0.8, -halfD, halfD));
+    const radius = clamp(10.5 / tanH, 22, 36);
+    const azimuth = 28 * DEG;
+    const polar = 50 * DEG;
     const pos = new THREE.Vector3(Math.sin(polar) * Math.sin(azimuth), Math.cos(polar), Math.sin(polar) * Math.cos(azimuth))
       .multiplyScalar(radius)
       .add(target);
     return { pos, target };
+  }
+
+  private snapCamera() {
+    const pose = this.interiorPose();
+    this.camera.position.copy(pose.pos);
+    this.target.copy(pose.target);
+    this.camera.lookAt(this.target);
+    this.needsRender = true;
   }
 
   private doorShot(b: BuildingHandle) {
@@ -430,7 +612,8 @@ export class World3D implements World {
     const w = window.innerWidth;
     const h = window.innerHeight;
     const portrait = w / h < 1;
-    const share = this.state === 'interior' || this.interior ? (portrait ? 0.15 : 0.14) : portrait ? 0.14 : 0.08;
+    // Inside, the room banner sits along the top, so the picture moves down a little.
+    const share = this.state === 'interior' || this.room ? (portrait ? -0.04 : -0.07) : portrait ? 0.14 : 0.08;
     this.camera.setViewOffset(w, h, 0, h * share, w, h);
     this.camera.updateProjectionMatrix();
   }
@@ -444,7 +627,8 @@ export class World3D implements World {
     // Widen the view on tall phone screens so the whole plaza fits across.
     this.camera.fov = aspect < 1 ? THREE.MathUtils.lerp(46, 60, clamp((1 - aspect) / 0.55, 0, 1)) : 42;
     this.applyViewOffset();
-    if (this.state !== 'moving') this.placeCamera();
+    if (this.state === 'interior') this.snapCamera();
+    else if (this.state !== 'moving') this.placeCamera();
     this.needsRender = true;
   }
 
@@ -462,7 +646,7 @@ export class World3D implements World {
     this.atmosphere.theme(dark);
     this.renderer.shadowMap.needsUpdate = true;
     this.applyLights();
-    if (this.interior) this.scene.background = new THREE.Color(p.interior);
+    if (this.room) this.scene.background = new THREE.Color(p.interior);
     this.plaza.theme(dark);
     this.applyLit();
     this.needsRender = true;
@@ -470,14 +654,21 @@ export class World3D implements World {
 
   /** Interiors are always lit like daytime rooms; the plaza follows the theme. */
   private applyLights() {
-    const p = this.dark && !this.interior ? SKY.dark : SKY.light;
+    const inside = !!this.room;
+    const p = this.dark && !inside ? SKY.dark : SKY.light;
     this.hemi.color.set(p.hemiSky);
     this.hemi.groundColor.set(p.hemiGround);
-    this.hemi.intensity = this.interior ? 1.35 : p.hemi;
-    this.sun.color.set(this.interior ? 0xfff0dc : p.sunColor);
-    this.sun.intensity = this.interior ? 2.1 : p.sun;
-    // Indoors the light comes from high on the camera side, so walls don't shade the floor.
-    if (this.interior) this.sun.position.set(22, 34, 26);
+    this.hemi.intensity = inside ? 1.5 : p.hemi;
+    this.sun.color.set(inside ? 0xfff0dc : p.sunColor);
+    this.sun.intensity = inside ? 2.3 : p.sun;
+    // Indoors the light comes from high on the camera side, so walls don't shade the floor,
+    // and a tighter shadow box keeps the furniture's shadows crisp.
+    const cam = this.sun.shadow.camera;
+    const reach = inside ? 13 : 42;
+    cam.left = cam.bottom = -reach;
+    cam.right = cam.top = reach;
+    cam.updateProjectionMatrix();
+    if (inside) this.sun.position.set(14, 26, 18);
     else this.sun.position.copy(SUN_DIR).multiplyScalar(70);
   }
 
@@ -495,18 +686,79 @@ export class World3D implements World {
 
   // ---- Input ------------------------------------------------------------------
 
-  /** Inside a room, the colleagues can be clicked to talk to them. */
+  /** Inside a room, the player can walk around and click people and things. */
   private inRoom() {
-    return this.state === 'interior' && this.active && !!this.interior;
+    return this.state === 'interior' && this.active && !!this.room;
   }
 
-  private pickPerson(x: number, y: number): number {
-    if (!this.interior) return -1;
+  private ray(x: number, y: number) {
     const r = this.canvas.getBoundingClientRect();
     this.ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
     this.raycaster.setFromCamera(this.ndc, this.camera);
-    const hit = this.raycaster.intersectObjects(this.interior.data.personHits, false)[0];
-    return typeof hit?.object.userData.person === 'number' ? hit.object.userData.person : -1;
+  }
+
+  private pickThing(x: number, y: number): ThingId | null {
+    if (!this.room) return null;
+    this.ray(x, y);
+    const hit = this.raycaster.intersectObjects(this.room.hits, false)[0];
+    return (hit?.object.userData.thing as ThingId | undefined) ?? null;
+  }
+
+  private pickFloor(x: number, y: number): THREE.Vector3 | null {
+    if (!this.room) return null;
+    this.ray(x, y);
+    return this.raycaster.intersectObject(this.room.floor, false)[0]?.point ?? null;
+  }
+
+  private setHoverThing(id: ThingId | null) {
+    if (id === this.hoverThing) return;
+    this.hoverThing = id;
+    this.canvas.style.cursor = id ? 'pointer' : '';
+    this.needsRender = true;
+  }
+
+  private onKey(e: KeyboardEvent, down: boolean) {
+    const t = e.target as HTMLElement | null;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    const k = e.key.toLowerCase();
+    const move = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k);
+    if (!this.inRoom() || !this.free) {
+      if (!down) this.keys.delete(k);
+      return;
+    }
+    if (move) {
+      // Arrow keys move the player only when nothing else on the page has focus.
+      if (k.startsWith('arrow') && t && t !== document.body && t !== this.canvas) return;
+      e.preventDefault();
+      if (down) this.keys.add(k);
+      else this.keys.delete(k);
+      this.keyboardLast = true;
+      ++this.walkToken;
+    } else if (down && k === 'e') {
+      const near = this.nearestThing(3);
+      if (near) {
+        e.preventDefault();
+        void this.approach(near);
+      }
+    }
+  }
+
+  /** The closest labelled thing within reach of the player. */
+  private nearestThing(reach: number): ThingId | null {
+    const r = this.room;
+    if (!r) return null;
+    const p = r.player.group.position;
+    let best: ThingId | null = null;
+    let bestD = reach;
+    r.things.forEach((v, id) => {
+      if (!this.labels[id]) return;
+      const d = Math.hypot(v.x - p.x, v.z - p.z);
+      if (d < bestD) {
+        bestD = d;
+        best = id;
+      }
+    });
+    return best;
   }
 
   private interactive() {
@@ -532,6 +784,7 @@ export class World3D implements World {
   private onPointerDown(e: PointerEvent) {
     if (this.inRoom()) {
       this.roomDown = { x: e.clientX, y: e.clientY };
+      this.keyboardLast = false;
       return;
     }
     if (!this.interactive()) return;
@@ -553,13 +806,10 @@ export class World3D implements World {
 
   private onPointerMove(e: PointerEvent) {
     if (this.inRoom()) {
-      if (e.pointerType === 'mouse') {
-        const i = this.pickPerson(e.clientX, e.clientY);
-        if (i !== this.personHover) {
-          this.personHover = i;
-          this.canvas.style.cursor = i >= 0 ? 'pointer' : '';
-          this.needsRender = true;
-        }
+      if (e.pointerType === 'mouse' && this.free) {
+        const id = this.pickThing(e.clientX, e.clientY);
+        this.keyboardLast = false;
+        this.setHoverThing(id && this.labels[id] ? id : null);
       }
       return;
     }
@@ -596,10 +846,14 @@ export class World3D implements World {
     if (this.inRoom()) {
       const down = this.roomDown;
       this.roomDown = null;
-      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 8) {
-        const i = this.pickPerson(e.clientX, e.clientY);
-        if (i >= 0) this.onPerson?.(i);
+      if (!down || !this.free || Math.hypot(e.clientX - down.x, e.clientY - down.y) >= 10) return;
+      const id = this.pickThing(e.clientX, e.clientY);
+      if (id && this.labels[id]) {
+        void this.approach(id);
+        return;
       }
+      const at = this.pickFloor(e.clientX, e.clientY);
+      if (at) this.walkToPoint(at.x, at.z);
       return;
     }
     const had = this.pointers.delete(e.pointerId);
@@ -659,7 +913,8 @@ export class World3D implements World {
     }
 
     const motion = !reducedMotion();
-    const animating = motion || this.tweens.length > 0;
+    // A room always updates: people turn and walk even with reduced motion (they just don't animate).
+    const animating = motion || this.tweens.length > 0 || !!this.room;
     if (animating || this.needsRender) {
       this.update(dt);
       this.renderer.render(this.scene, this.camera);
@@ -682,8 +937,7 @@ export class World3D implements World {
       }
       this.placeCamera();
     } else if (this.state === 'interior') {
-      if (motion) this.interiorSway += dt * 0.35;
-      this.placeCamera();
+      this.updateRoom(dt, motion);
     }
 
     if (this.plaza.group.visible) {
@@ -728,14 +982,76 @@ export class World3D implements World {
       if (Math.abs(lift - this.lastLift) > 0.001) this.renderer.shadowMap.needsUpdate = true;
       this.lastLift = lift;
     }
-    if (this.interior) {
-      this.interior.data.npc.update(t, this.talking === 'npc', motion, this.camera);
-      this.interior.data.people.forEach((p, i) => {
-        p.update(t, this.personTalking === i, motion, this.camera);
-        // A small lift shows which colleague the pointer is over.
-        p.group.position.y = this.personHover === i ? 0.12 : 0;
-      });
+  }
+
+  private updateRoom(dt: number, motion: boolean) {
+    const r = this.room;
+    if (!r) return;
+    const player = r.player;
+
+    // Keyboard walking, relative to the camera
+    if (this.free && this.keys.size) {
+      const f = (this.keys.has('w') || this.keys.has('arrowup') ? 1 : 0) - (this.keys.has('s') || this.keys.has('arrowdown') ? 1 : 0);
+      const s = (this.keys.has('d') || this.keys.has('arrowright') ? 1 : 0) - (this.keys.has('a') || this.keys.has('arrowleft') ? 1 : 0);
+      const fwd = new THREE.Vector3().subVectors(this.target, this.camera.position).setY(0).normalize();
+      const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
+      const dir = fwd.multiplyScalar(f).add(right.multiplyScalar(s));
+      player.steer(dir.x, dir.z, dt, (x, z) => r.grid.free(x, z));
+    } else {
+      player.steer(0, 0, dt, () => false);
     }
+
+    // People glance at the player when close; the two in a conversation look at each other.
+    const pp = player.group.position;
+    const head = new THREE.Vector3(pp.x, 2, pp.z);
+    // (The pair in a conversation already stand angled to each other and the camera, so their
+    // heads stay put; turning them too would show the camera the backs of their big heads.)
+    r.actors.forEach((a, id) => {
+      const d = a.group.position.distanceTo(pp);
+      a.lookAt = id !== this.focusId && d < 4.5 ? head : null;
+    });
+    player.lookAt = null;
+
+    let busy = player.update(dt, motion);
+    r.actors.forEach((a) => (busy = a.update(dt, motion) || busy));
+    this.spotMarks.forEach((m) => m.update(dt, motion, 0.9));
+    // Moving shadows: refresh often, less often on low-power devices.
+    if (++this.shadowTick % (this.lowPower ? 3 : 1) === 0) this.renderer.shadowMap.needsUpdate = true;
+
+    // Keyboard players get a prompt for the nearest thing
+    if (this.free && this.keyboardLast) this.setHoverThing(this.nearestThing(3));
+
+    // Hover ring and label
+    const hp = this.hoverThing ? r.things.get(this.hoverThing) : undefined;
+    const hoverActor = this.hoverThing ? r.actors.get(this.hoverThing) : undefined;
+    this.hoverRing.visible = !!hp && this.free && (!!hoverActor || hp.y <= 2.2);
+    if (hp) {
+      this.hoverRing.position.set(hp.x, 0.16, hp.z);
+      this.hoverRing.scale.setScalar((hoverActor ? 0.8 : 1.1) * (motion ? 1 + Math.sin(this.time * 5) * 0.05 : 1));
+    }
+    const label = this.hoverThing && this.free ? this.labels[this.hoverThing] : undefined;
+    if (label && hp) {
+      const v = new THREE.Vector3(hp.x, hoverActor ? hoverActor.topY + 0.9 : hp.y + 1.2, hp.z).project(this.camera);
+      this.labelEl.textContent = this.keyboardLast ? `E · ${label}` : label;
+      this.labelEl.style.left = `${((v.x + 1) / 2) * window.innerWidth}px`;
+      this.labelEl.style.top = `${((1 - v.y) / 2) * window.innerHeight}px`;
+      this.labelEl.hidden = false;
+    } else {
+      this.labelEl.hidden = true;
+    }
+
+    // Ease the camera toward its goal
+    const goal = this.interiorPose();
+    if (motion) {
+      const k = 1 - Math.exp(-dt * (this.focusId ? 3.2 : 4.5));
+      this.camera.position.lerp(goal.pos, k);
+      this.target.lerp(goal.target, k);
+    } else {
+      this.camera.position.copy(goal.pos);
+      this.target.copy(goal.target);
+    }
+    this.camera.lookAt(this.target);
+    if (busy) this.needsRender = true;
   }
 }
 
@@ -752,7 +1068,7 @@ function prepareForLighting(root: THREE.Object3D) {
       const unlit = m.type === 'MeshBasicMaterial' || m.type === 'SpriteMaterial';
       if (unlit && (m as THREE.MeshBasicMaterial).map) m.toneMapped = false;
     }
-    const lit = mats.some((m) => (m as THREE.Material).type === 'MeshLambertMaterial');
+    const lit = mats.some((m) => (m as THREE.Material).type === 'MeshLambertMaterial' || (m as THREE.Material).type === 'MeshStandardMaterial');
     const flat = mesh.geometry?.type === 'RingGeometry' || mesh.geometry?.type === 'CircleGeometry' || mesh.geometry?.type === 'PlaneGeometry';
     mesh.receiveShadow = lit;
     mesh.castShadow = lit && !flat && !mats.some((m) => m.transparent);

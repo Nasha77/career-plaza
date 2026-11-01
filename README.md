@@ -155,3 +155,9 @@ automatically when WebGL is unavailable) plays exactly the same game.
   setting for its panels. It works at phone width.
 - **No external assets.** Every 3D object is built from code; signs, charts and textures are drawn with the
   canvas API at runtime.
+
+## Inside the buildings
+
+Walk around each room: click or tap the floor to walk, click a person or object to go over and interact (arrow keys or WASD also move you, E interacts). "Things here" lists everything in the room for keyboard and screen-reader players. Conversations use an Animal Crossing-style talk box with character "babble" voices (mute with the speaker button).
+
+**3D models:** characters and furniture are from [Kenney](https://kenney.nl) (Mini Characters, Furniture Kit, Mini Market, Holiday Kit, Food Kit), CC0. See `public/models/License.txt`.

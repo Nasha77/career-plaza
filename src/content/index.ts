@@ -1,7 +1,7 @@
 import raw from './scenarios.json';
 import type { ContentFile, Scenario, ScenarioId, SkillName, TaskIndex } from '../types';
 
-export const CONTENT = raw as ContentFile;
+export const CONTENT = raw as unknown as ContentFile;
 
 /** Plaza order, also the order of the original camera tour. */
 export const SCENARIO_IDS: ScenarioId[] = ['resort', 'policy', 'foundation', 'workforce'];

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { ScenarioId } from '../../types';
-import { CHARACTERS, makeCharacter, type Character } from './characters';
+import { GUIDE, makeCharacter, type Character } from './characters';
 import { DISPLAY_FONT, roundRect, type Kit } from './kit';
 
 export interface BuildingHandle {
@@ -746,7 +746,7 @@ export function buildPlaza(kit: Kit): Plaza {
   const buildings = new Map<ScenarioId, BuildingHandle>();
   (Object.keys(PLACES) as ScenarioId[]).forEach((id) => buildings.set(id, makeBuilding(kit, id, group)));
 
-  const guide = makeCharacter(kit, CHARACTERS.guide);
+  const guide = makeCharacter(kit, GUIDE);
   guide.group.position.set(3.4, 0.3, 4.6);
   guide.group.rotation.y = Math.PI / 4;
   group.add(guide.group);

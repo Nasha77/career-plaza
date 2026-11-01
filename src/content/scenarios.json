@@ -254,7 +254,8 @@
             ],
             "note": "Most sign-ups came in the final week. Night-shift teams barely joined."
           },
-          "studyLink": "Like spotting patterns in survey results or records for a research project."
+          "studyLink": "Like spotting patterns in survey results or records for a research project.",
+          "spot": "Last year's sign-up data"
         },
         {
           "id": "B",
@@ -283,7 +284,8 @@
             ],
             "note": "The seniors remember the people, not the activities."
           },
-          "studyLink": "Like opening an essay with a vivid example that makes readers care."
+          "studyLink": "Like opening an essay with a vivid example that makes readers care.",
+          "spot": "Photo album from last year"
         },
         {
           "id": "C",
@@ -333,7 +335,8 @@
             ],
             "note": "Last year's most-asked question was \"What will I actually do?\""
           },
-          "studyLink": "Like organising a group project: who does what, and by when."
+          "studyLink": "Like organising a group project: who does what, and by when.",
+          "spot": "The sign-up sheet"
         }
       ],
       "reactions": {
@@ -497,7 +500,8 @@
             "studyLink": "Like comparing sources to explain why something happened, as in a history essay.",
             "feedback": "Good thinking. Knowing why people stayed away on Sunday tells us what to fix, not just what to promote.",
             "twistFeedback": "Check whether rain hit last year's numbers too. It tells us how much a covered backup matters.",
-            "reflectiveQuestion": "Did digging into the numbers feel more interesting than planning the fun parts?"
+            "reflectiveQuestion": "Did digging into the numbers feel more interesting than planning the fun parts?",
+            "spot": "Last year's visitor numbers"
           },
           {
             "id": "B",
@@ -543,7 +547,8 @@
             "studyLink": "Like planning a group project timeline so nothing clashes.",
             "feedback": "That's the backbone of any event. When everyone knows where to be, the media visit runs smoothly.",
             "twistFeedback": "Add a wet-weather line: where the choir moves if it rains.",
-            "reflectiveQuestion": "Do you enjoy being the person who knows where everything is?"
+            "reflectiveQuestion": "Do you enjoy being the person who knows where everything is?",
+            "spot": "The planning table"
           },
           {
             "id": "C",
@@ -572,7 +577,8 @@
             "studyLink": "Like choosing the most persuasive examples to open a presentation.",
             "feedback": "Buzz before the day is what fills a Sunday. You're thinking about why people would actually come.",
             "twistFeedback": "A 'rain or shine, we've got you covered' story could turn the forecast into a reason to visit indoors.",
-            "reflectiveQuestion": "Did coming up with ideas feel energising, or would you rather someone else made the content?"
+            "reflectiveQuestion": "Did coming up with ideas feel energising, or would you rather someone else made the content?",
+            "spot": "The photo corner"
           }
         ],
         "reactions": {
@@ -587,6 +593,59 @@
           "wantsMore": "Noted. I'll put you on the list for the next one.",
           "studied": "Nice. Same skill, louder setting.",
           "skippedStudies": "No worries. It might click next time you plan a project."
+        },
+        "examine": {
+          "board": {
+            "label": "The festive campaign board",
+            "lines": [
+              "The *Festive Weekend* plan. Saturday is packed: lights, a media visit, the choir.",
+              "Sunday morning just says *\"?\"*."
+            ]
+          },
+          "banner": {
+            "label": "The banner stand",
+            "lines": [
+              "A roll-up banner that says \"Joy awaits\".",
+              "It wobbles a little when you walk past. Wei Ling has taped the base down."
+            ]
+          },
+          "hamper": {
+            "label": "Gift hamper samples",
+            "lines": [
+              "Sample festive hampers from the mall shops.",
+              "A tag reads: \"Lucky draw prize? Ask Hui Min.\""
+            ]
+          }
+        }
+      },
+      "examine": {
+        "poster": {
+          "label": "The Volunteer Day poster",
+          "lines": [
+            "It's the poster for *Volunteer Day* at the senior activity centre.",
+            "The progress bar says *12 of 40* spots filled. Someone has drawn a small, hopeful arrow next to it."
+          ]
+        },
+        "boxes": {
+          "label": "Boxes of T-shirts",
+          "lines": [
+            "Boxes of bright volunteer T-shirts. There are a *lot* of them.",
+            "A note on top says: \"Order more if we hit 40!\""
+          ]
+        },
+        "coffee": {
+          "label": "The coffee machine",
+          "lines": [
+            "The office coffee machine. A sticky note says \"Descale me\".",
+            "Half the team's best ideas probably started here."
+          ]
+        },
+        "bookcase": {
+          "label": "The bookcase",
+          "lines": [
+            "Folders labelled with each year's community programmes.",
+            "One spine just says \"Feedback from the seniors\". It looks well read."
+          ]
         }
       }
     },
@@ -697,7 +756,8 @@
             ],
             "note": "The report confirms approval, not that a transfer has happened."
           },
-          "studyLink": "This is close reading, like comparing two primary sources in a history or literature essay."
+          "studyLink": "This is close reading, like comparing two primary sources in a history or literature essay.",
+          "spot": "The two sources"
         },
         {
           "id": "B",
@@ -735,7 +795,8 @@
             ],
             "note": "Two news outlets quoted our tracker last month."
           },
-          "studyLink": "Like writing a careful conclusion that says what the evidence does and doesn't show."
+          "studyLink": "Like writing a careful conclusion that says what the evidence does and doesn't show.",
+          "spot": "The deal tracker"
         },
         {
           "id": "C",
@@ -777,7 +838,8 @@
             ],
             "note": "A gap between approval and transfer is normal."
           },
-          "studyLink": "Like building a timeline to make sense of events in a history module."
+          "studyLink": "Like building a timeline to make sense of events in a history module.",
+          "spot": "The deal files"
         }
       ],
       "reactions": {
@@ -928,7 +990,8 @@
             "studyLink": "Like reading the marking rubric before an assignment, then checking your evidence against it.",
             "feedback": "That's the foundation. If a project can't meet the standard, nothing else matters.",
             "twistFeedback": "Check how the new rules change who can buy these credits. The standard might be met, but the market could shrink.",
-            "reflectiveQuestion": "Did working through the rules feel satisfying or slow?"
+            "reflectiveQuestion": "Did working through the rules feel satisfying or slow?",
+            "spot": "Carbon standards"
           },
           {
             "id": "B",
@@ -966,7 +1029,8 @@
             "studyLink": "Like comparing case studies in a policy or geography module to find what they share.",
             "feedback": "Patterns from similar projects are often the best early warning we have.",
             "twistFeedback": "Look for neighbouring projects that faced rule changes too. How they adapted is useful evidence.",
-            "reflectiveQuestion": "Did spotting patterns across cases hold your attention?"
+            "reflectiveQuestion": "Did spotting patterns across cases hold your attention?",
+            "spot": "The regional map"
           },
           {
             "id": "C",
@@ -1004,7 +1068,8 @@
             "studyLink": "Like an essay plan: your main claim, the evidence, and the questions you still need to answer.",
             "feedback": "A brief that's honest about its gaps helps the team decide what to check next.",
             "twistFeedback": "Add the new rules as an open question near the top. It could change the recommendation.",
-            "reflectiveQuestion": "How did it feel to recommend something while some answers are still missing?"
+            "reflectiveQuestion": "How did it feel to recommend something while some answers are still missing?",
+            "spot": "The brief"
           }
         ],
         "reactions": {
@@ -1019,6 +1084,52 @@
           "wantsMore": "I'll save you a seat in the research corner.",
           "studied": "Interesting. So you've been doing this kind of research already.",
           "skippedStudies": "That's okay. You might spot it in your next assignment."
+        },
+        "examine": {
+          "shelves": {
+            "label": "The reading shelves",
+            "lines": [
+              "Books on coastlines, carbon and climate finance, in several languages.",
+              "A bookmark in a Bahasa Indonesia report has Kenji's handwriting on it."
+            ]
+          },
+          "nook": {
+            "label": "The reading nook",
+            "lines": [
+              "A comfy chair under a lamp. The perfect spot for a long report.",
+              "A mug on the floor says \"Ask me about mangroves\"."
+            ]
+          }
+        }
+      },
+      "examine": {
+        "reports": {
+          "label": "The government report",
+          "lines": [
+            "A government report on screen. In green: *\"Transfer approved\"*.",
+            "Approved is not quite the same as completed. Interesting."
+          ]
+        },
+        "registry": {
+          "label": "The public registry",
+          "lines": [
+            "The public registry. In red: *\"No record yet\"*.",
+            "Two sources, two different stories."
+          ]
+        },
+        "shelves": {
+          "label": "Shelves of country reports",
+          "lines": [
+            "Rows of country reports, sorted by region.",
+            "Someone has added colourful tabs to every page about Article 6."
+          ]
+        },
+        "coffee": {
+          "label": "The coffee machine",
+          "lines": [
+            "A very serious coffee machine for a very serious office.",
+            "There's a sign-up rota for cleaning it. Daniel's name is on it twice."
+          ]
         }
       }
     },
@@ -1143,7 +1254,8 @@
             ],
             "note": "There is no data on the 120 people who left early."
           },
-          "studyLink": "Like using data to support an argument in a sociology or policy essay."
+          "studyLink": "Like using data to support an argument in a sociology or policy essay.",
+          "spot": "Attendance and survey data"
         },
         {
           "id": "B",
@@ -1172,7 +1284,8 @@
             ],
             "note": "What changed depends a lot on who stayed and why others left."
           },
-          "studyLink": "Like interviews for fieldwork or an oral history project."
+          "studyLink": "Like interviews for fieldwork or an oral history project.",
+          "spot": "The interview corner"
         },
         {
           "id": "C",
@@ -1210,7 +1323,8 @@
             ],
             "note": "An honest gap is easier to fix than a hidden one."
           },
-          "studyLink": "Like writing an abstract: what we know, what we don't, what's next."
+          "studyLink": "Like writing an abstract: what we know, what we don't, what's next.",
+          "spot": "The report on the table"
         }
       ],
       "reactions": {
@@ -1361,7 +1475,8 @@
             "studyLink": "Like a literature review: reading widely and pulling out the main findings.",
             "feedback": "Good research starts with what's already known. Now we can say something with confidence.",
             "twistFeedback": "Check what the co-host has published on young givers. It might fill a gap in our reading.",
-            "reflectiveQuestion": "Did reading and summarising reports feel like your kind of work?"
+            "reflectiveQuestion": "Did reading and summarising reports feel like your kind of work?",
+            "spot": "Reports on young givers"
           },
           {
             "id": "B",
@@ -1407,7 +1522,8 @@
             "studyLink": "Like using data to back up an argument in a social science essay.",
             "feedback": "Our own data tells a story no one else has. That's what makes a newsletter worth reading.",
             "twistFeedback": "Comparing our data with the co-host's could make the event even more interesting.",
-            "reflectiveQuestion": "How did it feel to find the story in a set of numbers?"
+            "reflectiveQuestion": "How did it feel to find the story in a set of numbers?",
+            "spot": "Grant records"
           },
           {
             "id": "C",
@@ -1449,7 +1565,8 @@
             "studyLink": "Like organising a seminar or society event that brings people together.",
             "feedback": "Bringing people together turns research into relationships. That's where giving grows.",
             "twistFeedback": "A co-host brings reach, but agree early whose voice leads, so the evening still feels like ours.",
-            "reflectiveQuestion": "Do you enjoy organising events where different groups meet?"
+            "reflectiveQuestion": "Do you enjoy organising events where different groups meet?",
+            "spot": "Chairs for the evening"
           }
         ],
         "reactions": {
@@ -1464,6 +1581,38 @@
           "wantsMore": "Lovely. There's always another sprint.",
           "studied": "That's lovely. Your essays are already good practice for this.",
           "skippedStudies": "That's alright. It might come to you while you're writing."
+        },
+        "examine": {
+          "board": {
+            "label": "The pinboard",
+            "lines": [
+              "Sticky notes about young givers: *online*, *time and skills*, *show change*, *trust*.",
+              "One note just says \"Mental health ↑↑\" with two arrows."
+            ]
+          },
+          "tea": {
+            "label": "A pot of tea",
+            "lines": [
+              "A teapot and a cup that has gone a little cold.",
+              "Rachel reads a lot. The tea suffers for it."
+            ]
+          }
+        }
+      },
+      "examine": {
+        "board": {
+          "label": "The programme board",
+          "lines": [
+            "*Youth Digital Skills*: 300 attended. Renewal next month.",
+            "Below it, in a dashed box: *\"What changed?\"*"
+          ]
+        },
+        "shelves": {
+          "label": "The cabinet",
+          "lines": [
+            "Files from every programme the foundation has funded.",
+            "Each one ends with the same question: \"What would we do differently?\""
+          ]
         }
       }
     },
@@ -1571,7 +1720,8 @@
             ],
             "note": "Most sources are expert reports. Few include workers' own views."
           },
-          "studyLink": "Like a literature review: reading widely and summarising the main debates."
+          "studyLink": "Like a literature review: reading widely and summarising the main debates.",
+          "spot": "The reports shelf"
         },
         {
           "id": "B",
@@ -1609,7 +1759,8 @@
             ],
             "note": "The roles affected soonest are common first jobs for graduates."
           },
-          "studyLink": "Like building an argument: which points matter most, and in what order."
+          "studyLink": "Like building an argument: which points matter most, and in what order.",
+          "spot": "Trend analysis"
         },
         {
           "id": "C",
@@ -1655,7 +1806,8 @@
             ],
             "note": "The union voice isn't confirmed yet."
           },
-          "studyLink": "Like organising a seminar where different viewpoints get heard."
+          "studyLink": "Like organising a seminar where different viewpoints get heard.",
+          "spot": "The briefing table"
         }
       ],
       "reactions": {
@@ -1805,7 +1957,8 @@
             "studyLink": "Like preparing interview questions for a research project or an oral history.",
             "feedback": "Good questions are half the work. They decide whether people say what they really think.",
             "twistFeedback": "With an observer in the room, open with an easy question so people relax first.",
-            "reflectiveQuestion": "Did writing questions for other people feel natural to you?"
+            "reflectiveQuestion": "Did writing questions for other people feel natural to you?",
+            "spot": "The flipchart"
           },
           {
             "id": "B",
@@ -1847,7 +2000,8 @@
             "studyLink": "Like organising a group project or society event so every member is included.",
             "feedback": "A balanced room is what makes the findings fair. That's careful, important work.",
             "twistFeedback": "Let everyone know an observer is coming. People should know before they agree to attend.",
-            "reflectiveQuestion": "How did it feel to be the person making sure everyone has a seat?"
+            "reflectiveQuestion": "How did it feel to be the person making sure everyone has a seat?",
+            "spot": "The sign-up desk"
           },
           {
             "id": "C",
@@ -1876,7 +2030,8 @@
             "studyLink": "Like analysing interview transcripts or field notes for themes.",
             "feedback": "Learning from last year saves everyone's time. Now we know where the real conversation is.",
             "twistFeedback": "Flag the topics that might feel sensitive with an observer present, so we handle them with care.",
-            "reflectiveQuestion": "Did looking for patterns in notes feel interesting or tedious?"
+            "reflectiveQuestion": "Did looking for patterns in notes feel interesting or tedious?",
+            "spot": "Last year's notes"
           }
         ],
         "reactions": {
@@ -1891,6 +2046,31 @@
           "wantsMore": "I'll remember that. We always need help before big sessions.",
           "studied": "Lovely. You've been practising this already.",
           "skippedStudies": "That's okay. You might notice it next time you work in a group."
+        },
+        "examine": {
+          "circle": {
+            "label": "The circle of chairs",
+            "lines": [
+              "Six chairs in a circle, so nobody sits at the head of the table.",
+              "Nadia says that small detail changes how people talk."
+            ]
+          }
+        }
+      },
+      "examine": {
+        "screen": {
+          "label": "The headline screen",
+          "lines": [
+            "Headlines about *AI and entry-level jobs* scroll past.",
+            "\"New tools change junior tasks.\" \"Employers rethink hiring.\""
+          ]
+        },
+        "coffee": {
+          "label": "The coffee machine",
+          "lines": [
+            "The coffee machine has a small queue of mugs in front of it.",
+            "Strategy work runs on caffeine and good questions."
+          ]
         }
       }
     }

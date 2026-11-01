@@ -28,6 +28,8 @@ export interface ScenarioOption {
   result: Finding;
   /** How this way of working shows up in humanities coursework. */
   studyLink: string;
+  /** Short label for the place in the room where this approach happens. */
+  spot: string;
   feedback: string;
   twistFeedback: string;
   reflectiveQuestion: string;
@@ -99,6 +101,8 @@ export interface Scenario {
   invite: string;
   resources: Resource[];
   options: ScenarioOption[];
+  /** Things in the room you can look at, by spot id (see src/world/three/layouts.ts). */
+  examine: Record<string, { label: string; lines: string[] }>;
   /** The second task, offered on the next visit: a different role with one of the colleagues. */
   taskB?: TaskB;
 }
