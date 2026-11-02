@@ -153,8 +153,8 @@ automatically when WebGL is unavailable) plays exactly the same game.
 - **Accessible.** Buildings can be chosen from buttons as well as in 3D; everything works by keyboard.
   The game respects reduced-motion settings (fades instead of camera flights) and the device's light or dark
   setting for its panels. It works at phone width.
-- **No external assets.** Every 3D object is built from code; signs, charts and textures are drawn with the
-  canvas API at runtime.
+- **Light on assets.** The plaza buildings are built from code, and signs, charts and textures are drawn
+  with the canvas API at runtime. People and room furniture are free CC0 models from Kenney.
 
 ## Inside the buildings
 

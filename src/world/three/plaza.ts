@@ -34,6 +34,10 @@ export interface Plaza {
   jet: THREE.Mesh;
   water: THREE.ShaderMaterial;
   theme: (dark: boolean) => void;
+  /** Where the trees stand, so Kenney models can take their place. */
+  treeSpots: [number, number, number][];
+  /** The code-built trees, hidden once the Kenney ones are in. */
+  stand: THREE.Object3D[];
 }
 
 const DIST = 20;
@@ -760,5 +764,5 @@ export function buildPlaza(kit: Kit): Plaza {
     lampMat.emissiveIntensity = dark ? 1.4 : 0.2;
   };
 
-  return { group, buildings, guide, rings, jet, water, theme };
+  return { group, buildings, guide, rings, jet, water, theme, treeSpots, stand: [trunks, leaves1, leaves2] };
 }

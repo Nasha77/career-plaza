@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import type { ScenarioId } from '../../types';
 import { fade, reducedMotion, type BodyAction, type Marker, type Mood, type RoomSetup, type ThingId, type Who, type World } from '../types';
-import type { Actor } from './actor';
+import { Actor } from './actor';
 import { buildAtmosphere, type Atmosphere } from './atmosphere';
 import { ROOM_D, ROOM_W } from './boards';
 import { Emote } from './emotes';
 import { Kit } from './kit';
 import { modelsFor } from './layouts';
-import { preload } from './models';
+import { preload, spawn } from './models';
 import { buildRoom, disposeRoom, type Room } from './room';
 import { LABEL_H, LABEL_W, buildPlaza, labelY, type BuildingHandle, type Plaza } from './plaza';
 
@@ -83,6 +83,8 @@ export class World3D implements World {
   private keyboardLast = false;
   private walkToken = 0;
   private shadowTick = 0;
+  /** Kenney people on the plaza: the guide (first) and a few passers-by. */
+  private plazaPeople: Actor[] = [];
   private active = true;
   private raf = 0;
   private last = 0;
@@ -238,6 +240,53 @@ export class World3D implements World {
     this.renderer.render(this.scene, this.camera);
     this.start();
     if (import.meta.env.DEV) (window as unknown as { __world: World3D }).__world = this;
+    void this.dressPlaza();
+  }
+
+  /**
+   * Swap the plaza's code-built guide for a Kenney character, and add a few people sitting on
+   * the benches and chatting by the fountain, so the plaza matches the rooms. If the models
+   * don't load, the code-built guide simply stays.
+   */
+  private async dressPlaza() {
+    const spots: [string, number, number, number, 'idle' | 'sit'][] = [
+      ['character-male-c', 3.4, 4.6, Math.PI / 4, 'idle'],
+      ['character-female-e', -6.2, 5.4, 2.4, 'idle'],
+      ['character-male-e', -5.0, 6.6, -2.6, 'idle'],
+      ['character-female-c', 7.6, -5.2, -0.9, 'idle'],
+      ['character-male-a', -7.4, -6.0, 0.8, 'idle'],
+    ];
+    try {
+      const models = await Promise.all(spots.map(([look]) => spawn(`characters/${look}`, 0.9)));
+      models.forEach((sp, i) => {
+        const [, x, z, yaw, pose] = spots[i];
+        const a = new Actor(sp, pose);
+        a.place(x, z, yaw);
+        a.group.position.y = 0.3;
+        this.plaza.group.add(a.group);
+        this.plazaPeople.push(a);
+      });
+      this.plaza.guide.group.visible = false;
+      await this.plantKenney();
+      this.renderer.shadowMap.needsUpdate = true;
+      this.needsRender = true;
+    } catch {
+      /* keep the code-built guide */
+    }
+  }
+
+  /** Kenney trees in place of the code-built ones (same spots, same blob shadows). */
+  private async plantKenney() {
+    const kinds = ['nature/tree', 'nature/tree-tall', 'nature/tree', 'nature/tree-autumn'];
+    const trees = await Promise.all(this.plaza.treeSpots.map((_, i) => spawn(kinds[i % kinds.length], 1.25)));
+    this.plaza.treeSpots.forEach(([x, z, s], i) => {
+      const o = trees[i].object;
+      o.position.set(x, 0, z);
+      o.rotation.y = i * 1.7;
+      o.scale.setScalar(s);
+      this.plaza.group.add(o);
+    });
+    this.plaza.stand.forEach((o) => (o.visible = false));
   }
 
   private listen(t: EventTarget, type: string, fn: (e: Event) => void, opts?: AddEventListenerOptions) {
@@ -976,6 +1025,10 @@ export class World3D implements World {
         }
       });
       this.plaza.guide.update(t, this.talking === 'guide', motion, this.camera);
+      this.plazaPeople.forEach((a, i) => {
+        a.talking = i === 0 && this.talking === 'guide';
+        a.update(dt, motion);
+      });
       // Re-render shadows only while a building is rising or settling.
       let lift = 0;
       this.plaza.buildings.forEach((b) => (lift += b.lift));
