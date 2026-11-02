@@ -524,7 +524,7 @@ export class App {
     s.colleagues.forEach((c, i) => {
       if (i !== manager) out.push({ id: `person:${i}`, label: `Talk to ${c.name}`, kind: 'person' });
     });
-    s.extras.forEach((e, i) => out.push({ id: `extra:${i}`, label: `Chat with ${e.name} (${e.role})`, kind: 'person' }));
+    s.extras.forEach((e, i) => out.push({ id: `extra:${i}`, label: e.busy ? `${e.name} (${e.role}, busy)` : `Chat with ${e.name} (${e.role})`, kind: 'person' }));
     s.options.forEach((o) => out.push({ id: `spot:${o.id}`, label: o.spot, kind: 'spot' }));
     Object.entries(s.examine).forEach(([k, v]) => out.push({ id: `spot:${k}`, label: v.label, kind: 'look' }));
     return out;
@@ -667,12 +667,7 @@ export class App {
     }
     if (id === 'manager') return this.converse(run, 'manager', () => this.talkToManager(run));
     if (id.startsWith('person:')) return this.converse(run, id, () => this.talkToColleague(run, Number(id.slice(7))));
-    if (id.startsWith('extra:')) {
-      const e = run.scenario.extras[Number(id.slice(6))];
-      return this.converse(run, id, async () => {
-        if (e) await this.say(run, id, e.line);
-      });
-    }
+    if (id.startsWith('extra:')) return this.converse(run, id, () => this.talkToExtra(run, id));
     const key = id.slice(5);
     if (['A', 'B', 'C'].includes(key)) return this.converse(run, null, () => this.atApproachSpot(run, key as ChoiceId));
     return this.converse(run, null, () => this.examine(run, key));
@@ -863,6 +858,52 @@ export class App {
     this.inPanel = true;
     run.pendingLine = `[excited] Ooh, what did you find? Show me!`;
     this.go('write');
+  }
+
+  /** A background person: a quick question for you (or they're busy), then you can ask about their work. */
+  private async talkToExtra(run: Run, id: ThingId) {
+    const e = run.scenario.extras[Number(id.slice(6))];
+    if (!e) return;
+    if (e.busy) {
+      this.world.emote(id, 'thinking');
+      await this.say(run, null, `${e.name} is busy ${e.busy}. Best not to bother them right now.`);
+      return;
+    }
+    this.world.emote(id, 'happy');
+    if (e.ask && e.choices) {
+      await this.say(run, id, `[thinking] ${e.ask}`);
+      if (this.run !== run) return;
+      const k = await this.talk.choose(e.choices.map((c) => c.text));
+      if (this.run !== run) return;
+      await this.say(run, id, e.choices[k].reply);
+    } else if (e.ask) {
+      const answered = await this.openQuestion(run, id, e.ask);
+      if (this.run !== run) return;
+      await this.say(run, id, answered ? `[happy] ${e.reply ?? 'Thanks!'}` : 'No worries! Have a think and come back.');
+    }
+    if (this.run !== run) return;
+    const more = await this.talk.choose(['What are you working on?', 'See you around!']);
+    if (more === 0 && this.run === run) await this.say(run, id, e.line);
+  }
+
+  /** An open question in the talk box, with a box to type in. Resolves true if they answered. */
+  private openQuestion(run: Run, id: ThingId, question: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const ta = h('textarea', { rows: 2, maxlength: 200, placeholder: 'Your answer…', 'aria-label': 'Your answer' }) as HTMLTextAreaElement;
+      const done = (answered: boolean) => resolve(answered && ta.value.trim().length > 0);
+      const controls = h(
+        'div',
+        { class: 'block' },
+        ta,
+        h(
+          'div',
+          { class: 'actions' },
+          h('button', { class: 'btn primary', type: 'button', onclick: () => done(true) }, 'Reply'),
+          h('button', { class: 'btn ghost', type: 'button', onclick: () => done(false) }, 'Skip'),
+        ),
+      );
+      void this.say(run, id, `[thinking] ${question}`, controls);
+    });
   }
 
   private async talkToColleague(run: Run, i: number) {

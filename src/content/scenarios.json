@@ -621,12 +621,28 @@
           {
             "name": "Ben",
             "role": "Mall Operations",
-            "line": "If the choir moves inside, I'll need the atrium cleared by 1:45. No pressure."
+            "line": "If the choir moves inside, I'll need the atrium cleared by 1:45. No pressure.",
+            "busy": "on a call about moving the choir stage"
           },
           {
             "name": "Aisha",
             "role": "Retail Partnerships",
-            "line": "Three shops want to sponsor the craft corner. One wants their logo on the snowman."
+            "line": "Three shops want to sponsor the craft corner. One wants their logo on the snowman.",
+            "ask": "Which shop should sponsor the kids' craft corner?",
+            "choices": [
+              {
+                "text": "The bookshop",
+                "reply": "Calm and wholesome. Parents will approve."
+              },
+              {
+                "text": "The toy store",
+                "reply": "The obvious fit. Kids, toys, glitter."
+              },
+              {
+                "text": "The bubble tea place",
+                "reply": "Bold. Sticky glue and sticky drinks, though..."
+              }
+            ]
           }
         ]
       },
@@ -664,12 +680,29 @@
         {
           "name": "Dev",
           "role": "Design Intern",
-          "line": "I'm redoing the Volunteer Day poster. Third version. The first two were 'too orange'."
+          "line": "I'm redoing the Volunteer Day poster. Third version. The first two were 'too orange'.",
+          "ask": "Quick one, I'm stuck: which poster would make you sign up?",
+          "choices": [
+            {
+              "text": "A big photo of last year's volunteers",
+              "reply": "Faces work. People like seeing people they know."
+            },
+            {
+              "text": "A bold headline: '28 spots left!'",
+              "reply": "Ooh, urgent. Priya will love that."
+            },
+            {
+              "text": "A cute drawing of the seniors' centre",
+              "reply": "Aww. Soft and friendly. I like it."
+            }
+          ]
         },
         {
           "name": "Siti",
           "role": "Volunteer Coordinator",
-          "line": "Last year I carried forty T-shirts up the stairs. This year: a trolley."
+          "line": "Last year I carried forty T-shirts up the stairs. This year: a trolley.",
+          "ask": "If you could volunteer anywhere this weekend, where would you go?",
+          "reply": "Nice. That's exactly the kind of thing people sign up for."
         }
       ]
     },
@@ -1129,12 +1162,28 @@
           {
             "name": "Hana",
             "role": "Translator",
-            "line": "I read the project papers in Bahasa first. Some details never make it into English."
+            "line": "I read the project papers in Bahasa first. Some details never make it into English.",
+            "ask": "How many languages do you speak or read?",
+            "choices": [
+              {
+                "text": "One",
+                "reply": "Plenty to start with. Most of my job is careful reading anyway."
+              },
+              {
+                "text": "Two",
+                "reply": "Nice! Two languages means two ways of seeing a document."
+              },
+              {
+                "text": "Three or more",
+                "reply": "Wow. Kenji will try to recruit you for the regional team."
+              }
+            ]
           },
           {
             "name": "Leo",
             "role": "Climate Finance Intern",
-            "line": "Day three. I now know what 'additionality' means. Mostly."
+            "line": "Day three. I now know what 'additionality' means. Mostly.",
+            "busy": "reading a ninety-page report on carbon credits"
           }
         ]
       },
@@ -1172,12 +1221,29 @@
         {
           "name": "Tom",
           "role": "Member Services",
-          "line": "A member just emailed asking if the deal is final. I said 'checking'."
+          "line": "A member just emailed asking if the deal is final. I said 'checking'.",
+          "ask": "A member asks me if the deal is final. What would you say?",
+          "choices": [
+            {
+              "text": "'We're checking, and we'll update you.'",
+              "reply": "That's what I said! Calm, and it doesn't promise too much."
+            },
+            {
+              "text": "'Yes, it's done.'",
+              "reply": "Hmm, the registry still says no record yet..."
+            },
+            {
+              "text": "'No idea, sorry!'",
+              "reply": "Ha. Honest, but let's sound a bit more helpful."
+            }
+          ]
         },
         {
           "name": "Lin",
           "role": "Data Volunteer",
-          "line": "I update the tracker on Fridays. Mondays are for fixing what I broke on Friday."
+          "line": "I update the tracker on Fridays. Mondays are for fixing what I broke on Friday.",
+          "ask": "What's something you've tracked or counted, just for fun?",
+          "reply": "Love that. Tracking things is just curiosity with a spreadsheet."
         }
       ]
     },
@@ -1650,12 +1716,28 @@
           {
             "name": "Wen",
             "role": "Library Volunteer",
-            "line": "Every report here has a sticky note. Rachel's system. Nobody else understands it."
+            "line": "Every report here has a sticky note. Rachel's system. Nobody else understands it.",
+            "busy": "re-shelving reports by colour (don't ask)"
           },
           {
             "name": "Kai",
             "role": "Events Intern",
-            "line": "Six chairs done. Twenty-four to go."
+            "line": "Six chairs done. Twenty-four to go.",
+            "ask": "What should we serve at the young givers' evening?",
+            "choices": [
+              {
+                "text": "Kopi and kaya toast",
+                "reply": "A classic. Nobody says no to kaya toast."
+              },
+              {
+                "text": "Bubble tea",
+                "reply": "Very on-brand for young donors. Noted!"
+              },
+              {
+                "text": "Fruit and water, keep it simple",
+                "reply": "Sensible. Rachel will appreciate the budget."
+              }
+            ]
           }
         ]
       },
@@ -1679,12 +1761,29 @@
         {
           "name": "Joel",
           "role": "Grants Officer",
-          "line": "I've read this report four times. The sticky notes are winning."
+          "line": "I've read this report four times. The sticky notes are winning.",
+          "ask": "How would you show that a youth programme actually worked?",
+          "choices": [
+            {
+              "text": "Numbers: who came and what changed",
+              "reply": "Clear and comparable. Funders love a good table."
+            },
+            {
+              "text": "Stories from the young people in it",
+              "reply": "Stories stick. People remember them long after the numbers."
+            },
+            {
+              "text": "Both, side by side",
+              "reply": "My favourite answer. A number and a face."
+            }
+          ]
         },
         {
           "name": "Nur",
           "role": "Volunteer",
-          "line": "I help at the youth programme on Saturdays. The kids taught me spreadsheets."
+          "line": "I help at the youth programme on Saturdays. The kids taught me spreadsheets.",
+          "ask": "If you taught a room of teenagers for an afternoon, what would you teach?",
+          "reply": "They'd love that. Honestly, I'd sign up too."
         }
       ]
     },
@@ -2132,12 +2231,29 @@
           {
             "name": "Ade",
             "role": "Union Liaison",
-            "line": "Three union reps on the phone. Two said yes. One asked what a focus group is."
+            "line": "Three union reps on the phone. Two said yes. One asked what a focus group is.",
+            "ask": "Where should we hold the next focus group?",
+            "choices": [
+              {
+                "text": "A community centre",
+                "reply": "Good call. Familiar and easy to get to."
+              },
+              {
+                "text": "A café",
+                "reply": "Relaxed. People talk more over coffee."
+              },
+              {
+                "text": "Online, after work",
+                "reply": "Practical. Shift workers would thank you."
+              }
+            ]
           },
           {
             "name": "Yuki",
             "role": "Note-taker",
-            "line": "I write down everything people say. Even the jokes. Especially the jokes."
+            "line": "I write down everything people say. Even the jokes. Especially the jokes.",
+            "ask": "What's one question you'd ask a young worker about AI?",
+            "reply": "Good one. I'll add it to the discussion guide."
           }
         ]
       },
@@ -2161,12 +2277,29 @@
         {
           "name": "Mira",
           "role": "Researcher",
-          "line": "I've read forty reports on AI and jobs this month. My verdict: it depends."
+          "line": "I've read forty reports on AI and jobs this month. My verdict: it depends.",
+          "ask": "Do you think AI will change your first job?",
+          "choices": [
+            {
+              "text": "A lot",
+              "reply": "You might be right. The reports are split, though."
+            },
+            {
+              "text": "A little",
+              "reply": "That's what most workers told us. Small changes, every day."
+            },
+            {
+              "text": "Not sure yet",
+              "reply": "Honestly, same. That's why we're asking people."
+            }
+          ]
         },
         {
           "name": "Sam",
           "role": "Comms Officer",
-          "line": "Marcus wants the slides 'punchier'. I've added three exclamation marks."
+          "line": "Marcus wants the slides 'punchier'. I've added three exclamation marks.",
+          "ask": "Give me a punchier title for a talk about AI and jobs.",
+          "reply": "Ooh, better than mine. I'm stealing it."
         }
       ]
     }

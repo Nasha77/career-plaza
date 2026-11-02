@@ -64,6 +64,24 @@ export interface Reactions {
   skippedStudies: string;
 }
 
+/**
+ * A background person. Most ask a quick multiple-choice question, some an open one, and a few
+ * are busy. Anyone not busy can also be asked what they're working on (`line`).
+ */
+export interface Extra {
+  name: string;
+  role: string;
+  line: string;
+  /** What they're busy with, if they'd rather not be disturbed. */
+  busy?: string;
+  /** The question they ask the player. */
+  ask?: string;
+  /** Answers to pick from, each with their reply (a multiple-choice question). */
+  choices?: { text: string; reply: string }[];
+  /** Their reply to an open question. */
+  reply?: string;
+}
+
 /** One line in the conversational intro: either the manager or the student's reply chip. */
 export type ChatLine = { npc: string } | { you: string };
 
@@ -101,8 +119,8 @@ export interface Scenario {
   invite: string;
   resources: Resource[];
   options: ScenarioOption[];
-  /** Background people in the room, each with one short line (positions in layouts.ts). */
-  extras: { name: string; role: string; line: string }[];
+  /** Background people in the room (positions in layouts.ts). */
+  extras: Extra[];
   /** Things in the room you can look at, by spot id (see src/world/three/layouts.ts). */
   examine: Record<string, { label: string; lines: string[] }>;
   /** The second task, offered on the next visit: a different role with one of the colleagues. */

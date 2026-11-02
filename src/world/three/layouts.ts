@@ -505,11 +505,95 @@ const workforceB: Layout = {
   },
 };
 
+/** How much bigger the rooms are than the layouts above are written. */
+export const ROOM_SCALE = 1.5;
+
+/** Furniture that other things gather around (a chair at a desk, a lamp by a sofa). */
+const ANCHOR = /desk|table|sofa|Sofa|bookcase|kitchen|display|tree-decorated|stall/;
+
+/**
+ * Spread a layout out to the bigger room. Floors, walls and wall-mounted things scale; each
+ * piece of furniture moves out but keeps its size, and whatever belongs with it (a chair at a
+ * desk, a laptop on a table, someone at their work) keeps its place beside it. People who were
+ * seated stand at their desk instead, and their chair goes.
+ */
+function spread(l: Layout, k = ROOM_SCALE): Layout {
+  const anchors = l.props.filter((p) => p.on === undefined && p.y === undefined && !p.walk && ANCHOR.test(p.m));
+  const near = (x: number, z: number): Prop | null => {
+    let best: Prop | null = null;
+    let bd = 2.4;
+    for (const a of anchors) {
+      const d = Math.hypot(a.x - x, a.z - z);
+      if (d < bd) {
+        bd = d;
+        best = a;
+      }
+    }
+    return best;
+  };
+  const follow = (x: number, z: number, around: Prop | null): [number, number] =>
+    around ? [around.x * k + (x - around.x), around.z * k + (z - around.z)] : [x * k, z * k];
+
+  // Seated people stand instead; drop the chair they were sitting on.
+  const seated = [l.manager, ...Object.values(l.people), ...(l.extras ?? [])].filter((p) => p.pose === 'sit');
+  const dropped = new Set<number>();
+  seated.forEach((s) => {
+    const i = l.props.findIndex((p, j) => !dropped.has(j) && /chair/i.test(p.m) && Math.hypot(p.x - s.x, p.z - s.z) < 0.9);
+    if (i >= 0) dropped.add(i);
+  });
+  const stand = (p: Placement): Placement => {
+    const [x, z] = follow(p.x, p.z, near(p.x, p.z));
+    return { ...p, x, z, pose: 'idle' };
+  };
+
+  const moved: Prop[] = [];
+  const newIndex = new Map<number, number>();
+  l.props.forEach((p, i) => {
+    if (dropped.has(i)) return;
+    let x: number;
+    let z: number;
+    if (p.on !== undefined) {
+      const parent = l.props[p.on];
+      [x, z] = follow(p.x, p.z, parent);
+    } else if (p.y !== undefined || p.walk || anchors.includes(p)) {
+      [x, z] = [p.x * k, p.z * k];
+    } else {
+      [x, z] = follow(p.x, p.z, near(p.x, p.z));
+    }
+    newIndex.set(i, moved.length);
+    moved.push({ ...p, x, z });
+  });
+  moved.forEach((p) => {
+    if (p.on !== undefined) p.on = newIndex.get(p.on);
+  });
+
+  const spots: Layout['spots'] = {};
+  for (const [key, sp] of Object.entries(l.spots)) {
+    const [x, z] = sp.y !== undefined ? [sp.x * k, sp.z * k] : follow(sp.x, sp.z, near(sp.x, sp.z));
+    spots[key] = { ...sp, x, z };
+  }
+  const people: Layout['people'] = {};
+  for (const [i, p] of Object.entries(l.people)) people[Number(i)] = stand(p);
+  return {
+    ...l,
+    floor: l.floor.map(([a, b, c, d]) => [a * k, b * k, c * k, d * k] as Rect),
+    partitions: l.partitions?.map(([a, b, c, d]) => [a * k, b * k, c * k, d * k] as Partition),
+    door: [l.door[0] * k, l.door[1] * k],
+    props: moved,
+    manager: stand(l.manager),
+    people,
+    extras: l.extras?.map(stand),
+    spots,
+    shelves: l.shelves?.map(([x, y, w]) => [x * k, y, w] as [number, number, number]),
+    frames: l.frames?.map(([x, y, w, h, seed, wall]) => [x * k, y, w, h, seed, wall] as NonNullable<Layout['frames']>[number]),
+  };
+}
+
 export const LAYOUTS: Record<ScenarioId, [Layout, Layout]> = {
-  resort: [resortA, resortB],
-  policy: [policyA, policyB],
-  foundation: [foundationA, foundationB],
-  workforce: [workforceA, workforceB],
+  resort: [spread(resortA), spread(resortB)],
+  policy: [spread(policyA), spread(policyB)],
+  foundation: [spread(foundationA), spread(foundationB)],
+  workforce: [spread(workforceA), spread(workforceB)],
 };
 
 export const layoutFor = (id: ScenarioId, task: TaskIndex) => LAYOUTS[id][task];

@@ -6,7 +6,7 @@ import { Actor } from './actor';
 import { BACK_Z, LEFT_X, boardsFor, buildShape, frame, wallShelf } from './boards';
 import { Kit } from './kit';
 import { castFor, extraLook } from '../cast';
-import { layoutFor, onFloor } from './layouts';
+import { ROOM_SCALE, layoutFor, onFloor } from './layouts';
 import { spawn, spawnCharacter } from './models';
 import { WalkGrid } from './walkgrid';
 
@@ -36,13 +36,21 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
   const group = new THREE.Group();
   const layout = layoutFor(id, setup.task);
   const floor = buildShape(kit, group, id, layout.floor, layout.partitions ?? [], layout.door);
-  boardsFor(id, setup.task)(kit, group, setup.twist);
-  for (const [x, y, w] of layout.shelves ?? []) wallShelf(kit, group, x, y, w);
-  (layout.frames ?? []).forEach(([x, y, w, h, seed, wall]) => frame(kit, group, x, y, w, h, seed, wall));
+  // The boards, shelves and frames are drawn for the room's original size; spread them out to
+  // the room's walls (their sizes stay the same).
+  const wallThings = new THREE.Group();
+  boardsFor(id, setup.task)(kit, wallThings, setup.twist);
+  for (const [x, y, w] of layout.shelves ?? []) wallShelf(kit, wallThings, x / ROOM_SCALE, y, w);
+  (layout.frames ?? []).forEach(([x, y, w, h, seed, wall]) => frame(kit, wallThings, x / ROOM_SCALE, y, w, h, seed, wall));
+  wallThings.children.forEach((c) => {
+    c.position.x *= ROOM_SCALE;
+    c.position.z *= ROOM_SCALE;
+  });
+  group.add(wallThings);
   const cast = castFor(setup.look).rooms[id];
   const managerIndex = taskManagerIndex(id, setup.task);
   // The walkable floor: inside the room's shape, a little way off the walls.
-  const grid = new WalkGrid(16, 12, 0.5);
+  const grid = new WalkGrid(16 * ROOM_SCALE, 12 * ROOM_SCALE, 0.5);
   grid.blockWhere((x, z) => !(onFloor(layout, x, z) && onFloor(layout, x - 0.7, z) && onFloor(layout, x + 0.7, z) && onFloor(layout, x, z - 0.7) && onFloor(layout, x, z + 0.3)));
   for (const [x0, z0, x1, z1] of layout.partitions ?? []) {
     grid.blockRect((x0 + x1) / 2, (z0 + z1) / 2, Math.abs(x1 - x0) + 0.3, Math.abs(z1 - z0) + 0.3, 0, 0.2);

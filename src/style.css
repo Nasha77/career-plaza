@@ -2550,3 +2550,25 @@ body[data-screen='scenario']:not(.simple)::before {
   z-index: 1;
   background: radial-gradient(ellipse 75% 70% at 50% 52%, transparent 55%, rgba(20, 12, 4, 0.55) 100%);
 }
+
+/* The name tag sits over the talk box's top edge, so the box itself must not clip;
+   long content (writing, ratings, links) scrolls inside the box instead. */
+.talk-box {
+  overflow: visible;
+  max-height: none;
+}
+.talk-extra {
+  max-height: min(42vh, 400px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #d9c7a0 transparent;
+}
+.talk-tag {
+  top: -18px;
+  z-index: 2;
+}
+@media (max-width: 600px) {
+  .talk-extra {
+    max-height: 46vh;
+  }
+}

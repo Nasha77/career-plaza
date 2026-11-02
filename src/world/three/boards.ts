@@ -147,13 +147,15 @@ export function buildShape(kit: Kit, g: THREE.Group, id: ScenarioId, rects: Rect
   const trim = kit.lambert(c.trim);
   const cap = kit.lambert(0x3b2e22);
 
-  // Walls along the edges of the floor, found on a 1-unit grid and merged into runs.
+  // Walls along the edges of the floor, found on a half-unit grid and merged into runs.
+  const S = 0.5;
+  const H = S / 2;
   const back: [number, number, number][] = []; // [z, x0, x1]
   const sides: [number, number, number, -1 | 1][] = []; // [x, z0, z1, inward]
-  for (let z = -6; z < 6; z++) {
+  for (let z = -12; z < 12; z += S) {
     let run: number | null = null;
-    for (let x = -8; x <= 8; x++) {
-      const edge = x < 8 && inRects(rects, x + 0.5, z + 0.5) && !inRects(rects, x + 0.5, z - 0.5);
+    for (let x = -14; x <= 14; x += S) {
+      const edge = x < 14 && inRects(rects, x + H, z + H) && !inRects(rects, x + H, z - H);
       if (edge && run === null) run = x;
       if (!edge && run !== null) {
         back.push([z, run, x]);
@@ -162,13 +164,13 @@ export function buildShape(kit: Kit, g: THREE.Group, id: ScenarioId, rects: Rect
     }
   }
   for (const inward of [1, -1] as const) {
-    for (let x = -8; x <= 8; x++) {
+    for (let x = -14; x <= 14; x += S) {
       let run: number | null = null;
-      for (let z = -6; z <= 6; z++) {
+      for (let z = -12; z <= 12; z += S) {
         // inward 1: floor to the right of the line x (a left wall); -1: floor to the left (a right wall)
-        const cx = inward === 1 ? x + 0.5 : x - 0.5;
-        const ox = inward === 1 ? x - 0.5 : x + 0.5;
-        const edge = z < 6 && inRects(rects, cx, z + 0.5) && !inRects(rects, ox, z + 0.5);
+        const cx = inward === 1 ? x + H : x - H;
+        const ox = inward === 1 ? x - H : x + H;
+        const edge = z < 12 && inRects(rects, cx, z + H) && !inRects(rects, ox, z + H);
         if (edge && run === null) run = z;
         if (!edge && run !== null) {
           sides.push([x, run, z, inward]);
@@ -241,7 +243,7 @@ export function buildShape(kit: Kit, g: THREE.Group, id: ScenarioId, rects: Rect
     sz += ((z0 + z1) / 2) * a;
     area += a;
   }
-  const glow = new THREE.PointLight(0xffd59a, 26, 16, 1.4);
+  const glow = new THREE.PointLight(0xffd59a, 40, 26, 1.4);
   glow.position.set(sx / area, 4.6, sz / area);
   g.add(glow);
   return floor;
