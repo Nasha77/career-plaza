@@ -616,7 +616,19 @@
               "A tag reads: \"Lucky draw prize? Ask Hui Min.\""
             ]
           }
-        }
+        },
+        "extras": [
+          {
+            "name": "Ben",
+            "role": "Mall Operations",
+            "line": "If the choir moves inside, I'll need the atrium cleared by 1:45. No pressure."
+          },
+          {
+            "name": "Aisha",
+            "role": "Retail Partnerships",
+            "line": "Three shops want to sponsor the craft corner. One wants their logo on the snowman."
+          }
+        ]
       },
       "examine": {
         "poster": {
@@ -647,7 +659,19 @@
             "One spine just says \"Feedback from the seniors\". It looks well read."
           ]
         }
-      }
+      },
+      "extras": [
+        {
+          "name": "Dev",
+          "role": "Design Intern",
+          "line": "I'm redoing the Volunteer Day poster. Third version. The first two were 'too orange'."
+        },
+        {
+          "name": "Siti",
+          "role": "Volunteer Coordinator",
+          "line": "Last year I carried forty T-shirts up the stairs. This year: a trolley."
+        }
+      ]
     },
     {
       "id": "policy",
@@ -1100,7 +1124,19 @@
               "A mug on the floor says \"Ask me about mangroves\"."
             ]
           }
-        }
+        },
+        "extras": [
+          {
+            "name": "Hana",
+            "role": "Translator",
+            "line": "I read the project papers in Bahasa first. Some details never make it into English."
+          },
+          {
+            "name": "Leo",
+            "role": "Climate Finance Intern",
+            "line": "Day three. I now know what 'additionality' means. Mostly."
+          }
+        ]
       },
       "examine": {
         "reports": {
@@ -1131,7 +1167,19 @@
             "There's a sign-up rota for cleaning it. Daniel's name is on it twice."
           ]
         }
-      }
+      },
+      "extras": [
+        {
+          "name": "Tom",
+          "role": "Member Services",
+          "line": "A member just emailed asking if the deal is final. I said 'checking'."
+        },
+        {
+          "name": "Lin",
+          "role": "Data Volunteer",
+          "line": "I update the tracker on Fridays. Mondays are for fixing what I broke on Friday."
+        }
+      ]
     },
     {
       "id": "foundation",
@@ -1597,7 +1645,19 @@
               "Rachel reads a lot. The tea suffers for it."
             ]
           }
-        }
+        },
+        "extras": [
+          {
+            "name": "Wen",
+            "role": "Library Volunteer",
+            "line": "Every report here has a sticky note. Rachel's system. Nobody else understands it."
+          },
+          {
+            "name": "Kai",
+            "role": "Events Intern",
+            "line": "Six chairs done. Twenty-four to go."
+          }
+        ]
       },
       "examine": {
         "board": {
@@ -1614,7 +1674,19 @@
             "Each one ends with the same question: \"What would we do differently?\""
           ]
         }
-      }
+      },
+      "extras": [
+        {
+          "name": "Joel",
+          "role": "Grants Officer",
+          "line": "I've read this report four times. The sticky notes are winning."
+        },
+        {
+          "name": "Nur",
+          "role": "Volunteer",
+          "line": "I help at the youth programme on Saturdays. The kids taught me spreadsheets."
+        }
+      ]
     },
     {
       "id": "workforce",
@@ -2055,7 +2127,19 @@
               "Nadia says that small detail changes how people talk."
             ]
           }
-        }
+        },
+        "extras": [
+          {
+            "name": "Ade",
+            "role": "Union Liaison",
+            "line": "Three union reps on the phone. Two said yes. One asked what a focus group is."
+          },
+          {
+            "name": "Yuki",
+            "role": "Note-taker",
+            "line": "I write down everything people say. Even the jokes. Especially the jokes."
+          }
+        ]
       },
       "examine": {
         "screen": {
@@ -2072,7 +2156,19 @@
             "Strategy work runs on caffeine and good questions."
           ]
         }
-      }
+      },
+      "extras": [
+        {
+          "name": "Mira",
+          "role": "Researcher",
+          "line": "I've read forty reports on AI and jobs this month. My verdict: it depends."
+        },
+        {
+          "name": "Sam",
+          "role": "Comms Officer",
+          "line": "Marcus wants the slides 'punchier'. I've added three exclamation marks."
+        }
+      ]
     }
   ]
 }

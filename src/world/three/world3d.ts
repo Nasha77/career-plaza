@@ -6,7 +6,8 @@ import { buildAtmosphere, type Atmosphere } from './atmosphere';
 import { Emote } from './emotes';
 import { Kit } from './kit';
 import { modelsFor } from './layouts';
-import { castFor, PLAYER_LOOKS } from '../cast';
+import { castFor, extraLook, PLAYER_LOOKS } from '../cast';
+import { STROLLERS, dressCampus, policyHall, shophouses, type ClassicBuilding } from './campus';
 import { preload, spawn, spawnCharacter } from './models';
 import { buildRoom, disposeRoom, type Room } from './room';
 import { LABEL_H, LABEL_W, buildPlaza, labelY, type BuildingHandle, type Plaza } from './plaza';
@@ -87,6 +88,7 @@ export class World3D implements World {
   private plazaPeople: Actor[] = [];
   private playerLook = PLAYER_LOOKS[0];
   private castToken = 0;
+  private strollStep: number[] = [];
   private active = true;
   private raf = 0;
   private last = 0;
@@ -251,63 +253,88 @@ export class World3D implements World {
    */
   private async dressPlaza() {
     try {
-      await Promise.all([this.setPlayerLook(this.playerLook), this.plantKenney(), this.skinBuildings()]);
-    } catch {
-      /* keep the code-built guide and trees */
+      await Promise.all([
+        this.setPlayerLook(this.playerLook),
+        this.plantKenney(),
+        this.skinBuildings(),
+        dressCampus(this.kit, this.plaza.group).then(() => {
+          prepareForLighting(this.plaza.group);
+          this.renderer.shadowMap.needsUpdate = true;
+          this.needsRender = true;
+        }),
+      ]);
+    } catch (err) {
+      console.warn('Some campus models did not load', err);
     }
   }
 
-  /** Who the player is: the plaza's people are re-cast so nobody else looks like them. */
+  /**
+   * Who the player is. The guide (a main character) is cast so nobody else looks like the player;
+   * the people strolling around are background extras in their own colours.
+   */
   async setPlayerLook(look: string): Promise<void> {
     this.playerLook = look;
     const token = ++this.castToken;
-    const spots: [number, number, number][] = [
-      [3.4, 4.6, Math.PI / 4],
-      [-6.2, 5.4, 2.4],
-      [-5.0, 6.6, -2.6],
-      [7.6, -5.2, -0.9],
-      [-7.4, -6.0, 0.8],
-    ];
-    const looks = castFor(look).plaza;
-    const models = await Promise.all(spots.map((_, i) => spawnCharacter(looks[i], 0.9)));
+    const guideLook = castFor(look).plaza[0];
+    const looks = [guideLook, ...STROLLERS.map((_, i) => extraLook(200 + i, look))];
+    const models = await Promise.all(looks.map((l) => spawnCharacter(l, 0.9)));
     if (token !== this.castToken) return;
     this.plazaPeople.forEach((a) => {
       a.group.removeFromParent();
       a.dispose();
     });
+    const guidePos = this.plaza.guide.group.position;
     this.plazaPeople = models.map((sp, i) => {
-      const [x, z, yaw] = spots[i];
       const a = new Actor(sp);
-      a.place(x, z, yaw);
+      if (i === 0) a.place(guidePos.x, guidePos.z, this.plaza.guide.group.rotation.y);
+      else {
+        const st = STROLLERS[i - 1];
+        a.place(st.at[0], st.at[1], st.r);
+      }
       a.group.position.y = 0.3;
       this.plaza.group.add(a.group);
       return a;
     });
+    this.strollStep = STROLLERS.map(() => 0);
     this.plaza.guide.group.visible = false;
     this.renderer.shadowMap.needsUpdate = true;
     this.needsRender = true;
   }
 
+  /** Strollers walk their loops along the paths (and stand still with reduced motion). */
+  private updateStrollers(dt: number, motion: boolean) {
+    STROLLERS.forEach((st, i) => {
+      const a = this.plazaPeople[i + 1];
+      if (!a) return;
+      if (motion && st.route.length && !a.walking) {
+        const k = (this.strollStep[i] = (this.strollStep[i] + 1) % st.route.length);
+        void a.walk([st.route[k]]);
+      }
+      a.update(dt, motion);
+      a.group.position.y = 0.3;
+    });
+    this.plazaPeople[0]?.update(dt, motion);
+  }
+
   /**
-   * Kenney buildings in place of the code-built bodies. Each building keeps the details that say
-   * what it is (the resort's pool and harbour, the policy office's porch, turbine and solar
-   * panels, the foundation's awnings and bunting, the strategy hub's glass entrance).
+   * Kenney buildings in place of the code-built bodies. The towers are modern (Foxbury); the
+   * policy hall with its clock tower and the shophouse row are classic (Britechester), built from
+   * Fantasy Town and Castle Kit pieces. Each keeps the details that say what it is.
    */
   private async skinBuildings() {
-    type Part = { m: string; x: number; z: number; w: number; d: number; h: number; tint?: number };
-    const PARTS: Record<ScenarioId, Part[]> = {
+    type Part = { m: string; x: number; z: number; w: number; d: number; h: number };
+    const TOWERS: Partial<Record<ScenarioId, Part[]>> = {
       resort: [{ m: 'city/building-j', x: 0, z: 0, w: 7, d: 5.6, h: 13 }],
-      policy: [{ m: 'city/building-e', x: 0, z: 0, w: 9.6, d: 6.2, h: 6.5 }],
-      foundation: [
-        { m: 'city/building-a', x: -2.75, z: 0, w: 2.8, d: 6, h: 6.6, tint: 0xffe1cf },
-        { m: 'city/building-c', x: 0, z: 0, w: 2.8, d: 6, h: 7.2, tint: 0xd9f3e4 },
-        { m: 'city/building-d', x: 2.75, z: 0, w: 2.8, d: 6, h: 6.8, tint: 0xfff0c4 },
-      ],
       workforce: [{ m: 'city/building-skyscraper-a', x: 0, z: 0, w: 7, d: 7, h: 13.5 }],
     };
-    const entries = Object.entries(PARTS) as [ScenarioId, Part[]][];
-    const loaded = await Promise.all(entries.map(([, parts]) => Promise.all(parts.map((p) => spawn(p.m)))));
-    entries.forEach(([id, parts], bi) => {
+    const swap = (b: BuildingHandle, height: number) => {
+      b.group.getObjectByName('core')!.visible = false;
+      b.group.getObjectByName('windows')!.visible = false;
+      b.height = height;
+    };
+    const towers = Object.entries(TOWERS) as [ScenarioId, Part[]][];
+    const loaded = await Promise.all(towers.map(([, parts]) => Promise.all(parts.map((p) => spawn(p.m)))));
+    towers.forEach(([id, parts], bi) => {
       const b = this.plaza.buildings.get(id);
       if (!b) return;
       let top = 0;
@@ -317,31 +344,34 @@ export class World3D implements World {
         sp.object.scale.set(p.w / sp.size.x, p.h / sp.size.y, p.d / sp.size.z);
         sp.object.position.set(p.x, 0, p.z);
         top = Math.max(top, p.h);
-        // Own materials per building, so it can be tinted and dimmed until visited
+        // Own materials per building, so it can be dimmed until visited
         sp.object.traverse((o) => {
           const mesh = o as THREE.Mesh;
           if (!mesh.isMesh) return;
           const m = (mesh.material as THREE.MeshStandardMaterial).clone();
-          if (p.tint !== undefined) m.color.set(p.tint);
           b.bodyMats.push({ m, base: m.color.clone() });
           mesh.material = m;
         });
         b.group.add(sp.object);
       });
-      b.group.getObjectByName('core')!.visible = false;
-      b.group.getObjectByName('windows')!.visible = false;
-      if (id === 'policy') {
-        // Solar panels on the flat roof
-        const panel = new THREE.MeshLambertMaterial({ color: 0x23376b, emissive: 0x16244a, emissiveIntensity: 0.3 });
-        for (const x of [-2.6, 0, 2.6]) {
-          const pnl = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.08, 1.6), panel);
-          pnl.position.set(x, top + 0.45, -0.6);
-          pnl.rotation.x = -0.35;
-          pnl.castShadow = true;
-          b.group.add(pnl);
-        }
-      }
+      swap(b, top + 1);
     });
+    const classic: [ScenarioId, Promise<ClassicBuilding>][] = [
+      ['policy', policyHall(this.kit)],
+      ['foundation', shophouses(this.kit)],
+    ];
+    for (const [id, build] of classic) {
+      const b = this.plaza.buildings.get(id);
+      const c = await build;
+      if (!b) continue;
+      c.mats.forEach((m) => {
+        const mm = m as THREE.MeshLambertMaterial;
+        if (mm.color) b.bodyMats.push({ m: mm, base: mm.color.clone() });
+      });
+      b.group.add(c.group);
+      swap(b, c.height);
+    }
+    prepareForLighting(this.plaza.group);
     this.applyLit();
     this.renderer.shadowMap.needsUpdate = true;
     this.needsRender = true;
@@ -672,11 +702,12 @@ export class World3D implements World {
     const aspect = this.camera.aspect;
     const tanH = Math.tan((this.camera.fov * DEG) / 2) * aspect;
     const intro = easeInOut(this.intro);
-    const radius = (clamp(25 / tanH, 48, 92) + this.zoom) * (1 + intro * 0.55);
-    const polar = (aspect < 1 ? 50 : 56) * DEG + this.pol - intro * 22 * DEG + this.parallax.y * 4 * DEG;
-    const swing = reducedMotion() ? 0 : Math.sin(this.orbitPhase) * 15 * DEG;
-    const azimuth = 45 * DEG + swing + this.az - intro * 70 * DEG + this.parallax.x * 6 * DEG;
-    const target = new THREE.Vector3(0, 1.5, 0);
+    const radius = (clamp((aspect < 1 ? 24 : 40) / tanH, aspect < 1 ? 60 : 70, 120) + this.zoom) * (1 + intro * 0.4);
+    const polar = (aspect < 1 ? 46 : 52) * DEG + this.pol - intro * 18 * DEG + this.parallax.y * 4 * DEG;
+    const swing = reducedMotion() ? 0 : Math.sin(this.orbitPhase) * 9 * DEG;
+    // From the south, along the campus's main axis (the entrance gate towards the clock tower)
+    const azimuth = 8 * DEG + swing + this.az - intro * 40 * DEG + this.parallax.x * 6 * DEG;
+    const target = new THREE.Vector3(0, 1.5, 1);
     const pos = new THREE.Vector3(
       Math.sin(polar) * Math.sin(azimuth),
       Math.cos(polar),
@@ -1124,10 +1155,10 @@ export class World3D implements World {
         }
       });
       this.plaza.guide.update(t, this.talking === 'guide', motion, this.camera);
-      this.plazaPeople.forEach((a, i) => {
-        a.talking = i === 0 && this.talking === 'guide';
-        a.update(dt, motion);
-      });
+      if (this.plazaPeople[0]) this.plazaPeople[0].talking = this.talking === 'guide';
+      this.updateStrollers(dt, motion);
+      // The terrace's water jets bob
+      this.plaza.ground.jets.forEach((j, i) => (j.scale.y = motion ? 1 + Math.sin(t * 4 + i) * 0.25 : 1));
       // Re-render shadows only while a building is rising or settling.
       let lift = 0;
       this.plaza.buildings.forEach((b) => (lift += b.lift));

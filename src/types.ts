@@ -101,6 +101,8 @@ export interface Scenario {
   invite: string;
   resources: Resource[];
   options: ScenarioOption[];
+  /** Background people in the room, each with one short line (positions in layouts.ts). */
+  extras: { name: string; role: string; line: string }[];
   /** Things in the room you can look at, by spot id (see src/world/three/layouts.ts). */
   examine: Record<string, { label: string; lines: string[] }>;
   /** The second task, offered on the next visit: a different role with one of the colleagues. */

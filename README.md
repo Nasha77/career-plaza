@@ -24,7 +24,7 @@ and build a growth record of what they used, what they enjoyed, and what to try 
 | **Managers with personalities** | Priya is warm and upbeat, Daniel calm and precise, Grace thoughtful and gentle, Marcus fast and direct. They react to every action you take. |
 | **Reflection** | Each run ends with a reflective question, your own enjoyment and confidence ratings, and links to learn more about the role. |
 | **Growth record** | What you tried (with your writing), what you enjoyed, skills used across buildings, skills to grow, ideas to try next, and **Then and now**: your start self-check next to what actually happened. |
-| **3D plaza** | Kenney buildings dressed to match their places (a harbourfront resort with a pool and harbour, a policy office with a porch, solar panels and a wind turbine, a pastel shophouse row, a glass strategy tower), with Kenney trees and people, always in daytime. |
+| **3D campus** | Laid out like The Sims 4 Discover University's campuses: you come in through a gate, past Foxbury-style planters, a water feature and a sculpture, into a Britechester-style quad (four hedged lawns, a fountain, lanterns strung with pennants). The Climate Policy Association's stone hall and clock tower closes the main axis; glass towers stand east and west, a shophouse row and a café sit on the corners, and a river runs past. Background people stroll the paths. Always in daytime. |
 | **Optional AI** | With a free Gemini key, managers respond to your actual words, ask a follow-up question, and write a personal summary. Works locally, or on a Vercel link. See below. |
 
 The skills tracked are **Research, Communication, Organisation and Analysis**.
@@ -160,8 +160,8 @@ automatically when WebGL is unavailable) plays exactly the same game.
 
 Each room is shaped like the work done there, the way Pokemon Black and White builds its interiors: an L-shaped office with a pantry nook, a wide mall floor, an office with a glass-walled meeting room, a library alcove, a briefing room with the analyst behind glass, a focus-group room reached through an entry hall. The camera looks in from the front with warm, lived-in lighting, like an Animal Crossing house.
 
-Everyone in the game looks different: the 12 Kenney characters also come in recoloured outfits and hair, and the character you pick is never used for anyone else.
+The main characters (you, the guide, the managers and named colleagues) each look different, using the 12 Kenney characters plus recoloured outfits and hair; the character you pick is never used for anyone else. Background people in the offices and on the plaza reuse models in other skin tones and outfits, and each says a short line if you talk to them.
 
 Walk around each room: click or tap the floor to walk, click a person or object to go over and interact (arrow keys or WASD also move you, E interacts). "Things here" lists everything in the room for keyboard and screen-reader players. Conversations use an Animal Crossing-style talk box with character "babble" voices (mute with the speaker button).
 
-**3D models:** characters and furniture are from [Kenney](https://kenney.nl) (Mini Characters, Furniture Kit, Mini Market, Holiday Kit, Food Kit, Survival Kit, City Kit Commercial), CC0. See `public/models/License.txt`.
+**3D models:** characters and furniture are from [Kenney](https://kenney.nl) (Mini Characters, Furniture Kit, Mini Market, Holiday Kit, Food Kit, Survival Kit, City Kit Commercial, Fantasy Town Kit, Castle Kit, City Kit Roads, Platformer Kit), CC0. See `public/models/License.txt`.

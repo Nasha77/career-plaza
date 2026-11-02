@@ -120,3 +120,47 @@ export async function spawnCharacter(look: string, scale = 1): Promise<Spawned> 
   });
   return sp;
 }
+
+/** One placement of a repeated prop: position, turn, and size (multiplies the base scale). */
+export interface Place {
+  x: number;
+  z: number;
+  y?: number;
+  r?: number;
+  s?: number;
+}
+
+const UP = new THREE.Vector3(0, 1, 0);
+
+/**
+ * Many copies of one model drawn as instanced meshes (one draw call per part), for repeated
+ * props such as hedges, lamps and trees. `scale` turns the model's units into world units.
+ * Pass `own` to give the copies their own materials (so they can be tinted or dimmed).
+ */
+export async function instanced(path: string, places: Place[], scale: number, own = false): Promise<THREE.Group> {
+  const gltf = await loadModel(path);
+  const group = new THREE.Group();
+  if (!places.length) return group;
+  gltf.scene.updateMatrixWorld(true);
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const v = new THREE.Vector3();
+  const sv = new THREE.Vector3();
+  gltf.scene.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mat = own ? (mesh.material as THREE.Material).clone() : mesh.material;
+    const im = new THREE.InstancedMesh(mesh.geometry, mat, places.length);
+    places.forEach((p, i) => {
+      m.compose(v.set(p.x, p.y ?? 0, p.z), q.setFromAxisAngle(UP, p.r ?? 0), sv.setScalar(scale * (p.s ?? 1)));
+      m.multiply(mesh.matrixWorld);
+      im.setMatrixAt(i, m);
+    });
+    im.instanceMatrix.needsUpdate = true;
+    im.castShadow = true;
+    im.receiveShadow = true;
+    im.computeBoundingSphere();
+    group.add(im);
+  });
+  return group;
+}

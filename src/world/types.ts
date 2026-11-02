@@ -9,7 +9,7 @@ export interface RoomSetup {
 }
 
 /** Something in a room you can walk up to: the manager, a colleague (by content index) or a spot. */
-export type ThingId = 'manager' | `person:${number}` | `spot:${string}`;
+export type ThingId = 'manager' | `person:${number}` | `extra:${number}` | `spot:${string}`;
 /** Who an emote or action is for: anything in the room, or the player. */
 export type Who = ThingId | 'player';
 

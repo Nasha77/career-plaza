@@ -109,14 +109,50 @@ const COOL: [number, number][] = [
   [0, 128],
 ];
 
-/** Which source block each block takes its colours from in a variant. */
+/** The skin swatches (bottom right) and the pale cream one. Only background extras change these. */
+const SKIN: [number, number][] = [
+  [0, 256],
+  [320, 384],
+  [384, 384],
+  [448, 384],
+];
+
+/**
+ * Which source block each block takes its colours from in a variant.
+ * Variants 1-2 (main characters) swap hair and clothes only. Variants 3-11 (background extras)
+ * also change skin tone, so an extra never looks like a main character.
+ */
 function mapping(variant: number): Map<string, [number, number]> {
   const m = new Map<string, [number, number]>();
   const rotate = (group: [number, number][], by: number) =>
     group.forEach((b, i) => m.set(b.join(','), group[(i + by) % group.length]));
-  rotate(WARM, variant);
-  rotate(COOL, variant * 2);
+  if (variant < VARIANTS) {
+    rotate(WARM, variant);
+    rotate(COOL, variant * 2);
+    return m;
+  }
+  const e = variant - VARIANTS;
+  const clothes = Math.floor(e / 3);
+  rotate(WARM, clothes + 1);
+  rotate(COOL, clothes * 2 + 1);
+  rotate(SKIN, (e % 3) + 1);
   return m;
+}
+
+/** How many extra (skin-shifted) colour versions there are per model. */
+export const EXTRA_VARIANTS = 9;
+
+/**
+ * A background extra's look: any model except the player's, always with a changed skin tone and
+ * outfit, so extras can repeat models without ever looking like the player or a main character.
+ */
+export function extraLook(seed: number, playerLook: string): string {
+  const models = MODELS.filter((m) => m !== modelOf(playerLook));
+  let h = seed * 2654435761;
+  h = (h ^ (h >>> 15)) >>> 0;
+  const model = models[h % models.length];
+  const variant = VARIANTS + ((h >>> 8) % EXTRA_VARIANTS);
+  return `${model}#${variant}`;
 }
 
 /** A recoloured copy of the colormap, as a canvas. */
@@ -129,6 +165,7 @@ export function recolourMap(img: CanvasImageSource & { width: number; height: nu
   if (!variant) return c;
   const k = img.width / 512;
   for (const [to, from] of mapping(variant)) {
+    if (to === from.join(',')) continue;
     const [tx, ty] = to.split(',').map(Number);
     ctx.drawImage(img, from[0] * k, from[1] * k, 64 * k, 128 * k, tx * k, ty * k, 64 * k, 128 * k);
   }
@@ -185,7 +222,9 @@ export function recolourPortrait(img: HTMLImageElement, variant: number): string
   ctx.drawImage(img, 0, 0);
   if (!variant || !swatchHues) return c.toDataURL();
   const hues = swatchHues;
-  const shifts = [...mapping(variant)].map(([to, from]) => ({ from: hues.get(to)!, to: hues.get(from.join(','))! }));
+  const shifts = [...mapping(variant)]
+    .filter(([to]) => hues.has(to))
+    .map(([to, from]) => ({ from: hues.get(to)!, to: hues.get(from.join(','))! }));
   const data = ctx.getImageData(0, 0, c.width, c.height);
   const p = data.data;
   for (let i = 0; i < p.length; i += 4) {

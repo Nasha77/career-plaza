@@ -5,7 +5,7 @@ import type { RoomSetup, ThingId } from '../types';
 import { Actor } from './actor';
 import { BACK_Z, LEFT_X, boardsFor, buildShape, frame, wallShelf } from './boards';
 import { Kit } from './kit';
-import { castFor } from '../cast';
+import { castFor, extraLook } from '../cast';
 import { layoutFor, onFloor } from './layouts';
 import { spawn, spawnCharacter } from './models';
 import { WalkGrid } from './walkgrid';
@@ -81,6 +81,9 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
     const at = layout.people[i];
     if (at && i !== managerIndex) people.push([`person:${i}`, look, at]);
   });
+  // Background extras: repeated models in new skin tones and outfits, never the player's model.
+  const roomSeed = ['resort', 'policy', 'foundation', 'workforce'].indexOf(id) * 10 + setup.task * 5;
+  (layout.extras ?? []).forEach((at, i) => people.push([`extra:${i}`, extraLook(roomSeed + i + 1, setup.look), at]));
   const actorModels = await Promise.all([...people.map(([, look]) => spawnCharacter(look)), spawnCharacter(setup.look)]);
   people.forEach(([thing, , at], i) => {
     const a = new Actor(actorModels[i], at.pose ?? 'idle');

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { ScenarioId } from '../../types';
 import { GUIDE, makeCharacter, type Character } from './characters';
+import { CAMPUS_PLACES, buildCampusGround, campusClear, type CampusGround } from './campus';
 import { DISPLAY_FONT, roundRect, type Kit } from './kit';
 
 export interface BuildingHandle {
@@ -38,14 +39,16 @@ export interface Plaza {
   treeSpots: [number, number, number][];
   /** The code-built trees, hidden once the Kenney ones are in. */
   stand: THREE.Object3D[];
+  /** Paths, lawns, terrace, water, river and gate. */
+  ground: CampusGround;
 }
 
-const DIST = 20;
+/** Building spots on the campus (see campus.ts for the whole layout). */
 const PLACES: Record<ScenarioId, [number, number]> = {
-  resort: [0, -DIST],
-  policy: [DIST, 0],
-  foundation: [0, DIST],
-  workforce: [-DIST, 0],
+  resort: CAMPUS_PLACES.resort,
+  policy: CAMPUS_PLACES.policy,
+  foundation: CAMPUS_PLACES.foundation,
+  workforce: CAMPUS_PLACES.workforce,
 };
 const NAMES: Record<ScenarioId, string> = {
   resort: 'Harbourfront Resort',
@@ -92,7 +95,7 @@ const span = (n: number, from: number, to: number) =>
 export const LABEL_W = 0.2;
 export const LABEL_H = LABEL_W * (140 / 640);
 /** Labels hang just in front of each building, below the roofline. */
-export const labelY = (height: number) => Math.min(height, 8) + 1.2;
+export const labelY = (height: number) => Math.min(height, 16) + 1.2;
 
 function labelSprite(kit: Kit, text: string): THREE.Sprite {
   const tex = kit.canvasTexture(640, 140, (ctx, w, h) => {
@@ -246,18 +249,18 @@ function buildPolicy(kit: Kit, g: THREE.Group, win: Windows, own: Own): BuildInf
   // Planters along the front
   const planter = kit.lambert(0x8f9a8b);
   const leaf = kit.lambert(0x5f9e6e);
-  for (const x of [-4.0, 4.0]) {
-    g.add(kit.box(1.0, 0.6, 1.6, planter, x, 0.3, 3.6));
-    g.add(kit.sphere(0.55, 0, leaf, x, 0.95, 3.6));
+  for (const x of [-4.4, 4.4]) {
+    g.add(kit.box(1.0, 0.6, 1.6, planter, x, 0.3, 4.6));
+    g.add(kit.sphere(0.55, 0, leaf, x, 0.95, 4.6));
   }
   // Flagpole with a green flag
-  g.add(kit.cyl(0.05, 0.05, 6.5, 5, kit.lambert(0xdedede), -4.8, 3.25, 4.6));
-  const flag = kit.box(1.2, 0.7, 0.04, kit.lambert(0x4f9a5c), -4.2, 6.1, 4.6);
+  g.add(kit.cyl(0.05, 0.05, 6.5, 5, kit.lambert(0xdedede), -6.6, 3.25, 5.0));
+  const flag = kit.box(1.2, 0.7, 0.04, kit.lambert(0x4f9a5c), -6.0, 6.1, 5.0);
   g.add(flag);
 
   // Small wind turbine beside the building
   const turbine = new THREE.Group();
-  turbine.position.set(6.4, 0, 0.5);
+  turbine.position.set(8.6, 0, -1.0);
   turbine.add(kit.cyl(0.12, 0.2, 7.2, 8, kit.lambert(0xf2f2ee), 0, 3.6, 0));
   turbine.add(kit.box(0.5, 0.4, 0.9, kit.lambert(0xf2f2ee), 0, 7.3, 0));
   const rotor = new THREE.Group();
@@ -314,8 +317,8 @@ function buildFoundation(kit: Kit, g: THREE.Group, win: Windows, own: Own): Buil
   core.add(roof);
 
   // Covered five-foot way: slab, pillars and striped awnings
-  g.add(kit.box(8.4, 0.25, 1.8, cream, 0, 2.95, 3.9));
-  for (const x of [-4.05, -1.35, 1.35, 4.05]) g.add(kit.cyl(0.14, 0.16, 2.9, 8, cream, x, 1.45, 4.6));
+  g.add(kit.box(12.6, 0.25, 1.8, cream, 0, 2.95, 3.9));
+  for (const x of [-6.1, -2.1, 2.1, 6.1]) g.add(kit.cyl(0.14, 0.16, 2.9, 8, cream, x, 1.45, 4.6));
   const stripes = kit.canvasTexture(128, 64, (ctx, w, h) => {
     for (let i = 0; i < 8; i++) {
       ctx.fillStyle = i % 2 ? '#ffffff' : '#e07a5f';
@@ -323,9 +326,9 @@ function buildFoundation(kit: Kit, g: THREE.Group, win: Windows, own: Own): Buil
     }
   });
   const awningMat = kit.track(new THREE.MeshLambertMaterial({ map: stripes, side: THREE.DoubleSide }));
-  bays.forEach(([x]) => {
+  [-4.2, 0, 4.2].forEach((x) => {
     const a = new THREE.Mesh(kit.geo('plane', () => new THREE.PlaneGeometry(1, 1)), awningMat);
-    a.scale.set(2.3, 0.9, 1);
+    a.scale.set(3.6, 0.9, 1);
     a.position.set(x, 3.75, 3.4);
     a.rotation.x = -0.9;
     g.add(a);
@@ -334,15 +337,15 @@ function buildFoundation(kit: Kit, g: THREE.Group, win: Windows, own: Own): Buil
 
   // Bunting across the front
   const flagColors = [0xe07a5f, 0xf2c14e, 0x5f9e6e, 0x3d7ea6, 0xd9a6c9];
-  for (let i = 0; i < 11; i++) {
-    const f = kit.cyl(0.0, 0.22, 0.42, 3, kit.lambert(flagColors[i % flagColors.length]), -4 + i * 0.8, 5.55 - Math.sin((i / 10) * Math.PI) * 0.35, 3.3);
+  for (let i = 0; i < 15; i++) {
+    const f = kit.cyl(0.0, 0.22, 0.42, 3, kit.lambert(flagColors[i % flagColors.length]), -5.6 + i * 0.8, 3.95 - Math.sin((i / 14) * Math.PI) * 0.3, 4.75);
     f.rotation.x = Math.PI;
     g.add(f);
   }
 
   // Community garden in front: raised beds with plants
   const bed = kit.lambert(0x8a6a48);
-  for (const [x, z] of [[-5.6, 2.6], [5.6, 2.6]]) {
+  for (const [x, z] of [[-7.6, 2.6], [7.6, 2.6]]) {
     g.add(kit.box(1.4, 0.5, 2.2, bed, x, 0.25, z));
     for (const dz of [-0.6, 0, 0.6]) g.add(kit.sphere(0.3, 0, kit.lambert(dz === 0 ? 0xf2c14e : 0x5f9e6e), x, 0.7, z + dz));
   }
@@ -537,33 +540,6 @@ function lawnGeometry() {
   return g;
 }
 
-/** Concentric stone paving drawn on a canvas, mapped onto the plaza's round top. */
-function pavingTexture(kit: Kit) {
-  return kit.canvasTexture(1024, 1024, (ctx, w) => {
-    const c = w / 2;
-    ctx.fillStyle = '#d6cfc1';
-    ctx.fillRect(0, 0, w, w);
-    let seed = 7;
-    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-    for (let r0 = 40, ring = 0; r0 < c; r0 += 34, ring++) {
-      const r1 = r0 + 34;
-      const count = Math.max(6, Math.round((Math.PI * 2 * r0) / 70));
-      const offset = ring % 2 ? 0.5 : 0;
-      for (let k = 0; k < count; k++) {
-        const a0 = ((k + offset) / count) * Math.PI * 2;
-        const a1 = ((k + offset + 1) / count) * Math.PI * 2;
-        const tone = 226 + Math.floor(rnd() * 28);
-        ctx.fillStyle = `rgb(${tone},${tone - 4},${tone - 12})`;
-        ctx.beginPath();
-        ctx.arc(c, c, r1 - 2, a0 + 0.012, a1 - 0.012);
-        ctx.arc(c, c, r0 + 2, a1 - 0.012, a0 + 0.012, true);
-        ctx.closePath();
-        ctx.fill();
-      }
-    }
-  });
-}
-
 /** Stylised water: drifting ripple bands, sparkles and a brighter rim, all in the shader. */
 function waterMaterial(kit: Kit) {
   return kit.track(
@@ -593,18 +569,12 @@ function waterMaterial(kit: Kit) {
 /** Grass tufts and small flowers: two instanced draw calls for the whole lawn. */
 function scatterPlants(kit: Kit, group: THREE.Group) {
   const spots: { x: number; z: number }[] = [];
-  const blocked = (x: number, z: number) => {
-    const r = Math.hypot(x, z);
-    if (r < 13.8) return true; // paving
-    if ((Math.abs(x) < 2.6 || Math.abs(z) < 2.6) && r < 19) return true; // walkways
-    for (const [bx, bz] of Object.values(PLACES)) if (Math.hypot(x - bx, z - bz) < 7.5) return true;
-    return false;
-  };
+  const blocked = (x: number, z: number) => !campusClear(x, z);
   let seed = 11;
   const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   while (spots.length < 420) {
     const a = rnd() * Math.PI * 2;
-    const r = 14 + Math.pow(rnd(), 1.6) * 50;
+    const r = 16 + Math.pow(rnd(), 1.6) * 52;
     const x = Math.sin(a) * r;
     const z = Math.cos(a) * r;
     if (!blocked(x, z)) spots.push({ x, z });
@@ -642,24 +612,16 @@ export function buildPlaza(kit: Kit): Plaza {
 
   const grass = kit.lambert(0xffffff, { unique: true });
   grass.vertexColors = true;
-  const paving = kit.lambert(0xffffff, { unique: true });
-  paving.map = pavingTexture(kit);
-  const pavingDark = kit.lambert(0xcfc6b6, { unique: true });
-  const path = kit.lambert(0xd8cdbb, { unique: true });
 
   // Lawn: a gently undulating colour field so the grass doesn't read as one flat fill.
   const ground = new THREE.Mesh(kit.geo('ground', () => lawnGeometry()), grass);
   group.add(ground);
-  group.add(kit.cyl(13, 13.4, 0.3, 48, paving, 0, 0.15, 0));
-  const inner = kit.ring(6.8, 7.6, 40, pavingDark);
-  inner.position.y = 0.31;
-  group.add(inner);
-  // Walkways from the plaza to each door
-  group.add(kit.box(3.4, 0.28, 7, path, 0, 0.14, -15.5), kit.box(3.4, 0.28, 7, path, 0, 0.14, 15.5));
-  group.add(kit.box(7, 0.28, 3.4, path, 15.5, 0.14, 0), kit.box(7, 0.28, 3.4, path, -15.5, 0.14, 0));
+  // The campus: paths, the quad's lawns, the terrace and water feature, the river and the gate
+  const campus = buildCampusGround(kit);
+  group.add(campus.group);
   scatterPlants(kit, group);
 
-  // Fountain
+  // Fountain in the middle of the quad
   const stone = kit.lambert(0xbfb6a6);
   const water = waterMaterial(kit);
   group.add(kit.cyl(3.2, 3.4, 0.9, 20, stone, 0, 0.6, 0));
@@ -679,62 +641,26 @@ export function buildPlaza(kit: Kit): Plaza {
     group.add(m);
     return m;
   });
-
-  // Benches (two instanced parts) at the diagonals, facing the fountain
-  const benchWood = kit.lambert(0xa0704a);
-  const unitBox = kit.geo('box', () => new THREE.BoxGeometry(1, 1, 1));
-  const seats = new THREE.InstancedMesh(unitBox, benchWood, 8);
-  const backs = new THREE.InstancedMesh(unitBox, benchWood, 8);
   const tmp = new THREE.Object3D();
-  [45, 135, 225, 315].forEach((deg, i) => {
-    for (let k = 0; k < 2; k++) {
-      const a = THREE.MathUtils.degToRad(deg + (k ? 12 : -12));
-      const r = 10.2;
-      tmp.position.set(Math.sin(a) * r, 0.75, Math.cos(a) * r);
-      tmp.rotation.set(0, a, 0);
-      tmp.scale.set(2.2, 0.18, 0.8);
-      tmp.updateMatrix();
-      seats.setMatrixAt(i * 2 + k, tmp.matrix);
-      tmp.position.set(Math.sin(a) * (r + 0.4), 1.2, Math.cos(a) * (r + 0.4));
-      tmp.scale.set(2.2, 0.7, 0.14);
-      tmp.updateMatrix();
-      backs.setMatrixAt(i * 2 + k, tmp.matrix);
-    }
-  });
-  group.add(seats, backs);
-
-  // Lamp posts
-  const lampAngles = [25, 65, 115, 155, 205, 245, 295, 335];
-  const poles = new THREE.InstancedMesh(kit.geo('pole', () => new THREE.CylinderGeometry(0.09, 0.12, 3.6, 6)), kit.lambert(0x2f3b38), lampAngles.length);
   const lampMat = kit.lambert(0xfff1c4, { unique: true, emissive: 0xffd36b, emissiveIntensity: 0.2 });
-  const heads = new THREE.InstancedMesh(kit.geo('lamp', () => new THREE.IcosahedronGeometry(0.3, 0)), lampMat, lampAngles.length);
-  lampAngles.forEach((deg, i) => {
-    const a = THREE.MathUtils.degToRad(deg);
-    tmp.rotation.set(0, 0, 0);
-    tmp.scale.set(1, 1, 1);
-    tmp.position.set(Math.sin(a) * 12.4, 2.1, Math.cos(a) * 12.4);
-    tmp.updateMatrix();
-    poles.setMatrixAt(i, tmp.matrix);
-    tmp.position.y = 4.05;
-    tmp.updateMatrix();
-    heads.setMatrixAt(i, tmp.matrix);
-  });
-  group.add(poles, heads);
 
   // Trees: trunks + two foliage tiers, all instanced
   const treeSpots: [number, number, number][] = [];
-  const addTree = (deg: number, r: number, s: number) => {
-    const a = THREE.MathUtils.degToRad(deg);
-    treeSpots.push([Math.sin(a) * r, Math.cos(a) * r, s]);
-  };
-  for (const deg of [45, 135, 225, 315]) {
-    addTree(deg - 10, 17, 1.1);
-    addTree(deg + 12, 19, 0.9);
-    addTree(deg, 24, 1.3);
-    addTree(deg - 20, 30, 1.2);
-    addTree(deg + 22, 33, 1.4);
+  {
+    let seed = 23;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    let tries = 0;
+    while (treeSpots.length < 70 && tries++ < 4000) {
+      const x = (rnd() - 0.5) * 140;
+      const z = (rnd() - 0.5) * 150;
+      const near = Math.max(Math.abs(x), Math.abs(z));
+      if (near < 18 || !campusClear(x, z)) continue;
+      if (treeSpots.some(([tx, tz]) => Math.hypot(tx - x, tz - z) < 4.2)) continue;
+      // Thicker towards the edges, a few scattered closer in
+      if (near < 34 && rnd() < 0.55) continue;
+      treeSpots.push([x, z, 1 + rnd() * 0.5]);
+    }
   }
-  for (let i = 0; i < 16; i++) addTree(i * 22.5 + 8, 42 + (i % 3) * 5, 1.5);
   const trunks = new THREE.InstancedMesh(kit.geo('trunk', () => new THREE.CylinderGeometry(0.2, 0.28, 1.6, 5)), kit.lambert(0x7a5a3e), treeSpots.length);
   const leafGeo = kit.geo('leaf', () => new THREE.ConeGeometry(1.5, 2.6, 7));
   const leaves1 = new THREE.InstancedMesh(leafGeo, kit.lambert(0x5f9e6e), treeSpots.length);
@@ -775,12 +701,10 @@ export function buildPlaza(kit: Kit): Plaza {
 
   const theme = (dark: boolean) => {
     grass.color.set(dark ? 0x56756a : 0xffffff);
-    paving.color.set(dark ? 0x6d716b : 0xf1ebe0);
     water.uniforms.night.value = dark ? 1 : 0;
-    pavingDark.color.set(dark ? 0x5a5e58 : 0xcfc6b6);
-    path.color.set(dark ? 0x64675f : 0xd8cdbb);
+    campus.pathMats.forEach((m) => m.color.set(dark ? 0x8a8a84 : 0xffffff));
     lampMat.emissiveIntensity = dark ? 1.4 : 0.2;
   };
 
-  return { group, buildings, guide, rings, jet, water, theme, treeSpots, stand: [trunks, leaves1, leaves2] };
+  return { group, buildings, guide, rings, jet, water, theme, treeSpots, stand: [trunks, leaves1, leaves2], ground: campus };
 }

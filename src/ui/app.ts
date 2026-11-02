@@ -524,6 +524,7 @@ export class App {
     s.colleagues.forEach((c, i) => {
       if (i !== manager) out.push({ id: `person:${i}`, label: `Talk to ${c.name}`, kind: 'person' });
     });
+    s.extras.forEach((e, i) => out.push({ id: `extra:${i}`, label: `Chat with ${e.name} (${e.role})`, kind: 'person' }));
     s.options.forEach((o) => out.push({ id: `spot:${o.id}`, label: o.spot, kind: 'spot' }));
     Object.entries(s.examine).forEach(([k, v]) => out.push({ id: `spot:${k}`, label: v.label, kind: 'look' }));
     return out;
@@ -666,6 +667,12 @@ export class App {
     }
     if (id === 'manager') return this.converse(run, 'manager', () => this.talkToManager(run));
     if (id.startsWith('person:')) return this.converse(run, id, () => this.talkToColleague(run, Number(id.slice(7))));
+    if (id.startsWith('extra:')) {
+      const e = run.scenario.extras[Number(id.slice(6))];
+      return this.converse(run, id, async () => {
+        if (e) await this.say(run, id, e.line);
+      });
+    }
     const key = id.slice(5);
     if (['A', 'B', 'C'].includes(key)) return this.converse(run, null, () => this.atApproachSpot(run, key as ChoiceId));
     return this.converse(run, null, () => this.examine(run, key));
@@ -708,6 +715,10 @@ export class App {
       const m = taskManagerIndex(s.id, run.taskIndex);
       const look = m === null ? cast.manager : cast.colleagues[m];
       return { name: s.npc.name, color: managerColor(run), portrait: portrait(look), voice: voiceFor(s.npc.name, VOICES[s.npc.name]) };
+    }
+    if (who.startsWith('extra:')) {
+      const e = s.extras[Number(who.slice(6))];
+      return { name: e?.name ?? '', color: '#8a7357', voice: voiceFor(e?.name ?? 'extra') };
     }
     const i = Number(who.slice(7));
     const c = s.colleagues[i];

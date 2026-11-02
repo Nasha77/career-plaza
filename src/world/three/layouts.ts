@@ -47,6 +47,8 @@ export interface Layout {
   manager: Placement;
   /** Colleagues by their index in the content file. The one running task B is skipped. */
   people: Record<number, Placement>;
+  /** Background people doing their own thing (their names and lines are in the content). */
+  extras?: Placement[];
   /** Approach spots (A, B, C) and things to examine, by id. */
   spots: Record<string, { x: number; z: number; y?: number }>;
   /** Wall shelves on the back wall [x, y, width], and framed pictures [x, y, w, h, seed, wall]. */
@@ -119,6 +121,7 @@ const resortA: Layout = {
     1: { x: -4.6, z: -2.7, r: PI, pose: 'sit' },
     2: { x: 5.2, z: -3.4, r: PI },
   },
+  extras: [{ x: -2.8, z: -0.4, r: 0.4 }, { x: -5.0, z: 4.0, r: 0.6 }],
   spots: {
     A: { x: -1.4, z: -4.2 },
     B: { x: -3.8, z: 2.2 },
@@ -175,6 +178,7 @@ const resortB: Layout = {
     1: { x: 3.8, z: -1.6, r: -2.3 },
     2: { x: 1.4, z: -2.7, r: PI, pose: 'sit' },
   },
+  extras: [{ x: -5.4, z: -2.6, r: 0.8 }, { x: 5.6, z: 2.8, r: -1.2 }],
   spots: {
     A: { x: 1.4, z: -4.2 },
     B: { x: -2.2, z: 1.6 },
@@ -232,6 +236,7 @@ const policyA: Layout = {
     1: { x: 5.2, z: -0.6, r: HALF },
     2: { x: -5.4, z: -2.6, r: 0.6 },
   },
+  extras: [{ x: -6.2, z: 1.6, r: HALF }, { x: 4.8, z: 1.4, r: -HALF }],
   spots: {
     A: { x: -1.6, z: -4.2 },
     B: { x: 3.6, z: -4.2 },
@@ -281,6 +286,7 @@ const policyB: Layout = {
     0: { x: 3.2, z: -2.7, r: PI, pose: 'sit' },
     2: { x: -5.6, z: -2.6, r: -HALF },
   },
+  extras: [{ x: 4.4, z: 3.8, r: -0.8 }, { x: -3.6, z: -3.4, r: PI }],
   spots: {
     A: { x: 3.2, z: -4.2 },
     B: { x: -2.6, z: -4.9, y: 3.3 },
@@ -334,6 +340,7 @@ const foundationA: Layout = {
     1: { x: 4.2, z: -2.7, r: PI, pose: 'sit' },
     2: { x: 5.2, z: -0.6, r: HALF },
   },
+  extras: [{ x: 2.6, z: 1.8, r: -0.8 }, { x: 5.0, z: 2.0, r: -HALF }],
   spots: {
     A: { x: 4.2, z: -4.2 },
     B: { x: -5.0, z: 3.4 },
@@ -388,6 +395,7 @@ const foundationB: Layout = {
     0: { x: 0.8, z: 3.2, r: -2.4 },
     1: { x: 1.6, z: -2.7, r: PI, pose: 'sit' },
   },
+  extras: [{ x: -2.4, z: -0.4, r: -0.6 }, { x: 4.4, z: -2.6, r: PI }],
   spots: {
     A: { x: 5.3, z: -4.5 },
     B: { x: 1.6, z: -4.2 },
@@ -437,6 +445,7 @@ const workforceA: Layout = {
     1: { x: 5.0, z: -2.7, r: PI, pose: 'sit' },
     2: { x: -3.8, z: 3.2, r: -0.9 },
   },
+  extras: [{ x: -6.0, z: -0.2, r: -HALF }, { x: 6.0, z: 1.2, r: 0.3 }],
   spots: {
     A: { x: -7.4, z: -2.6 },
     B: { x: 5.0, z: -4.2 },
@@ -487,6 +496,7 @@ const workforceB: Layout = {
     1: { x: -4.4, z: 0.6, r: HALF },
     2: { x: -3.8, z: -2.7, r: PI, pose: 'sit' },
   },
+  extras: [{ x: 4.0, z: 1.8, r: HALF }, { x: 3.2, z: -3.0, r: PI }],
   spots: {
     A: { x: 1.4, z: -4.6, y: 2.4 },
     B: { x: -3.8, z: -4.2 },
