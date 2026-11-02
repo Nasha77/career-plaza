@@ -2359,3 +2359,194 @@ body:not(.simple) .title-card {
     pointer-events: auto;
   }
 }
+
+/* =====================================================================================
+   Animal Crossing look, everywhere: cream and brown, mint buttons with a chunky edge,
+   very rounded cards, a rounded font. Always light, like the game's own menus.
+   ===================================================================================== */
+html:root:not(#_) {
+  color-scheme: light;
+  --bg: #f6eed6;
+  --surface: #fffaea;
+  --surface-2: #f4e9c9;
+  --glass: rgba(255, 250, 234, 0.94);
+  --ink: #5a4632;
+  --ink-2: #8a7357;
+  --line: #eadcb6;
+  --brand: #2fa58a;
+  --brand-ink: #ffffff;
+  --accent: #f2a93b;
+  --accent-soft: #fdecc2;
+  --danger: #d4604a;
+  --focus: #2f7fc1;
+  --veil: #f6eed6;
+  --shadow: 0 5px 0 rgba(170, 140, 90, 0.22), 0 14px 32px rgba(90, 60, 20, 0.16);
+  --skill-research: #1f8f86;
+  --skill-communication: #d0583c;
+  --skill-organisation: #5c8a2a;
+  --skill-analysis: #b07a0c;
+  --font-body: 'Nunito', 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-display: 'Nunito', 'Bricolage Grotesque', system-ui, sans-serif;
+  --radius: 28px;
+}
+body {
+  font-weight: 600;
+}
+h1,
+h2,
+h3,
+.wordmark,
+.rb-text strong,
+.bname {
+  font-weight: 900;
+  letter-spacing: 0;
+}
+.card {
+  border: 0;
+  border-radius: var(--radius);
+}
+/* Buttons: pills with a chunky bottom edge that presses down */
+.btn {
+  border-radius: 999px;
+  border: 0;
+  background: #fffaea;
+  color: #5a4632;
+  font-weight: 800;
+  box-shadow: 0 4px 0 #e0cfa6, 0 6px 14px rgba(90, 60, 20, 0.12);
+  transition: transform 100ms, box-shadow 100ms, filter 120ms;
+}
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 #e0cfa6, 0 8px 16px rgba(90, 60, 20, 0.14);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #e0cfa6;
+}
+.btn.primary {
+  background: var(--brand);
+  color: #fff;
+  box-shadow: 0 4px 0 #1f7a66, 0 6px 14px rgba(20, 90, 70, 0.22);
+}
+.btn.primary:hover:not(:disabled) {
+  box-shadow: 0 5px 0 #1f7a66, 0 8px 16px rgba(20, 90, 70, 0.24);
+}
+.btn.primary:active:not(:disabled) {
+  box-shadow: 0 1px 0 #1f7a66;
+}
+.btn.ghost {
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink-2);
+}
+.btn.ghost:hover:not(:disabled) {
+  background: rgba(255, 250, 234, 0.7);
+  box-shadow: none;
+}
+.btn.danger-solid {
+  background: var(--danger);
+  color: #fff;
+  box-shadow: 0 4px 0 #a8432f;
+}
+/* HUD pills */
+.wordmark,
+.mapstat,
+.hud .back {
+  border: 0;
+  background: var(--glass);
+  color: var(--ink);
+  box-shadow: 0 3px 0 rgba(170, 140, 90, 0.25);
+}
+.hud .back {
+  font-weight: 800;
+}
+/* Room banner, plaza sheet, title and self-check share the cream card */
+.room-banner {
+  background: var(--glass);
+  border-radius: 26px;
+}
+.thing-btn {
+  border: 0;
+  background: #fff;
+  box-shadow: 0 3px 0 #e6d7b1;
+  font-weight: 800;
+}
+.thing-btn.marked {
+  background: var(--accent-soft);
+  box-shadow: 0 3px 0 #ecc46e;
+}
+.bbtn {
+  border: 0 !important;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 4px 0 #e6d7b1;
+}
+.bbtn:hover,
+.bbtn.hovered {
+  transform: translateY(-2px);
+}
+.chip {
+  border-radius: 999px;
+}
+.pill span {
+  border-radius: 999px;
+}
+.pill input:checked + span {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+.task-card,
+.find,
+.findings {
+  border-radius: 20px;
+}
+.dialog {
+  border-radius: 30px;
+}
+.record-page {
+  background:
+    radial-gradient(circle, rgba(200, 170, 110, 0.18) 1.5px, transparent 1.6px) 0 0 / 22px 22px,
+    var(--bg);
+}
+.rsec {
+  border-radius: 30px;
+}
+.room-label {
+  font-family: var(--font-body);
+  font-weight: 800;
+  box-shadow: 0 3px 0 rgba(170, 140, 90, 0.35), 0 6px 14px rgba(40, 30, 10, 0.2);
+}
+/* The talk box sits up off the bottom edge, like Animal Crossing, and uses the same font */
+.talk {
+  padding-bottom: clamp(22px, 7vh, 64px);
+}
+.talk-text,
+.talk-choice,
+.talk-tag {
+  font-family: var(--font-body);
+}
+.talk-text {
+  font-weight: 800;
+}
+.talk-tag {
+  font-weight: 900;
+}
+.talk-box {
+  font-weight: 700;
+}
+@media (max-width: 600px) {
+  .talk {
+    padding-bottom: clamp(14px, 4vh, 32px);
+  }
+}
+
+/* Inside a building: a soft dark vignette around the room, like Animal Crossing's houses */
+body[data-screen='scenario']:not(.simple)::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(ellipse 75% 70% at 50% 52%, transparent 55%, rgba(20, 12, 4, 0.55) 100%);
+}

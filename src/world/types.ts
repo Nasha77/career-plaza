@@ -55,6 +55,8 @@ export interface World {
   mark(marks: Partial<Record<ThingId, Marker>>): void;
   /** Hover labels for the room's things, set by the game from the content. */
   setLabels(labels: Partial<Record<ThingId, string>>): void;
+  /** The player's chosen character, so nobody else in the world shares it. */
+  setPlayerLook(look: string): void;
 }
 
 export const reducedMotion = () =>

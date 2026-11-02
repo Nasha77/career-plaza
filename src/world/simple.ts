@@ -23,6 +23,7 @@ export class SimpleWorld implements World {
   act(): void {}
   mark(): void {}
   setLabels(): void {}
+  setPlayerLook(): void {}
   setActive(): void {}
   celebrate(): void {}
   dispose(): void {}

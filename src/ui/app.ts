@@ -8,8 +8,9 @@ import { ScriptedProvider } from '../feedback/scripted';
 import { buildRecord, exploredIds, guideLine, joinList, ratingWord, recordAsText, thenAndNow, type GrowthRecord, type ThenAndNow } from '../record';
 import { clearState, loadState, saveState } from '../store';
 import type { Attempt, ChatLine, ChoiceId, Rating, Resource, SaveState, Scenario, ScenarioId, SelfCheck, SkillName, TaskIndex } from '../types';
-import { CAST } from '../world/three/layouts';
+import { PLAYER_LOOKS, castFor } from '../world/cast';
 import { reducedMotion, type Marker, type ThingId, type World } from '../world/types';
+import { portraitFor, preparePortraits } from './portraits';
 import { Talk, type Speaker } from './talk';
 import {
   buildingIcon,
@@ -89,16 +90,6 @@ const VOICES: Record<string, Partial<Voice>> = {
 };
 
 const LOOK_KEY = 'careerPlaza.look';
-const PLAYER_LOOKS = [
-  'character-female-f',
-  'character-male-f',
-  'character-female-b',
-  'character-male-a',
-  'character-female-c',
-  'character-male-d',
-  'character-female-a',
-  'character-male-e',
-];
 
 export class App {
   private save: SaveState = loadState();
@@ -166,6 +157,7 @@ export class App {
   }
 
   private bindWorld() {
+    this.world.setPlayerLook(this.look);
     this.world.onPick = (id) => {
       if (this.screen === 'plaza') void this.enterBuilding(id);
     };
@@ -310,6 +302,7 @@ export class App {
               checked: this.look === look,
               onchange: () => {
                 this.look = look;
+                this.world.setPlayerLook(look);
                 try {
                   localStorage.setItem(LOOK_KEY, look);
                 } catch {
@@ -450,6 +443,7 @@ export class App {
     const taskIndex = nextTask(this.attempts, id);
     const scenario = getTask(id, taskIndex);
     const isRevisit = this.attempts.some((a) => a.scenarioId === id && (a.taskIndex ?? 0) === taskIndex);
+    this.resetTalk();
     this.run = {
       scenario,
       taskIndex,
@@ -462,6 +456,8 @@ export class App {
     this.world.setHover(null);
     this.world.setTalking(null);
     this.els.stage.replaceChildren();
+    const cast = castFor(this.look).rooms[id];
+    void preparePortraits([cast.manager, ...cast.colleagues]);
     try {
       await this.world.enter(id, { task: taskIndex, twist: isRevisit, look: this.look }, () => {
         this.setScreen('scenario');
@@ -495,9 +491,18 @@ export class App {
     await this.exitToPlaza();
   }
 
+  /** Forget any conversation in progress (leaving mid-conversation must not block the next visit). */
+  private resetTalk() {
+    this.conversing = false;
+    this.inPanel = false;
+    this.talkWith = null;
+    this.talk.hide();
+  }
+
   private async exitToPlaza() {
     this.busy = true;
     this.run = null;
+    this.resetTalk();
     this.talk.hide();
     this.world.setTalking(null);
     this.world.setFree(false);
@@ -697,8 +702,8 @@ export class App {
   /** The speaker for the talk box: name tag colour, portrait and voice. */
   private speaker(run: Run, who: ThingId): Speaker {
     const s = run.scenario;
-    const cast = CAST[s.id];
-    const portrait = (look: string) => `${import.meta.env.BASE_URL}models/characters/previews/${look}.png`;
+    const cast = castFor(this.look).rooms[s.id];
+    const portrait = portraitFor;
     if (who === 'manager') {
       const m = taskManagerIndex(s.id, run.taskIndex);
       const look = m === null ? cast.manager : cast.colleagues[m];
@@ -1131,7 +1136,13 @@ export class App {
         c = await aiCoach(run.scenario.id, run.taskIndex, run.choiceId, run.written);
         if (this.run !== run) return;
       }
-      c = c ?? coachWriting(run.scenario, run.written);
+      // Only stop the student when the answer is clearly weak: the offline check says so, or the
+      // AI does and the answer is very short. (The AI on its own is stricter than we want.)
+      const offline = coachWriting(run.scenario, run.written);
+      const words = run.written.split(/\s+/).filter(Boolean).length;
+      const aiWeak = c?.status === 'could_strengthen' && words < 12;
+      if (offline.status === 'could_strengthen' || aiWeak) c = c?.status === 'could_strengthen' ? c : offline;
+      else c = { status: 'solid', tip: '' };
       if (c.status === 'could_strengthen') {
         run.coach = c;
         this.go('coach');

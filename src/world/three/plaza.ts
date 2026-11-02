@@ -13,7 +13,7 @@ export interface BuildingHandle {
   /** Unit vector from the building toward the plaza centre. */
   toCenter: THREE.Vector3;
   windowMat: THREE.MeshLambertMaterial;
-  bodyMats: { m: THREE.MeshLambertMaterial; base: THREE.Color }[];
+  bodyMats: { m: THREE.MeshLambertMaterial | THREE.MeshStandardMaterial; base: THREE.Color }[];
   ring: THREE.Mesh;
   ringMat: THREE.MeshBasicMaterial;
   sparkle: THREE.Mesh;
@@ -104,13 +104,17 @@ function labelSprite(kit: Kit, text: string): THREE.Sprite {
     }
     const tw = Math.min(w - 20, ctx.measureText(text).width + 64);
     const x = (w - tw) / 2;
-    ctx.fillStyle = 'rgba(20, 48, 42, 0.92)';
-    roundRect(ctx, x, 14, tw, h - 28, 40);
+    // A cream sign with a darker bottom edge, like Animal Crossing's signs
+    ctx.fillStyle = '#e0cfa6';
+    roundRect(ctx, x, 20, tw, h - 30, 40);
     ctx.fill();
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#fffaea';
+    roundRect(ctx, x, 12, tw, h - 32, 40);
+    ctx.fill();
+    ctx.fillStyle = '#5a4632';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, w / 2, h / 2 + 3);
+    ctx.fillText(text, w / 2, h / 2 - 1);
   });
   // Fixed on-screen size, so names stay readable at any camera distance.
   const mat = kit.track(new THREE.SpriteMaterial({ map: tex, depthTest: false, transparent: true, sizeAttenuation: false }));
@@ -151,22 +155,23 @@ function buildResort(kit: Kit, g: THREE.Group, win: Windows, own: Own): BuildInf
   const body = own(0xe6d2ae);
   const trim = own(0x2f6f6a);
   const white = own(0xf4f1ea);
-  g.add(kit.box(6.6, 0.6, 5.6, trim, 0, 0.3, 0));
-  g.add(kit.box(6, 11, 5, body, 0, 5.5, 0));
+  const core = coreGroup(g);
+  core.add(kit.box(6.6, 0.6, 5.6, trim, 0, 0.3, 0));
+  core.add(kit.box(6, 11, 5, body, 0, 5.5, 0));
   // Balcony bands give the tower its hotel look
   for (let y = 3.2; y <= 10.4; y += 1.2) {
-    g.add(kit.box(6.3, 0.12, 0.5, white, 0, y, 2.7), kit.box(6.3, 0.12, 0.5, white, 0, y, -2.7));
+    core.add(kit.box(6.3, 0.12, 0.5, white, 0, y, 2.7), kit.box(6.3, 0.12, 0.5, white, 0, y, -2.7));
   }
   // Rooftop garden deck with a curved canopy
-  g.add(kit.box(6.4, 0.3, 5.4, trim, 0, 11.15, 0));
+  core.add(kit.box(6.4, 0.3, 5.4, trim, 0, 11.15, 0));
   const canopy = kit.cyl(3.4, 3.4, 0.25, 16, white, 0, 13.2, 0);
   canopy.scale.set(1, 1, 0.75);
-  g.add(canopy);
-  for (const [x, z] of [[-2.4, -1.6], [2.4, -1.6], [-2.4, 1.6], [2.4, 1.6]]) g.add(kit.cyl(0.12, 0.12, 1.9, 6, trim, x, 12.2, z));
-  g.add(kit.sphere(0.6, 0, kit.lambert(0x5f9e6e), -1.2, 11.7, 0.6), kit.sphere(0.5, 0, kit.lambert(0x78b57f), 1.3, 11.6, -0.5));
+  core.add(canopy);
+  for (const [x, z] of [[-2.4, -1.6], [2.4, -1.6], [-2.4, 1.6], [2.4, 1.6]]) core.add(kit.cyl(0.12, 0.12, 1.9, 6, trim, x, 12.2, z));
+  core.add(kit.sphere(0.6, 0, kit.lambert(0x5f9e6e), -1.2, 11.7, 0.6), kit.sphere(0.5, 0, kit.lambert(0x78b57f), 1.3, 11.6, -0.5));
   // Entrance canopy and door
-  g.add(kit.box(3.2, 0.18, 1.4, trim, 0, 2.9, 3.1));
-  g.add(kit.box(1.8, 2.5, 0.1, kit.lambert(0x1f4e4a), 0, 1.25, 2.53));
+  core.add(kit.box(3.2, 0.18, 1.4, trim, 0, 2.9, 3.1));
+  core.add(kit.box(1.8, 2.5, 0.1, kit.lambert(0x1f4e4a), 0, 1.25, 2.53));
 
   // Pool deck to one side, with loungers, a parasol and palms
   const deck = kit.lambert(0xd9cbb2);
@@ -213,17 +218,18 @@ function buildPolicy(kit: Kit, g: THREE.Group, win: Windows, own: Own): BuildInf
   const body = own(0xc7c6b6);
   const roof = own(0x4a5560);
   const stone = own(0xf1ece2);
-  g.add(kit.box(9, 4.6, 6, body, 0, 2.3, 0));
+  const core = coreGroup(g);
+  core.add(kit.box(9, 4.6, 6, body, 0, 2.3, 0));
   const r = kit.prism(9.8, 2.1, 6.6, roof);
   r.position.y = 4.6;
-  g.add(r);
+  core.add(r);
   // Solar panels on one roof slope
   const panel = kit.lambert(0x23376b, { emissive: 0x16244a, emissiveIntensity: 0.3 });
   const slope = Math.atan2(2.1, 4.9);
   for (const z of [-2.0, 0, 2.0]) {
     const p = kit.box(2.6, 0.08, 1.7, panel, 2.35, 5.72, z);
     p.rotation.z = -slope;
-    g.add(p);
+    core.add(p);
   }
   // Columned porch
   g.add(kit.box(6.2, 0.3, 2.2, stone, 0, 0.15, 4.0));
@@ -232,7 +238,7 @@ function buildPolicy(kit: Kit, g: THREE.Group, win: Windows, own: Own): BuildInf
   const ped = kit.prism(6.6, 1.2, 0.5, stone);
   ped.position.set(0, 4.42, 5.0);
   g.add(ped);
-  g.add(kit.box(1.6, 2.6, 0.1, kit.lambert(0x5b3a2e), 0, 1.3, 3.03));
+  core.add(kit.box(1.6, 2.6, 0.1, kit.lambert(0x5b3a2e), 0, 1.3, 3.03));
   // A leaf emblem instead of a clock
   const emblem = kit.cyl(0.5, 0.5, 0.12, 12, kit.lambert(0x5f9e6e), 0, 5.6, 3.32);
   emblem.rotation.x = Math.PI / 2;
@@ -291,20 +297,21 @@ function buildFoundation(kit: Kit, g: THREE.Group, win: Windows, own: Own): Buil
   ];
   const cream = own(0xf7f1e6);
   const roofTile = own(0xb5694a);
+  const core = coreGroup(g);
   bays.forEach(([x, wall, shutter]) => {
     const w = own(wall);
-    g.add(kit.box(2.7, 6.2, 6, w, x, 3.1, 0));
+    core.add(kit.box(2.7, 6.2, 6, w, x, 3.1, 0));
     // Upper-floor windows framed by coloured shutters
     for (const dx of [-0.55, 0.55]) {
-      g.add(kit.box(0.22, 1.3, 0.08, kit.lambert(shutter), x + dx * 1.55, 4.6, 3.05));
+      core.add(kit.box(0.22, 1.3, 0.08, kit.lambert(shutter), x + dx * 1.55, 4.6, 3.05));
     }
-    g.add(kit.box(2.7, 0.3, 6.2, cream, x, 6.35, 0));
+    core.add(kit.box(2.7, 0.3, 6.2, cream, x, 6.35, 0));
   });
   // Tiled roof with its ridge running along the row
   const roof = kit.prism(6.2, 1.2, 8.4, roofTile);
   roof.rotation.y = Math.PI / 2;
   roof.position.y = 6.5;
-  g.add(roof);
+  core.add(roof);
 
   // Covered five-foot way: slab, pillars and striped awnings
   g.add(kit.box(8.4, 0.25, 1.8, cream, 0, 2.95, 3.9));
@@ -323,7 +330,7 @@ function buildFoundation(kit: Kit, g: THREE.Group, win: Windows, own: Own): Buil
     a.rotation.x = -0.9;
     g.add(a);
   });
-  g.add(kit.box(1.4, 2.4, 0.1, kit.lambert(0x5b3a2e), 0, 1.2, 3.03));
+  core.add(kit.box(1.4, 2.4, 0.1, kit.lambert(0x5b3a2e), 0, 1.2, 3.03));
 
   // Bunting across the front
   const flagColors = [0xe07a5f, 0xf2c14e, 0x5f9e6e, 0x3d7ea6, 0xd9a6c9];
@@ -369,7 +376,7 @@ function buildFoundation(kit: Kit, g: THREE.Group, win: Windows, own: Own): Buil
   m.scale.set(4.4, 4.4, 1);
   m.position.set(4.06, 3.3, -0.4);
   m.rotation.y = Math.PI / 2;
-  g.add(m);
+  core.add(m);
 
   win.grid('front', 8.1, 6, [-2.7, 0, 2.7], [4.6], 1.0, 1.3);
   win.grid('front', 8.1, 6, [-3.5, -1.9, 1.9, 3.5], [1.3], 0.8, 1.1);
@@ -382,9 +389,10 @@ function buildWorkforce(kit: Kit, g: THREE.Group, win: Windows, own: Own): Build
   const glass = own(0x8fb9cf);
   const band = own(0xf2f4f5);
   const dark = own(0x2a3a44);
-  g.add(kit.cyl(4.3, 4.5, 0.5, 20, dark, 0, 0.25, 0));
-  g.add(kit.cyl(3.6, 3.8, 11, 20, glass, 0, 5.75, 0));
-  for (let y = 2.0; y <= 10.5; y += 1.7) g.add(kit.cyl(3.7, 3.7, 0.18, 20, band, 0, y, 0));
+  const core = coreGroup(g);
+  core.add(kit.cyl(4.3, 4.5, 0.5, 20, dark, 0, 0.25, 0));
+  core.add(kit.cyl(3.6, 3.8, 11, 20, glass, 0, 5.75, 0));
+  for (let y = 2.0; y <= 10.5; y += 1.7) core.add(kit.cyl(3.7, 3.7, 0.18, 20, band, 0, y, 0));
   // Scrolling news ticker band
   const ticker = kit.canvasTexture(1024, 64, (ctx, w, h) => {
     ctx.fillStyle = '#0f2a30';
@@ -401,14 +409,14 @@ function buildWorkforce(kit: Kit, g: THREE.Group, win: Windows, own: Own): Build
     kit.track(new THREE.MeshBasicMaterial({ map: ticker })),
   );
   tickerMesh.position.y = 8.6;
-  g.add(tickerMesh);
+  core.add(tickerMesh);
   // Crown: halo ring and antenna
-  g.add(kit.cyl(2.8, 3.6, 0.6, 20, dark, 0, 11.55, 0));
+  core.add(kit.cyl(2.8, 3.6, 0.6, 20, dark, 0, 11.55, 0));
   const halo = new THREE.Mesh(kit.geo('halo', () => new THREE.TorusGeometry(2.4, 0.12, 6, 32)), kit.lambert(0x7ee0d2, { emissive: 0x3aa69a, emissiveIntensity: 0.6 }));
   halo.rotation.x = Math.PI / 2;
   halo.position.y = 12.4;
-  g.add(halo);
-  g.add(kit.cyl(0.06, 0.06, 2.4, 5, band, 0, 13.0, 0));
+  core.add(halo);
+  core.add(kit.cyl(0.06, 0.06, 2.4, 5, band, 0, 13.0, 0));
   // Glass entrance pavilion
   g.add(kit.box(3.6, 3.0, 2.4, glass, 0, 1.5, 4.2));
   g.add(kit.box(4.2, 0.2, 3.0, band, 0, 3.1, 4.3));
@@ -429,6 +437,14 @@ function buildWorkforce(kit: Kit, g: THREE.Group, win: Windows, own: Own): Build
   };
 }
 
+/** The building's main body, which a Kenney model can replace; everything else stays. */
+function coreGroup(g: THREE.Group): THREE.Group {
+  const core = new THREE.Group();
+  core.name = 'core';
+  g.add(core);
+  return core;
+}
+
 const BUILDERS = { resort: buildResort, policy: buildPolicy, foundation: buildFoundation, workforce: buildWorkforce };
 
 function makeBuilding(kit: Kit, id: ScenarioId, parent: THREE.Group): BuildingHandle {
@@ -447,7 +463,9 @@ function makeBuilding(kit: Kit, id: ScenarioId, parent: THREE.Group): BuildingHa
   const win = new Windows();
   const info = BUILDERS[id](kit, group, win, own);
   const windowMat = kit.lambert(0xcfe6ee, { unique: true, emissive: 0x000000 });
-  group.add(win.build(kit, windowMat));
+  const windows = win.build(kit, windowMat);
+  windows.name = 'windows';
+  group.add(windows);
 
   const hit = kit.box(info.hit[0], info.hit[1], info.hit[2], kit.basic(0xffffff), 0, info.hit[1] / 2, 0.5);
   (hit.material as THREE.Material).visible = false;

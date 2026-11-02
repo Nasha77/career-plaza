@@ -1,34 +1,38 @@
 import * as THREE from 'three';
 import type { ScenarioId, TaskIndex } from '../../types';
 import { DISPLAY_FONT, FONT, roundRect, type Kit } from './kit';
+import type { Partition, Rect } from './layouts';
 
 /**
  * The room shell (floor, two walls, a window) and the canvas-drawn boards on the walls:
  * the posters, screens and pinboards that show what each task is about. No image files.
  */
 
-export const ROOM_W = 16;
-export const ROOM_D = 12;
+export const ROOM_W = 14;
+export const ROOM_D = 10;
 export const BACK_Z = -ROOM_D / 2;
 export const LEFT_X = -ROOM_W / 2;
+export const RIGHT_X = ROOM_W / 2;
 const WALL_H = 5.4;
 
 interface RoomColors {
   floor: number;
+  /** Upper wall, and the panelled lower part of the wall (wainscoting). */
   back: number;
   left: number;
+  panel: number;
   trim: number;
 }
 
 const COLORS: Record<ScenarioId, RoomColors> = {
-  resort: { floor: 0xd6cbb8, back: 0xf3ede2, left: 0xe8dfcf, trim: 0x2f6f6a },
-  policy: { floor: 0xb9a184, back: 0xe9ecee, left: 0xdde2e6, trim: 0x34465e },
-  foundation: { floor: 0xc9ad8a, back: 0xf4ece0, left: 0xe9dccb, trim: 0x8c3b4a },
-  workforce: { floor: 0xcfd9db, back: 0xe7eef0, left: 0xd5e0e3, trim: 0x1f4e5a },
+  resort: { floor: 0xc9a77e, back: 0xf2e6cf, left: 0xeadcc0, panel: 0x7fb3a3, trim: 0xf7f0e2 },
+  policy: { floor: 0xa98a66, back: 0xdfe6dc, left: 0xd4ddd2, panel: 0x6f8c74, trim: 0xf1ede2 },
+  foundation: { floor: 0xb98f68, back: 0xf4e1cf, left: 0xebd5c0, panel: 0xb7705f, trim: 0xf8efe3 },
+  workforce: { floor: 0xb7a58c, back: 0xe2e7ea, left: 0xd6dde1, panel: 0x5f7c8c, trim: 0xf1f1ec },
 };
 
 type FloorStyle = 'carpet' | 'planks' | 'tiles';
-const FLOORS: Record<ScenarioId, FloorStyle> = { resort: 'carpet', policy: 'planks', foundation: 'planks', workforce: 'tiles' };
+const FLOORS: Record<ScenarioId, FloorStyle> = { resort: 'planks', policy: 'planks', foundation: 'planks', workforce: 'tiles' };
 
 const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`;
 
@@ -97,25 +101,207 @@ function wallTexture(kit: Kit, base: number) {
   });
 }
 
-/** Floor, back and left walls, trim and a window: a cutaway room on a plinth. */
-export function buildShell(kit: Kit, g: THREE.Group, id: ScenarioId): THREE.Mesh {
+/** A window on a side wall (facing +x for side 1 on a left wall), with frame, bars and sill. */
+function sideWindow(kit: Kit, g: THREE.Group, wallX: number, inward: -1 | 1, z: number, trim: THREE.Material) {
+  const x = wallX + inward * 0.02;
+  g.add(kit.box(0.08, 2.0, 2.6, kit.lambert(0xcfe9f2, { emissive: 0xbfe6f2, emissiveIntensity: 0.55 }), x, 3.1, z));
+  const fx = x + inward * 0.05;
+  g.add(kit.box(0.14, 0.14, 2.9, trim, fx, 4.15, z), kit.box(0.14, 0.14, 2.9, trim, fx, 2.05, z));
+  g.add(kit.box(0.14, 2.2, 0.14, trim, fx, 3.1, z - 1.38), kit.box(0.14, 2.2, 0.14, trim, fx, 3.1, z + 1.38));
+  g.add(kit.box(0.12, 2.0, 0.08, trim, fx, 3.1, z));
+  g.add(kit.box(0.4, 0.12, 3.0, trim, x + inward * 0.2, 1.98, z));
+}
+
+const inRects = (rects: Rect[], x: number, z: number) => rects.some(([x0, z0, x1, z1]) => x > x0 && x < x1 && z > z0 && z < z1);
+
+/**
+ * The room, shaped by its floor rectangles: floor, walls along every back and side edge (the
+ * front is left open, as in Animal Crossing and Pokemon), wainscoting, windows, white glass
+ * partitions, and a warm lamp light. Returns the floor (for clicking to walk).
+ */
+export function buildShape(kit: Kit, g: THREE.Group, id: ScenarioId, rects: Rect[], partitions: Partition[], door: [number, number]): THREE.Group {
   const c = COLORS[id];
-  const lambert = (map: THREE.Texture) => kit.track(new THREE.MeshLambertMaterial({ map }));
-  g.add(kit.box(ROOM_W + 0.8, 0.9, ROOM_D + 0.8, kit.lambert(0xbfb6a6), 0, -0.45, 0));
-  const floor = kit.box(ROOM_W, 0.12, ROOM_D, lambert(floorTexture(kit, FLOORS[id], c.floor)), 0, 0.06, 0);
+  const PANEL_H = 1.5;
+  const floorTex = floorTexture(kit, FLOORS[id], c.floor);
+  const floor = new THREE.Group();
   floor.name = 'floor';
+  const plinth = kit.lambert(0x4a3a2c);
+  for (const [x0, z0, x1, z1] of rects) {
+    const w = x1 - x0;
+    const d = z1 - z0;
+    // The floor pattern lines up across rectangles: one texture repeat every 8 units.
+    const tex = floorTex.clone();
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(w / 8, d / 6);
+    tex.offset.set(x0 / 8, -z1 / 6);
+    tex.needsUpdate = true;
+    kit.track(tex);
+    floor.add(kit.box(w, 0.12, d, kit.track(new THREE.MeshLambertMaterial({ map: tex })), (x0 + x1) / 2, 0.06, (z0 + z1) / 2));
+    g.add(kit.box(w + 0.6, 0.9, d + 0.6, plinth, (x0 + x1) / 2, -0.45, (z0 + z1) / 2));
+  }
   g.add(floor);
-  g.add(kit.box(ROOM_W, WALL_H, 0.3, lambert(wallTexture(kit, c.back)), 0, WALL_H / 2, BACK_Z - 0.15));
-  g.add(kit.box(0.3, WALL_H, ROOM_D, lambert(wallTexture(kit, c.left)), LEFT_X - 0.15, WALL_H / 2, 0));
+
+  const upperBack = kit.track(new THREE.MeshLambertMaterial({ map: wallTexture(kit, c.back) }));
+  const upperSide = kit.track(new THREE.MeshLambertMaterial({ map: wallTexture(kit, c.left) }));
+  const panel = kit.lambert(c.panel);
   const trim = kit.lambert(c.trim);
-  g.add(kit.box(ROOM_W, 0.25, 0.34, trim, 0, WALL_H + 0.05, BACK_Z - 0.15), kit.box(0.34, 0.25, ROOM_D, trim, LEFT_X - 0.15, WALL_H + 0.05, 0));
-  g.add(kit.box(ROOM_W + 0.8, 0.12, 0.12, trim, 0, 0.0, ROOM_D / 2 + 0.4), kit.box(0.12, 0.12, ROOM_D + 0.8, trim, ROOM_W / 2 + 0.4, 0.0, 0));
-  // Window on the side wall
-  g.add(kit.box(0.08, 2.4, 4.2, kit.lambert(0xbfe3ef, { emissive: 0x9fd4e6, emissiveIntensity: 0.35 }), LEFT_X + 0.02, 3.0, 1.2));
-  g.add(kit.box(0.1, 0.12, 4.4, trim, LEFT_X + 0.04, 1.75, 1.2), kit.box(0.1, 2.4, 0.1, trim, LEFT_X + 0.04, 3.0, 1.2));
+  const cap = kit.lambert(0x3b2e22);
+
+  // Walls along the edges of the floor, found on a 1-unit grid and merged into runs.
+  const back: [number, number, number][] = []; // [z, x0, x1]
+  const sides: [number, number, number, -1 | 1][] = []; // [x, z0, z1, inward]
+  for (let z = -6; z < 6; z++) {
+    let run: number | null = null;
+    for (let x = -8; x <= 8; x++) {
+      const edge = x < 8 && inRects(rects, x + 0.5, z + 0.5) && !inRects(rects, x + 0.5, z - 0.5);
+      if (edge && run === null) run = x;
+      if (!edge && run !== null) {
+        back.push([z, run, x]);
+        run = null;
+      }
+    }
+  }
+  for (const inward of [1, -1] as const) {
+    for (let x = -8; x <= 8; x++) {
+      let run: number | null = null;
+      for (let z = -6; z <= 6; z++) {
+        // inward 1: floor to the right of the line x (a left wall); -1: floor to the left (a right wall)
+        const cx = inward === 1 ? x + 0.5 : x - 0.5;
+        const ox = inward === 1 ? x - 0.5 : x + 0.5;
+        const edge = z < 6 && inRects(rects, cx, z + 0.5) && !inRects(rects, ox, z + 0.5);
+        if (edge && run === null) run = z;
+        if (!edge && run !== null) {
+          sides.push([x, run, z, inward]);
+          run = null;
+        }
+      }
+    }
+  }
+  for (const [z, x0, x1] of back) {
+    const w = x1 - x0;
+    const cx = (x0 + x1) / 2;
+    g.add(kit.box(w + 0.3, WALL_H, 0.3, upperBack, cx, WALL_H / 2, z - 0.15));
+    g.add(kit.box(w, PANEL_H, 0.06, panel, cx, PANEL_H / 2, z + 0.03));
+    g.add(kit.box(w, 0.12, 0.12, trim, cx, PANEL_H, z + 0.06));
+    g.add(kit.box(w, 0.14, 0.08, trim, cx, 0.19, z + 0.06));
+    g.add(kit.box(w + 0.42, 0.3, 0.42, cap, cx, WALL_H + 0.1, z - 0.15));
+  }
+  let bestLeft: [number, number, number] | null = null;
+  let bestRight: [number, number, number] | null = null;
+  for (const [x, z0, z1, inward] of sides) {
+    const d = z1 - z0;
+    const cz = (z0 + z1) / 2;
+    // Walls that start in the front half of the room stay low, so they don't hide the room.
+    const h = z0 >= 0 ? PANEL_H + 0.25 : WALL_H;
+    g.add(kit.box(0.3, h, d, h < WALL_H ? panel : upperSide, x - inward * 0.15, h / 2, cz));
+    if (h === WALL_H) {
+      g.add(kit.box(0.06, PANEL_H, d, panel, x + inward * 0.03, PANEL_H / 2, cz));
+      g.add(kit.box(0.12, 0.12, d, trim, x + inward * 0.06, PANEL_H, cz));
+    }
+    g.add(kit.box(0.08, 0.14, d, trim, x + inward * 0.06, 0.19, cz));
+    g.add(kit.box(0.42, h === WALL_H ? 0.3 : 0.16, d + 0.42, h === WALL_H ? cap : trim, x - inward * 0.15, h + 0.06, cz));
+    if (h < WALL_H) continue;
+    if (inward === 1 && d >= 4 && (!bestLeft || d > bestLeft[2] - bestLeft[1])) bestLeft = [x, z0, z1];
+    if (inward === -1 && d >= 4 && (!bestRight || d > bestRight[2] - bestRight[1])) bestRight = [x, z0, z1];
+  }
+  // A window on the longest wall run each side, toward the front where it won't hide boards
+  if (bestLeft) sideWindow(kit, g, bestLeft[0], 1, Math.min(bestLeft[2] - 2, (bestLeft[1] + bestLeft[2]) / 2 + 1), trim);
+  if (bestRight) sideWindow(kit, g, bestRight[0], -1, Math.min(bestRight[2] - 2, (bestRight[1] + bestRight[2]) / 2 + 1), trim);
+
+  // White glass partitions, as in Pokemon Black and White's offices
+  const white = kit.lambert(0xf4f2ec);
+  const glass = kit.lambert(0xcfe8ef, { transparent: true, opacity: 0.45 });
+  for (const [x0, z0, x1, z1] of partitions) {
+    const along = x0 === x1 ? 'z' : 'x';
+    const len = along === 'x' ? Math.abs(x1 - x0) : Math.abs(z1 - z0);
+    const cx = (x0 + x1) / 2;
+    const cz = (z0 + z1) / 2;
+    const [w, d] = along === 'x' ? [len, 0.22] : [0.22, len];
+    g.add(kit.box(w, 1.0, d, white, cx, 0.5, cz));
+    const pane = kit.box(along === 'x' ? len : 0.06, 1.5, along === 'x' ? 0.06 : len, glass, cx, 1.75, cz);
+    pane.castShadow = false;
+    g.add(pane);
+    g.add(kit.box(along === 'x' ? len : 0.16, 0.12, along === 'x' ? 0.16 : len, white, cx, 2.55, cz));
+    for (const t of [0, 1]) {
+      const px = x0 + (x1 - x0) * t;
+      const pz = z0 + (z1 - z0) * t;
+      g.add(kit.box(0.24, 2.7, 0.24, white, px, 1.35, pz));
+    }
+  }
+
   // Doormat where the player comes in
-  g.add(kit.box(2.2, 0.03, 1.2, kit.lambert(c.trim), 5.6, 0.13, 5.2));
+  g.add(kit.box(2.4, 0.03, 1.1, kit.lambert(c.panel), door[0], 0.13, door[1] + 0.3));
+  // A warm lamp-light glow over the middle of the room
+  let sx = 0;
+  let sz = 0;
+  let area = 0;
+  for (const [x0, z0, x1, z1] of rects) {
+    const a = (x1 - x0) * (z1 - z0);
+    sx += ((x0 + x1) / 2) * a;
+    sz += ((z0 + z1) / 2) * a;
+    area += a;
+  }
+  const glow = new THREE.PointLight(0xffd59a, 26, 16, 1.4);
+  glow.position.set(sx / area, 4.6, sz / area);
+  g.add(glow);
   return floor;
+}
+
+/** A small wall shelf on the back wall (a plank on two brackets); things on it come from the layout. */
+export function wallShelf(kit: Kit, g: THREE.Group, x: number, y: number, w: number) {
+  const wood = kit.lambert(0x8a6240);
+  g.add(kit.box(w, 0.12, 0.6, wood, x, y, BACK_Z + 0.3));
+  for (const dx of [-w / 2 + 0.3, w / 2 - 0.3]) g.add(kit.box(0.08, 0.35, 0.4, wood, x + dx, y - 0.22, BACK_Z + 0.2));
+}
+/** A framed picture: a little landscape or potted plant painted in code. */
+export function frame(kit: Kit, g: THREE.Group, x: number, y: number, w: number, h: number, seed: number, wall: 'back' | 'left' | 'right' = 'back') {
+  const palettes = [
+    ['#bfe3ef', '#7fb36a', '#4f8a54', '#f6d79a'],
+    ['#f7e1c9', '#e07a5f', '#f2c14e', '#3d7ea6'],
+    ['#e8f0e0', '#5f9e6e', '#a7c957', '#386641'],
+    ['#fbe8d3', '#d9a6c9', '#8c6bb1', '#f2c14e'],
+  ];
+  const pal = palettes[seed % palettes.length];
+  const tex = kit.canvasTexture(128, 160, (ctx, cw, ch) => {
+    ctx.fillStyle = pal[0];
+    ctx.fillRect(0, 0, cw, ch);
+    if (seed % 2) {
+      ctx.fillStyle = pal[3];
+      ctx.beginPath();
+      ctx.arc(90, 45, 16, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = pal[1];
+      ctx.beginPath();
+      ctx.ellipse(40, 150, 90, 60, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = pal[2];
+      ctx.beginPath();
+      ctx.ellipse(120, 160, 80, 55, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillStyle = pal[1];
+      ctx.fillRect(48, 110, 32, 34);
+      ctx.fillStyle = pal[2];
+      for (const [px, py, r] of [[64, 80, 26], [44, 92, 18], [84, 92, 18], [64, 58, 18]]) {
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  });
+  const wood = kit.lambert(0x6b4a30);
+  const pic = plane(kit, tex, w, h);
+  if (wall === 'back') {
+    g.add(kit.box(w + 0.2, h + 0.2, 0.08, wood, x, y, BACK_Z + 0.05));
+    pic.position.set(x, y, BACK_Z + 0.1);
+  } else {
+    const side = wall === 'left' ? 1 : -1;
+    const wx = (wall === 'left' ? LEFT_X : RIGHT_X) + side * 0.05;
+    g.add(kit.box(0.08, h + 0.2, w + 0.2, wood, wx, y, x));
+    pic.position.set(wx + side * 0.05, y, x);
+    pic.rotation.y = (side * Math.PI) / 2;
+  }
+  g.add(pic);
 }
 
 function textLines(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, n: number, gap: number, color: string) {

@@ -3,10 +3,11 @@ import { taskManagerIndex } from '../../content';
 import type { ScenarioId } from '../../types';
 import type { RoomSetup, ThingId } from '../types';
 import { Actor } from './actor';
-import { BACK_Z, LEFT_X, ROOM_D, ROOM_W, boardsFor, buildShell } from './boards';
+import { BACK_Z, LEFT_X, boardsFor, buildShape, frame, wallShelf } from './boards';
 import { Kit } from './kit';
-import { CAST, layoutFor } from './layouts';
-import { spawn } from './models';
+import { castFor } from '../cast';
+import { layoutFor, onFloor } from './layouts';
+import { spawn, spawnCharacter } from './models';
 import { WalkGrid } from './walkgrid';
 
 /** A built room: furniture, people, the player, the walk grid and the click targets. */
@@ -14,7 +15,7 @@ export interface Room {
   id: ScenarioId;
   kit: Kit;
   group: THREE.Group;
-  floor: THREE.Mesh;
+  floor: THREE.Object3D;
   grid: WalkGrid;
   player: Actor;
   /** Everyone you can talk to, by thing id. */
@@ -25,33 +26,39 @@ export interface Room {
   hits: THREE.Mesh[];
   /** Markers for spots hang from these anchors. */
   spotAnchors: Map<ThingId, THREE.Group>;
+  /** The floor's outer edges [x0, z0, x1, z1], for framing the camera. */
+  bounds: [number, number, number, number];
 }
 
-export const DOOR: [number, number] = [5.6, 4.6];
 
 export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room> {
   const kit = new Kit();
   const group = new THREE.Group();
-  const floor = buildShell(kit, group, id);
-  boardsFor(id, setup.task)(kit, group, setup.twist);
-
   const layout = layoutFor(id, setup.task);
-  const cast = CAST[id];
+  const floor = buildShape(kit, group, id, layout.floor, layout.partitions ?? [], layout.door);
+  boardsFor(id, setup.task)(kit, group, setup.twist);
+  for (const [x, y, w] of layout.shelves ?? []) wallShelf(kit, group, x, y, w);
+  (layout.frames ?? []).forEach(([x, y, w, h, seed, wall]) => frame(kit, group, x, y, w, h, seed, wall));
+  const cast = castFor(setup.look).rooms[id];
   const managerIndex = taskManagerIndex(id, setup.task);
-  const grid = new WalkGrid(ROOM_W, ROOM_D, 0.5);
-  grid.blockEdges(0.7);
+  // The walkable floor: inside the room's shape, a little way off the walls.
+  const grid = new WalkGrid(16, 12, 0.5);
+  grid.blockWhere((x, z) => !(onFloor(layout, x, z) && onFloor(layout, x - 0.7, z) && onFloor(layout, x + 0.7, z) && onFloor(layout, x, z - 0.7) && onFloor(layout, x, z + 0.3)));
+  for (const [x0, z0, x1, z1] of layout.partitions ?? []) {
+    grid.blockRect((x0 + x1) / 2, (z0 + z1) / 2, Math.abs(x1 - x0) + 0.3, Math.abs(z1 - z0) + 0.3, 0, 0.2);
+  }
 
   // Furniture: load everything at once, then place in order so things can stack.
   const spawned = await Promise.all(layout.props.map((p) => spawn(p.m, p.s ?? 1)));
   const tops: number[] = [];
   layout.props.forEach((p, i) => {
     const sp = spawned[i];
-    const y = p.on !== undefined ? tops[p.on] : 0;
+    const y = p.y ?? (p.on !== undefined ? tops[p.on] : 0);
     sp.object.position.set(p.x, y, p.z);
     sp.object.rotation.y = p.r ?? 0;
     group.add(sp.object);
     tops[i] = y + sp.size.y;
-    if (!p.walk && p.on === undefined) grid.blockRect(p.x, p.z, sp.size.x, sp.size.z, p.r ?? 0);
+    if (!p.walk && p.on === undefined && p.y === undefined) grid.blockRect(p.x, p.z, sp.size.x, sp.size.z, p.r ?? 0);
     if (p.walk) sp.object.traverse((o) => ((o as THREE.Mesh).castShadow = false));
   });
 
@@ -74,7 +81,7 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
     const at = layout.people[i];
     if (at && i !== managerIndex) people.push([`person:${i}`, look, at]);
   });
-  const actorModels = await Promise.all([...people.map(([, look]) => spawn(`characters/${look}`)), spawn(`characters/${setup.look}`)]);
+  const actorModels = await Promise.all([...people.map(([, look]) => spawnCharacter(look)), spawnCharacter(setup.look)]);
   people.forEach(([thing, , at], i) => {
     const a = new Actor(actorModels[i], at.pose ?? 'idle');
     a.place(at.x, at.z, at.r);
@@ -82,7 +89,7 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
     actors.set(thing, a);
     things.set(thing, new THREE.Vector3(at.x, a.topY, at.z));
     // The Mini Characters are chunky, so give everyone a little personal space.
-    grid.blockCircle(at.x, at.z, 1.5);
+    grid.blockCircle(at.x, at.z, 1.1);
     addHit(thing, at.x, 1.3, at.z, 1.5, 2.8);
   });
 
@@ -104,10 +111,14 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
   }
 
   const player = new Actor(actorModels[actorModels.length - 1]);
-  player.place(DOOR[0], DOOR[1], Math.PI + 0.5);
+  player.place(layout.door[0], layout.door[1], Math.PI);
   group.add(player.group);
 
-  return { id, kit, group, floor, grid, player, actors, things, hits, spotAnchors };
+  const bounds = layout.floor.reduce(
+    (b, [x0, z0, x1, z1]) => [Math.min(b[0], x0), Math.min(b[1], z0), Math.max(b[2], x1), Math.max(b[3], z1)] as [number, number, number, number],
+    [Infinity, Infinity, -Infinity, -Infinity] as [number, number, number, number],
+  );
+  return { id, kit, group, floor, grid, player, actors, things, hits, spotAnchors, bounds };
 }
 
 export function disposeRoom(room: Room) {

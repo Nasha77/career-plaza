@@ -3,11 +3,11 @@ import type { ScenarioId } from '../../types';
 import { fade, reducedMotion, type BodyAction, type Marker, type Mood, type RoomSetup, type ThingId, type Who, type World } from '../types';
 import { Actor } from './actor';
 import { buildAtmosphere, type Atmosphere } from './atmosphere';
-import { ROOM_D, ROOM_W } from './boards';
 import { Emote } from './emotes';
 import { Kit } from './kit';
 import { modelsFor } from './layouts';
-import { preload, spawn } from './models';
+import { castFor, PLAYER_LOOKS } from '../cast';
+import { preload, spawn, spawnCharacter } from './models';
 import { buildRoom, disposeRoom, type Room } from './room';
 import { LABEL_H, LABEL_W, buildPlaza, labelY, type BuildingHandle, type Plaza } from './plaza';
 
@@ -23,7 +23,7 @@ const SKY = {
   light: {
     top: 0x5d9fd6, horizon: 0xf6dcb6, bottom: 0x9cc48a,
     hemiSky: 0xdfeaff, hemiGround: 0x8f9a66, hemi: 1.7,
-    sun: 3.4, sunColor: 0xffd7a6, glow: 0xffcf8a, glowSize: 1, interior: 0xe4e0d4,
+    sun: 3.4, sunColor: 0xffd7a6, glow: 0xffcf8a, glowSize: 1, interior: 0x231c15,
   },
   dark: {
     top: 0x060d1c, horizon: 0x1f3047, bottom: 0x2e4636,
@@ -38,7 +38,7 @@ const easeInOut = (k: number) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k 
 const clamp = THREE.MathUtils.clamp;
 const DEG = Math.PI / 180;
 /** The room camera's angle from the front; conversations are framed from the same side. */
-const TALK_AZ = 28 * DEG;
+const TALK_AZ = 0;
 
 export class World3D implements World {
   readonly mode = '3d' as const;
@@ -85,6 +85,8 @@ export class World3D implements World {
   private shadowTick = 0;
   /** Kenney people on the plaza: the guide (first) and a few passers-by. */
   private plazaPeople: Actor[] = [];
+  private playerLook = PLAYER_LOOKS[0];
+  private castToken = 0;
   private active = true;
   private raf = 0;
   private last = 0;
@@ -244,35 +246,105 @@ export class World3D implements World {
   }
 
   /**
-   * Swap the plaza's code-built guide for a Kenney character, and add a few people sitting on
-   * the benches and chatting by the fountain, so the plaza matches the rooms. If the models
-   * don't load, the code-built guide simply stays.
+   * Swap the plaza's code-built guide for a Kenney character, add a few people strolling by the
+   * fountain, and plant Kenney trees. If the models don't load, the code-built ones simply stay.
    */
   private async dressPlaza() {
-    const spots: [string, number, number, number, 'idle' | 'sit'][] = [
-      ['character-male-c', 3.4, 4.6, Math.PI / 4, 'idle'],
-      ['character-female-e', -6.2, 5.4, 2.4, 'idle'],
-      ['character-male-e', -5.0, 6.6, -2.6, 'idle'],
-      ['character-female-c', 7.6, -5.2, -0.9, 'idle'],
-      ['character-male-a', -7.4, -6.0, 0.8, 'idle'],
-    ];
     try {
-      const models = await Promise.all(spots.map(([look]) => spawn(`characters/${look}`, 0.9)));
-      models.forEach((sp, i) => {
-        const [, x, z, yaw, pose] = spots[i];
-        const a = new Actor(sp, pose);
-        a.place(x, z, yaw);
-        a.group.position.y = 0.3;
-        this.plaza.group.add(a.group);
-        this.plazaPeople.push(a);
-      });
-      this.plaza.guide.group.visible = false;
-      await this.plantKenney();
-      this.renderer.shadowMap.needsUpdate = true;
-      this.needsRender = true;
+      await Promise.all([this.setPlayerLook(this.playerLook), this.plantKenney(), this.skinBuildings()]);
     } catch {
-      /* keep the code-built guide */
+      /* keep the code-built guide and trees */
     }
+  }
+
+  /** Who the player is: the plaza's people are re-cast so nobody else looks like them. */
+  async setPlayerLook(look: string): Promise<void> {
+    this.playerLook = look;
+    const token = ++this.castToken;
+    const spots: [number, number, number][] = [
+      [3.4, 4.6, Math.PI / 4],
+      [-6.2, 5.4, 2.4],
+      [-5.0, 6.6, -2.6],
+      [7.6, -5.2, -0.9],
+      [-7.4, -6.0, 0.8],
+    ];
+    const looks = castFor(look).plaza;
+    const models = await Promise.all(spots.map((_, i) => spawnCharacter(looks[i], 0.9)));
+    if (token !== this.castToken) return;
+    this.plazaPeople.forEach((a) => {
+      a.group.removeFromParent();
+      a.dispose();
+    });
+    this.plazaPeople = models.map((sp, i) => {
+      const [x, z, yaw] = spots[i];
+      const a = new Actor(sp);
+      a.place(x, z, yaw);
+      a.group.position.y = 0.3;
+      this.plaza.group.add(a.group);
+      return a;
+    });
+    this.plaza.guide.group.visible = false;
+    this.renderer.shadowMap.needsUpdate = true;
+    this.needsRender = true;
+  }
+
+  /**
+   * Kenney buildings in place of the code-built bodies. Each building keeps the details that say
+   * what it is (the resort's pool and harbour, the policy office's porch, turbine and solar
+   * panels, the foundation's awnings and bunting, the strategy hub's glass entrance).
+   */
+  private async skinBuildings() {
+    type Part = { m: string; x: number; z: number; w: number; d: number; h: number; tint?: number };
+    const PARTS: Record<ScenarioId, Part[]> = {
+      resort: [{ m: 'city/building-j', x: 0, z: 0, w: 7, d: 5.6, h: 13 }],
+      policy: [{ m: 'city/building-e', x: 0, z: 0, w: 9.6, d: 6.2, h: 6.5 }],
+      foundation: [
+        { m: 'city/building-a', x: -2.75, z: 0, w: 2.8, d: 6, h: 6.6, tint: 0xffe1cf },
+        { m: 'city/building-c', x: 0, z: 0, w: 2.8, d: 6, h: 7.2, tint: 0xd9f3e4 },
+        { m: 'city/building-d', x: 2.75, z: 0, w: 2.8, d: 6, h: 6.8, tint: 0xfff0c4 },
+      ],
+      workforce: [{ m: 'city/building-skyscraper-a', x: 0, z: 0, w: 7, d: 7, h: 13.5 }],
+    };
+    const entries = Object.entries(PARTS) as [ScenarioId, Part[]][];
+    const loaded = await Promise.all(entries.map(([, parts]) => Promise.all(parts.map((p) => spawn(p.m)))));
+    entries.forEach(([id, parts], bi) => {
+      const b = this.plaza.buildings.get(id);
+      if (!b) return;
+      let top = 0;
+      parts.forEach((p, i) => {
+        const sp = loaded[bi][i];
+        // Fit the footprint and height exactly (the blocky Kenney buildings stretch well).
+        sp.object.scale.set(p.w / sp.size.x, p.h / sp.size.y, p.d / sp.size.z);
+        sp.object.position.set(p.x, 0, p.z);
+        top = Math.max(top, p.h);
+        // Own materials per building, so it can be tinted and dimmed until visited
+        sp.object.traverse((o) => {
+          const mesh = o as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          const m = (mesh.material as THREE.MeshStandardMaterial).clone();
+          if (p.tint !== undefined) m.color.set(p.tint);
+          b.bodyMats.push({ m, base: m.color.clone() });
+          mesh.material = m;
+        });
+        b.group.add(sp.object);
+      });
+      b.group.getObjectByName('core')!.visible = false;
+      b.group.getObjectByName('windows')!.visible = false;
+      if (id === 'policy') {
+        // Solar panels on the flat roof
+        const panel = new THREE.MeshLambertMaterial({ color: 0x23376b, emissive: 0x16244a, emissiveIntensity: 0.3 });
+        for (const x of [-2.6, 0, 2.6]) {
+          const pnl = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.08, 1.6), panel);
+          pnl.position.set(x, top + 0.45, -0.6);
+          pnl.rotation.x = -0.35;
+          pnl.castShadow = true;
+          b.group.add(pnl);
+        }
+      }
+    });
+    this.applyLit();
+    this.renderer.shadowMap.needsUpdate = true;
+    this.needsRender = true;
   }
 
   /** Kenney trees in place of the code-built ones (same spots, same blob shadows). */
@@ -490,7 +562,20 @@ export class World3D implements World {
     this.sky.visible = false;
     this.scene.fog = null;
     this.scene.background = new THREE.Color(this.dark ? SKY.dark.interior : SKY.light.interior);
-    const data = await building;
+    let data: Room;
+    try {
+      data = await building;
+    } catch (err) {
+      // A model failed to load: go back to the plaza instead of leaving the screen covered.
+      this.plaza.group.visible = true;
+      this.sky.visible = true;
+      this.scene.fog = this.fog;
+      this.scene.background = null;
+      this.state = 'plaza';
+      this.placeCamera();
+      await fade(this.veil, false, 200);
+      throw err;
+    }
     prepareForLighting(data.group);
     this.scene.add(data.group);
     this.renderer.shadowMap.needsUpdate = true;
@@ -614,21 +699,30 @@ export class World3D implements World {
     const other = this.focusId && r ? r.things.get(this.focusId) : undefined;
     if (other) {
       // Frame the pair a little low, so the talk box along the bottom doesn't cover them.
-      const mid = new THREE.Vector3((p.x + other.x) / 2, -1.2, (p.z + other.z) / 2);
+      const mid = new THREE.Vector3((p.x + other.x) / 2, -0.4, (p.z + other.z) / 2);
       const gap = Math.hypot(other.x - p.x, other.z - p.z);
       const az = TALK_AZ;
-      const radius = clamp((gap * 1.2 + 3.6) / Math.min(tanH, 0.9), 10, 16);
+      const radius = clamp((gap * 1.3 + 4.6) / Math.min(tanH, 0.9), 12, 18);
       const polar = 70 * DEG;
       const pos = new THREE.Vector3(Math.sin(polar) * Math.sin(az), Math.cos(polar), Math.sin(polar) * Math.cos(az)).multiplyScalar(radius).add(mid);
       return { pos, target: mid };
     }
     // Follow loosely: the camera drifts toward the player but keeps most of the room in view.
-    const halfW = ROOM_W / 2 - 5;
-    const halfD = ROOM_D / 2 - 4;
-    const target = new THREE.Vector3(clamp(p.x * 0.4, -halfW, halfW), 1.2, clamp(p.z * 0.4 - 0.8, -halfD, halfD));
-    const radius = clamp(10.5 / tanH, 22, 36);
-    const azimuth = 28 * DEG;
-    const polar = 50 * DEG;
+    // Like an Animal Crossing house: straight in from the front, the whole room in view,
+    // drifting a little toward the player.
+    const [bx0, bz0, bx1, bz1] = r ? r.bounds : [-7, -5, 7, 5];
+    const cx = (bx0 + bx1) / 2;
+    const cz = (bz0 + bz1) / 2;
+    // On narrow (phone) screens, show about two-thirds of the room's width and follow the player across it.
+    const narrow = aspect < 0.8;
+    const halfW = (bx1 - bx0) / 2;
+    const viewHalf = narrow ? Math.max(4.2, halfW * 0.62) : halfW + 1.6;
+    const follow = narrow ? clamp(p.x, bx0 + viewHalf - 1, bx1 - viewHalf + 1) : cx + (p.x - cx) * 0.18;
+    const target = new THREE.Vector3(follow, 0.6, cz + (p.z - cz) * 0.12 + 0.4);
+    const tanV = Math.tan((this.camera.fov * DEG) / 2);
+    const radius = clamp(Math.max(viewHalf / tanH, (bz1 - bz0) / 2 / tanV + 6), narrow ? 12 : 17, 40);
+    const azimuth = 0;
+    const polar = 47 * DEG;
     const pos = new THREE.Vector3(Math.sin(polar) * Math.sin(azimuth), Math.cos(polar), Math.sin(polar) * Math.cos(azimuth))
       .multiplyScalar(radius)
       .add(target);
@@ -662,7 +756,7 @@ export class World3D implements World {
     const h = window.innerHeight;
     const portrait = w / h < 1;
     // Inside, the room banner sits along the top, so the picture moves down a little.
-    const share = this.state === 'interior' || this.room ? (portrait ? -0.04 : -0.07) : portrait ? 0.14 : 0.08;
+    const share = this.state === 'interior' || this.room ? (portrait ? -0.17 : -0.13) : portrait ? 0.14 : 0.08;
     this.camera.setViewOffset(w, h, 0, h * share, w, h);
     this.camera.updateProjectionMatrix();
   }
@@ -707,9 +801,14 @@ export class World3D implements World {
     const p = this.dark && !inside ? SKY.dark : SKY.light;
     this.hemi.color.set(p.hemiSky);
     this.hemi.groundColor.set(p.hemiGround);
-    this.hemi.intensity = inside ? 1.5 : p.hemi;
-    this.sun.color.set(inside ? 0xfff0dc : p.sunColor);
-    this.sun.intensity = inside ? 2.3 : p.sun;
+    // Indoors: warm and a little dim, so the lamp light and windows glow (Animal Crossing's mood)
+    if (inside) {
+      this.hemi.color.set(0xffe9cc);
+      this.hemi.groundColor.set(0x5a4634);
+    }
+    this.hemi.intensity = inside ? 1.15 : p.hemi;
+    this.sun.color.set(inside ? 0xffe2b8 : p.sunColor);
+    this.sun.intensity = inside ? 1.8 : p.sun;
     // Indoors the light comes from high on the camera side, so walls don't shade the floor,
     // and a tighter shadow box keeps the furniture's shadows crisp.
     const cam = this.sun.shadow.camera;
@@ -717,7 +816,7 @@ export class World3D implements World {
     cam.left = cam.bottom = -reach;
     cam.right = cam.top = reach;
     cam.updateProjectionMatrix();
-    if (inside) this.sun.position.set(14, 26, 18);
+    if (inside) this.sun.position.set(5, 24, 16);
     else this.sun.position.copy(SUN_DIR).multiplyScalar(70);
   }
 
@@ -1049,7 +1148,9 @@ export class World3D implements World {
       const fwd = new THREE.Vector3().subVectors(this.target, this.camera.position).setY(0).normalize();
       const right = new THREE.Vector3(-fwd.z, 0, fwd.x);
       const dir = fwd.multiplyScalar(f).add(right.multiplyScalar(s));
-      player.steer(dir.x, dir.z, dt, (x, z) => r.grid.free(x, z));
+      // If the player is somehow standing in a blocked spot, let them walk out of it.
+      const stuck = !r.grid.free(player.group.position.x, player.group.position.z);
+      player.steer(dir.x, dir.z, dt, (x, z) => stuck || r.grid.free(x, z));
     } else {
       player.steer(0, 0, dt, () => false);
     }
@@ -1064,6 +1165,22 @@ export class World3D implements World {
       a.lookAt = id !== this.focusId && d < 4.5 ? head : null;
     });
     player.lookAt = null;
+
+    // In a conversation, anyone standing between the camera and the pair steps out of the shot.
+    const mid = focusMid(r, this.focusId);
+    r.actors.forEach((a, id) => {
+      let show = true;
+      if (mid && id !== this.focusId) {
+        const cam = this.camera.position;
+        const ap = a.group.position;
+        const toMid = new THREE.Vector3(mid.x - cam.x, 0, mid.z - cam.z);
+        const toA = new THREE.Vector3(ap.x - cam.x, 0, ap.z - cam.z);
+        const along = toA.dot(toMid.clone().normalize());
+        const off = Math.sqrt(Math.max(0, toA.lengthSq() - along * along));
+        show = !(along > 0 && along < toMid.length() - 0.8 && off < 2.2);
+      }
+      a.group.visible = show;
+    });
 
     let busy = player.update(dt, motion);
     r.actors.forEach((a) => (busy = a.update(dt, motion) || busy));
@@ -1106,6 +1223,14 @@ export class World3D implements World {
     this.camera.lookAt(this.target);
     if (busy) this.needsRender = true;
   }
+}
+
+/** The point halfway between the player and whoever they're talking to. */
+function focusMid(r: Room, focus: ThingId | null): THREE.Vector3 | null {
+  const other = focus ? r.things.get(focus) : undefined;
+  if (!other || !r.actors.has(focus!)) return null;
+  const p = r.player.group.position;
+  return new THREE.Vector3((p.x + other.x) / 2, 0, (p.z + other.z) / 2);
 }
 
 /**

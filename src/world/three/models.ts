@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { modelOf, recolourMap, variantOf } from '../cast';
 
 /**
  * Kenney models (CC0, kenney.nl) loaded from public/models. Each file loads once and is
@@ -76,19 +77,46 @@ export async function spawn(path: string, scale = 1): Promise<Spawned> {
   return { object, animations: gltf.animations, size };
 }
 
-/** All 12 Mini Characters, used for the player and everyone in the rooms. */
-export const LOOKS = [
-  'character-female-a',
-  'character-female-b',
-  'character-female-c',
-  'character-female-d',
-  'character-female-e',
-  'character-female-f',
-  'character-male-a',
-  'character-male-b',
-  'character-male-c',
-  'character-male-d',
-  'character-male-e',
-  'character-male-f',
-] as const;
-export type Look = (typeof LOOKS)[number];
+const variantTextures = new Map<number, THREE.Texture>();
+const variantMaterials = new Map<string, THREE.Material>();
+
+/**
+ * A character by look ("character-male-a" or "character-male-a#2"). Recoloured looks get their
+ * own copy of the colour swatch texture, so hair and clothes change while skin stays the same.
+ */
+export async function spawnCharacter(look: string, scale = 1): Promise<Spawned> {
+  const model = modelOf(look);
+  const variant = variantOf(look);
+  const sp = await spawn(`characters/${model}`, scale);
+  if (!variant) return sp;
+  sp.object.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    const next = mats.map((m) => {
+      const std = m as THREE.MeshStandardMaterial;
+      if (!std.map?.image) return m;
+      const done = variantMaterials.get(`${std.uuid}:${variant}`);
+      if (done) return done;
+      let tex = variantTextures.get(variant);
+      if (!tex) {
+        const img = std.map.image as CanvasImageSource & { width: number; height: number };
+        tex = new THREE.CanvasTexture(recolourMap(img, variant));
+        tex.colorSpace = std.map.colorSpace;
+        tex.flipY = std.map.flipY;
+        tex.magFilter = std.map.magFilter;
+        tex.minFilter = std.map.minFilter;
+        tex.wrapS = std.map.wrapS;
+        tex.wrapT = std.map.wrapT;
+        variantTextures.set(variant, tex);
+      }
+      // Shared like the originals: one recoloured material per look, kept for the whole visit.
+      const c = std.clone();
+      c.map = tex;
+      variantMaterials.set(`${std.uuid}:${variant}`, c);
+      return c;
+    });
+    mesh.material = Array.isArray(mesh.material) ? next : next[0];
+  });
+  return sp;
+}

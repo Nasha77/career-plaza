@@ -150,8 +150,8 @@ export class Kit {
   }
 }
 
-export const FONT = "'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif";
-export const DISPLAY_FONT = "'Bricolage Grotesque', 'Atkinson Hyperlegible', 'Segoe UI', sans-serif";
+export const FONT = "'Nunito', 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif";
+export const DISPLAY_FONT = "'Nunito', 'Bricolage Grotesque', 'Atkinson Hyperlegible', 'Segoe UI', sans-serif";
 
 export function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();

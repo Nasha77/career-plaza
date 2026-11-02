@@ -57,11 +57,20 @@ export class WalkGrid {
       }
   }
 
-  /** Keep walkers off the back and side walls. */
+  /** Block every cell whose centre matches (for example: outside the room's shape). */
+  blockWhere(test: (x: number, z: number) => boolean) {
+    for (let r = 0; r < this.rows; r++)
+      for (let c = 0; c < this.cols; c++) {
+        const [x, z] = this.centre(c, r);
+        if (test(x, z)) this.blocked[r * this.cols + c] = 1;
+      }
+  }
+
+  /** Keep walkers off the back and side walls (and the very front edge). */
   blockEdges(margin: number) {
     const m = Math.ceil(margin / this.cell);
     for (let r = 0; r < this.rows; r++)
-      for (let c = 0; c < this.cols; c++) if (r < m || c < m || c >= this.cols - 1 || r >= this.rows - 1) this.blocked[r * this.cols + c] = 1;
+      for (let c = 0; c < this.cols; c++) if (r < m || c < m || c >= this.cols - m || r >= this.rows - 1) this.blocked[r * this.cols + c] = 1;
   }
 
   private inside(c: number, r: number) {
@@ -96,11 +105,52 @@ export class WalkGrid {
     return best;
   }
 
-  /** A* over 8 neighbours. Returns world points from just after the start to the goal, or null. */
+  /** Every cell reachable from a start cell (a flood fill), as a 0/1 map. */
+  private reachable(from: number): Uint8Array {
+    const seen = new Uint8Array(this.cols * this.rows);
+    const queue = [from];
+    seen[from] = 1;
+    while (queue.length) {
+      const cur = queue.pop()!;
+      const cc = cur % this.cols;
+      const cr = Math.floor(cur / this.cols);
+      for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nc = cc + dc;
+        const nr = cr + dr;
+        if (!this.inside(nc, nr)) continue;
+        const ni = nr * this.cols + nc;
+        if (seen[ni] || this.blocked[ni]) continue;
+        seen[ni] = 1;
+        queue.push(ni);
+      }
+    }
+    return seen;
+  }
+
+  /**
+   * A* over 8 neighbours. Returns world points from just after the start to the goal, or null.
+   * The goal is the reachable free spot nearest to `to`, so a target tucked behind furniture
+   * still gets the player as close as they can stand.
+   */
   path(from: [number, number], to: [number, number]): [number, number][] | null {
     const start = this.nearestFree(from[0], from[1], undefined, 1.5);
-    const goal = this.nearestFree(to[0], to[1], from, 3);
-    if (!start || !goal) return null;
+    if (!start) return null;
+    const startCell = this.ri(start[1]) * this.cols + this.ci(start[0]);
+    const reach = this.reachable(startCell);
+    let goal: [number, number] | null = null;
+    let best = Infinity;
+    for (let i = 0; i < reach.length; i++) {
+      if (!reach[i]) continue;
+      const [cx, cz] = this.centre(i % this.cols, Math.floor(i / this.cols));
+      const d = Math.hypot(cx - to[0], cz - to[1]) * 4 + Math.hypot(cx - from[0], cz - from[1]) * 0.2;
+      if (d < best) {
+        best = d;
+        goal = [cx, cz];
+      }
+    }
+    if (!goal) return null;
+    // Keep an exact target when it is itself a reachable free spot.
+    if (this.free(to[0], to[1]) && reach[this.ri(to[1]) * this.cols + this.ci(to[0])]) goal = to;
     const s = this.ri(start[1]) * this.cols + this.ci(start[0]);
     const g = this.ri(goal[1]) * this.cols + this.ci(goal[0]);
     const n = this.cols * this.rows;
