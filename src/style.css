@@ -2572,3 +2572,87 @@ body[data-screen='scenario']:not(.simple)::before {
     max-height: 46vh;
   }
 }
+
+/* ---------- Choosing a role before going in ---------- */
+.role-pick-wrap {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(60, 40, 20, 0.28);
+  z-index: 30;
+  pointer-events: auto;
+}
+.role-pick {
+  width: min(680px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 20px;
+  animation: talk-in 220ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.role-pick h2 {
+  margin: 2px 0 4px;
+}
+.role-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 0 6px;
+}
+.role-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px;
+  border: 0;
+  border-radius: 22px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #e6d7b1, 0 8px 18px rgba(90, 60, 20, 0.1);
+  transition: transform 100ms, box-shadow 100ms;
+}
+.role-option:hover,
+.role-option:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #e6d7b1, 0 10px 20px rgba(90, 60, 20, 0.14);
+}
+.role-option:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #e6d7b1;
+}
+.role-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--c, var(--brand));
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+.role-option.tried .role-tag {
+  background: var(--accent-soft);
+  color: #7a5310;
+}
+.role-name {
+  font-family: var(--font-display);
+  font-size: 1.08rem;
+  line-height: 1.25;
+}
+.role-with {
+  color: var(--ink-2);
+  font-size: 0.9rem;
+}
+.role-brief {
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+@media (max-width: 600px) {
+  .role-options {
+    grid-template-columns: 1fr;
+  }
+}

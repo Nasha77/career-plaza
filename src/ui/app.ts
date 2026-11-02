@@ -159,7 +159,7 @@ export class App {
   private bindWorld() {
     this.world.setPlayerLook(this.look);
     this.world.onPick = (id) => {
-      if (this.screen === 'plaza') void this.enterBuilding(id);
+      if (this.screen === 'plaza') this.pickRole(id);
     };
     this.world.onThing = (id) => {
       if (this.screen === 'scenario' && this.run) void this.useThing(id);
@@ -359,19 +359,19 @@ export class App {
     const line = guideLine(this.attempts);
 
     const buttons = SCENARIO_IDS.map((id) => {
-      const next = nextTask(this.attempts, id);
-      const s = getTask(id, next);
+      const s = getScenario(id);
       const visited = explored.includes(id);
-      const fresh = !this.attempts.some((a) => a.scenarioId === id && (a.taskIndex ?? 0) === next);
-      const inside = fresh ? 'new task inside' : 'new twist inside';
+      const roles = taskCount(id);
+      const tried = rolesTried(this.attempts, id);
+      const inside = `${tried} of ${roles} roles tried`;
       return h(
         'button',
         {
           class: `bbtn b-${id} ${visited ? 'visited' : ''}`,
           type: 'button',
           'data-id': id,
-          'aria-label': `${s.building}: ${s.internRole}, with ${s.npc.name}. ${visited ? `Explored. Enter again: ${inside}.` : 'Not explored yet.'}`,
-          onclick: () => void this.enterBuilding(id),
+          'aria-label': `${s.building}: ${roles} roles to choose from. ${visited ? `Explored, ${inside}.` : 'Not explored yet.'}`,
+          onclick: () => this.pickRole(id),
           onmouseenter: () => this.world.setHover(id),
           onmouseleave: () => this.world.setHover(null),
           onfocus: () => this.world.setHover(id),
@@ -382,8 +382,8 @@ export class App {
           'span',
           { class: 'btext' },
           h('span', { class: 'bname' }, s.building),
-          simple ? h('span', { class: 'bdesc' }, `You: ${s.internRole}. Working with ${s.npc.name}, ${s.npc.role}.`) : null,
-          h('span', { class: 'bstatus' }, visited ? `✓ Explored · ${inside}` : 'New'),
+          simple ? h('span', { class: 'bdesc' }, `${roles} roles: ${[0, 1].slice(0, roles).map((t) => getTask(id, t as TaskIndex).internRole).join(' or ')}.`) : null,
+          h('span', { class: 'bstatus' }, visited ? `✓ ${inside}` : `New · ${roles} roles`),
         ),
       );
     });
@@ -436,11 +436,68 @@ export class App {
   //   brief (roam) -> intro chat -> choose an approach -> walk there, see the findings ("look")
   //   -> back to the manager: write -> feedback -> reflect -> studies -> rate -> resources -> done (roam)
 
-  private async enterBuilding(id: ScenarioId) {
+  /**
+   * Before going in, the player picks which of the building's roles to try. Each card says who
+   * they'd work with, what the job is, and whether they've tried it (a second go brings a twist).
+   */
+  private pickRole(id: ScenarioId) {
+    if (this.busy || this.screen !== 'plaza') return;
+    if (taskCount(id) < 2) return void this.enterBuilding(id, 0);
+    this.els.stage.querySelector('.role-pick-wrap')?.remove();
+    const s0 = getScenario(id);
+    const prev = document.activeElement as HTMLElement | null;
+    const close = () => {
+      wrap.remove();
+      document.removeEventListener('keydown', onKey, true);
+      this.world.setHover(null);
+      prev?.focus?.();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        close();
+      }
+    };
+    const cards = ([0, 1] as TaskIndex[]).map((t) => {
+      const task = getTask(id, t);
+      const tries = this.attempts.filter((a) => a.scenarioId === id && (a.taskIndex ?? 0) === t).length;
+      const color = managerColor({ scenario: task, taskIndex: t });
+      return h(
+        'button',
+        {
+          class: `role-option ${tries ? 'tried' : ''}`,
+          type: 'button',
+          onclick: () => {
+            close();
+            void this.enterBuilding(id, t);
+          },
+        },
+        h('span', { class: 'role-tag', style: `--c:${color}` }, tries ? `✓ Tried · new twist next` : 'New'),
+        h('strong', { class: 'role-name' }, task.internRole),
+        h('span', { class: 'role-with' }, `With ${task.npc.name}, ${task.npc.role}`),
+        h('span', { class: 'role-brief' }, task.brief),
+      );
+    });
+    const card = h(
+      'section',
+      { class: 'role-pick card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'role-pick-h' },
+      h('p', { class: 'kicker' }, s0.building),
+      h('h2', { id: 'role-pick-h' }, 'Which role would you like to try?'),
+      h('p', { class: 'soft' }, 'Both happen in the same building, with different people. You can come back for the other one any time.'),
+      h('div', { class: 'role-options' }, cards),
+      h('div', { class: 'actions' }, h('button', { class: 'btn ghost', type: 'button', onclick: close }, 'Not now')),
+    );
+    const wrap = h('div', { class: 'role-pick-wrap', onclick: (e: Event) => e.target === wrap && close() }, card);
+    document.addEventListener('keydown', onKey, true);
+    this.els.stage.append(wrap);
+    this.world.setHover(id);
+    this.announce(`${s0.building}: choose a role.`);
+    card.querySelector<HTMLElement>('.role-option')?.focus();
+  }
+
+  private async enterBuilding(id: ScenarioId, taskIndex: TaskIndex) {
     if (this.busy) return;
     this.busy = true;
-    // Visits alternate between the building's tasks: A, B, then A and B again with their twists.
-    const taskIndex = nextTask(this.attempts, id);
     const scenario = getTask(id, taskIndex);
     const isRevisit = this.attempts.some((a) => a.scenarioId === id && (a.taskIndex ?? 0) === taskIndex);
     this.resetTalk();
@@ -802,7 +859,7 @@ export class App {
       await this.say(run, null, `${o.spot}. This is where you started.`);
       return this.showFindings(run);
     }
-    await this.say(run, null, `${o.spot}. You've already started somewhere else this time. You could try this next visit.`);
+    await this.say(run, null, `${o.spot}. You've already started somewhere else this time. You could try it next time.`);
   }
 
   /** The approach is picked: the manager reacts, the player walks there and finds something. */
@@ -912,7 +969,7 @@ export class App {
     // In the first task, the colleague who runs the second one hints at it.
     const leadsNext = run.taskIndex === 0 && getScenario(run.scenario.id).taskB?.managerColleague === i;
     const lines = [...c.lines];
-    if (c.openRole) lines.push(`${c.openRole}${leadsNext ? " That's the role you'd try on your next visit!" : ''}`);
+    if (c.openRole) lines.push(`${c.openRole}${leadsNext ? " You can pick that role when you come in from the plaza!" : ''}`);
     this.world.emote(who, 'happy');
     for (const line of lines) {
       if (this.run !== run) return;
@@ -1393,10 +1450,11 @@ export class App {
   }
 }
 
-/** The task the next visit to a building offers. */
-function nextTask(attempts: Attempt[], id: ScenarioId): TaskIndex {
-  return (attempts.filter((a) => a.scenarioId === id).length % taskCount(id)) as TaskIndex;
+/** How many of a building's roles the player has finished at least once. */
+function rolesTried(attempts: Attempt[], id: ScenarioId): number {
+  return new Set(attempts.filter((a) => a.scenarioId === id).map((a) => a.taskIndex ?? 0)).size;
 }
+
 
 /** The manager's avatar colour: the building's colour, or the colleague's when they run task B. */
 function managerColor(run: { scenario: Scenario; taskIndex: TaskIndex }): string {
