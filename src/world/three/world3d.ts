@@ -441,8 +441,10 @@ export class World3D implements World {
     const token = ++this.walkToken;
     const p = r.player.group.position;
     // Stand beside a person (left or right as the camera sees it), so a conversation is side by side.
+    // At reception, stand in front of the desk instead, face to face with the receptionist.
     let goal: [number, number] = [pos.x, pos.z];
-    if (r.actors.has(id)) {
+    if (r.lobby && id === 'manager') goal = [pos.x + 0.8, pos.z + 2.8];
+    else if (r.actors.has(id)) {
       const rx = Math.cos(TALK_AZ);
       const rz = -Math.sin(TALK_AZ);
       const sides: [number, number][] = [1, -1]
@@ -487,8 +489,11 @@ export class World3D implements World {
     const a = id ? r.actors.get(id) : undefined;
     const pos = id ? r.things.get(id) : undefined;
     // Face each other, turned partly toward the camera so both faces show, as in Animal Crossing.
-    if (pos) r.player.face(pos.x, pos.z, TALK_AZ, a ? 0.5 : 0);
-    if (a) a.face(r.player.group.position.x, r.player.group.position.z, TALK_AZ, 0.5);
+    // Face each other: at reception straight on across the desk; elsewhere turned partly toward
+    // the camera so both faces show, as in Animal Crossing.
+    const across = r.lobby && id === 'manager';
+    if (pos) r.player.face(pos.x, pos.z, TALK_AZ, a && !across ? 0.5 : 0);
+    if (a) a.face(r.player.group.position.x, r.player.group.position.z, TALK_AZ, across ? 0 : 0.5);
     if (reducedMotion()) this.snapCamera();
   }
 
@@ -765,7 +770,8 @@ export class World3D implements World {
       // Frame the pair a little low, so the talk box along the bottom doesn't cover them.
       const mid = new THREE.Vector3((p.x + other.x) / 2, -0.4, (p.z + other.z) / 2);
       const gap = Math.hypot(other.x - p.x, other.z - p.z);
-      const az = TALK_AZ;
+      // Across the reception desk the pair line up front to back, so look from the front corner.
+      const az = r?.lobby && this.focusId === 'manager' ? -0.55 : TALK_AZ;
       const radius = clamp((gap * 1.3 + 4.6) / Math.min(tanH, 0.9), 12, 18);
       const polar = 70 * DEG;
       const pos = new THREE.Vector3(Math.sin(polar) * Math.sin(az), Math.cos(polar), Math.sin(polar) * Math.cos(az)).multiplyScalar(radius).add(mid);

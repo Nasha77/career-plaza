@@ -28,6 +28,8 @@ export interface Room {
   spotAnchors: Map<ThingId, THREE.Group>;
   /** The floor's outer edges [x0, z0, x1, z1], for framing the camera. */
   bounds: [number, number, number, number];
+  /** The reception lobby (where the player talks to the receptionist across the desk). */
+  lobby: boolean;
 }
 
 
@@ -83,6 +85,49 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
     hits.push(hit);
   };
 
+  // The way out: a door in a side wall, on the clearest stretch nearest where the player came in.
+  // (The front is open to the camera, so a door there would block the view.)
+  const [dx, dz] = layout.door;
+  let exitAt: [number, number, number] | null = null;
+  let best = Infinity;
+  for (const [x0, z0, x1, z1] of layout.floor)
+    for (const [wx, k] of [[x0, 1], [x1, -1]] as const) {
+      for (let z = z1 - 1.5; z >= z0 + 1.5; z -= 0.5) {
+        // Only an outside wall, with nothing standing in front of the doorway.
+        let clear = !onFloor(layout, wx - k * 0.3, z - 1.3) && !onFloor(layout, wx - k * 0.3, z + 1.3);
+        for (let ox = 0.8; ox <= 1.8 && clear; ox += 0.5) for (let oz = -1.3; oz <= 1.3 && clear; oz += 0.5) clear = grid.free(wx + k * ox, z + oz);
+        const d = Math.hypot(wx - dx, z - dz);
+        if (clear && d < best) [best, exitAt] = [d, [wx, z, k]];
+      }
+    }
+  const [wallX, ez, inward] = exitAt ?? [layout.floor[0][0], (layout.floor[0][1] + layout.floor[0][3]) / 2, 1];
+  const wood = kit.lambert(0x8a6240);
+  const panel = kit.lambert(0x5b3b24);
+  group.add(kit.box(0.1, 2.9, 2.2, panel, wallX + inward * 0.08, 1.45, ez));
+  group.add(kit.box(0.24, 3.2, 0.24, wood, wallX + inward * 0.12, 1.6, ez - 1.2), kit.box(0.24, 3.2, 0.24, wood, wallX + inward * 0.12, 1.6, ez + 1.2));
+  group.add(kit.box(0.24, 0.24, 2.64, wood, wallX + inward * 0.12, 3.2, ez));
+  grid.blockRect(wallX + inward * 0.3, ez, 0.6, 2.6, 0);
+  const exitSign = kit.canvasTexture(256, 80, (ctx, w, h) => {
+    ctx.fillStyle = '#2f7d4f';
+    ctx.beginPath();
+    ctx.roundRect(0, 0, w, h, 18);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = "900 40px 'Nunito', sans-serif";
+    ctx.textAlign = 'center';
+    ctx.fillText('EXIT', w / 2, 54);
+  });
+  const signMesh = new THREE.Mesh(kit.geo('plane', () => new THREE.PlaneGeometry(1, 1)), kit.track(new THREE.MeshBasicMaterial({ map: exitSign, toneMapped: false })));
+  signMesh.scale.set(1.3, 0.4, 1);
+  // The sign sticks out from the wall facing the camera, so it reads from the room's front view.
+  signMesh.position.set(wallX + inward * 0.75, 3.7, ez);
+  group.add(signMesh, kit.box(0.06, 0.4, 0.06, wood, wallX + inward * 0.75, 4.05, ez));
+  // A green mat in front of the door, like the way-out mats in Pokemon interiors.
+  group.add(kit.box(1.2, 0.04, 2.2, kit.lambert(0x5fae6e), wallX + inward * 0.85, 0.03, ez));
+  things.set('spot:exit', new THREE.Vector3(wallX + inward * 1.1, 1.6, ez));
+  addHit('spot:exit', wallX + inward * 0.6, 1.6, ez, 2.2, 3.2);
+
+
   // People
   // In the lobby, the 'manager' spot is the receptionist.
   const managerLook = setup.lobby ? cast.reception : managerIndex === null ? cast.manager : cast.colleagues[managerIndex];
@@ -96,7 +141,23 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
   const extraInfo = setup.lobby ? [] : getTask(id, setup.task).extras;
   (layout.extras ?? []).forEach((at, i) => people.push([`extra:${i}`, extraLook(roomSeed + i + 1, setup.look, extraInfo[i]?.gender), at]));
   const actorModels = await Promise.all([...people.map(([, look]) => spawnCharacter(look)), spawnCharacter(setup.look)]);
-  people.forEach(([thing, , at], i) => {
+  // Nobody stands inside furniture: anyone overlapping something moves to the nearest clear spot.
+  const fits = (x: number, z: number) =>
+    grid.free(x, z) && [0, 1, 2, 3, 4, 5, 6, 7].every((k) => grid.free(x + Math.cos((k * Math.PI) / 4) * 0.5, z + Math.sin((k * Math.PI) / 4) * 0.5));
+  const clearSpot = (x: number, z: number): [number, number] => {
+    if (fits(x, z)) return [x, z];
+    for (let r = 0.25; r <= 3; r += 0.25)
+      for (let k = 0; k < 16; k++) {
+        const a = (k / 16) * Math.PI * 2;
+        const nx = x + Math.cos(a) * r;
+        const nz = z + Math.sin(a) * r;
+        if (fits(nx, nz)) return [nx, nz];
+      }
+    return [x, z];
+  };
+  people.forEach(([thing, , spot], i) => {
+    const [cx, cz] = clearSpot(spot.x, spot.z);
+    const at = { ...spot, x: cx, z: cz };
     const a = new Actor(actorModels[i], at.pose ?? 'idle');
     a.place(at.x, at.z, at.r);
     group.add(a.group);
@@ -132,7 +193,7 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
     (b, [x0, z0, x1, z1]) => [Math.min(b[0], x0), Math.min(b[1], z0), Math.max(b[2], x1), Math.max(b[3], z1)] as [number, number, number, number],
     [Infinity, Infinity, -Infinity, -Infinity] as [number, number, number, number],
   );
-  return { id, kit, group, floor, grid, player, actors, things, hits, spotAnchors, bounds };
+  return { id, kit, group, floor, grid, player, actors, things, hits, spotAnchors, bounds, lobby: !!setup.lobby };
 }
 
 export function disposeRoom(room: Room) {

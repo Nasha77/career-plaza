@@ -559,6 +559,7 @@ export class App {
     const things: [ThingId, string][] = [
       ['manager', `Talk to ${r.name} (${r.role})`],
       ['spot:sign', 'The company sign'],
+      ['spot:exit', 'Back to the plaza'],
     ];
     list.replaceChildren(
       h(
@@ -608,6 +609,10 @@ export class App {
   private async useLobbyThing(tid: ThingId, walk = false) {
     const id = this.lobby;
     if (!id || this.conversing || this.busy) return;
+    if (tid === 'spot:exit') {
+      if (walk) await this.world.goTo(tid);
+      return this.exitToPlaza();
+    }
     this.conversing = true;
     this.world.setFree(false);
     if (walk) await this.world.goTo(tid);
@@ -757,6 +762,7 @@ export class App {
     s.extras.forEach((e, i) => out.push({ id: `extra:${i}`, label: e.busy ? `${e.name} (${e.role}, busy)` : `Chat with ${e.name} (${e.role})`, kind: 'person' }));
     s.options.forEach((o) => out.push({ id: `spot:${o.id}`, label: o.spot, kind: 'spot' }));
     Object.entries(s.examine).forEach(([k, v]) => out.push({ id: `spot:${k}`, label: v.label, kind: 'look' }));
+    out.push({ id: 'spot:exit', label: 'Leave the building', kind: 'look' });
     return out;
   }
 
@@ -894,6 +900,10 @@ export class App {
       this.world.setFree(false);
       await this.world.goTo(id);
       if (this.run !== run) return;
+    }
+    if (id === 'spot:exit') {
+      this.world.setFree(true);
+      return this.leaveScenario();
     }
     if (id === 'manager') return this.converse(run, 'manager', () => this.talkToManager(run));
     if (id.startsWith('person:')) return this.converse(run, id, () => this.talkToColleague(run, Number(id.slice(7))));

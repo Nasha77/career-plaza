@@ -619,12 +619,12 @@ const lobby: Layout = {
   floor: [[-6, -5, 6, 4]],
   door: [0, 3.4],
   props: [
-    // The front desk: two desks side by side, a screen and a little bell of a cash register
+    // The front desk: two desks side by side; the screen sits to one side so the receptionist is in view
     desk(-0.75, -2.4, Math.PI), // 0
     desk(1.95, -2.4, Math.PI), // 1
-    { m: 'furniture/computerScreen', x: -0.6, z: -2.3, r: Math.PI, on: 0 },
+    { m: 'furniture/computerScreen', x: 1.5, z: -2.3, r: Math.PI, on: 1 },
     { m: 'furniture/plantSmall1', x: 2.6, z: -2.4, on: 1 },
-    { m: 'food/mug', x: 1.4, z: -2.3, on: 1 },
+    { m: 'food/mug', x: -0.2, z: -2.3, on: 0 },
     // Waiting area on the left
     { m: 'furniture/rugRounded', x: -3.8, z: 1.4, walk: true },
     { m: 'furniture/loungeSofa', x: -5.4, z: 1.4, r: HALF },
@@ -643,7 +643,7 @@ const lobby: Layout = {
     [-4.4, 3.4, 1.0, 1.2, 1],
     [1.2, 3.2, 1.0, 1.2, 2, 'left'],
   ],
-  manager: { x: 0.6, z: -3.6, r: 0 },
+  manager: { x: -0.75, z: -3.7, r: 0 },
   people: {},
   spots: {
     sign: { x: -0.2, z: -4.9, y: 3.6 },
