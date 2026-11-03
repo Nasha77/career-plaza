@@ -10,6 +10,8 @@ import { h } from './dom';
 
 export interface Speaker {
   name: string;
+  /** Their job, shown small next to the name. */
+  role?: string;
   color: string;
   /** Small portrait image (a Kenney character preview), if any. */
   portrait?: string;
@@ -118,6 +120,7 @@ export class Talk {
     this.tag.style.setProperty('--c', sp.color);
     if (sp.portrait) this.tag.append(h('img', { src: sp.portrait, alt: '', width: 32, height: 32 }));
     this.tag.append(h('span', null, sp.name));
+    if (sp.role) this.tag.append(h('span', { class: 'talk-role' }, sp.role));
   }
 
   /**

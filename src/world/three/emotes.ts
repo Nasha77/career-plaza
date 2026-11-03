@@ -58,6 +58,8 @@ export class Emote {
   readonly sprite: THREE.Sprite;
   private age = 0;
   private life: number;
+  /** Extra height above the anchor (to keep clear of icons nearby). */
+  lift = 0;
 
   constructor(kind: keyof typeof GLYPH, life = 1.8) {
     this.sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture(kind), depthTest: false, transparent: true, toneMapped: false }));
@@ -74,7 +76,7 @@ export class Emote {
     const overshoot = motion ? 1 + Math.sin(Math.min(1, this.age / 0.35) * Math.PI) * 0.18 : 1;
     const bob = motion && this.life === Infinity ? Math.sin(this.age * 4) * 0.12 : 0;
     this.sprite.scale.setScalar(size * pop * overshoot);
-    this.sprite.position.y = bob;
+    this.sprite.position.y = this.lift + bob;
     if (this.life === Infinity) return true;
     const fadeStart = this.life - 0.35;
     (this.sprite.material as THREE.SpriteMaterial).opacity = this.age > fadeStart ? Math.max(0, 1 - (this.age - fadeStart) / 0.35) : 1;

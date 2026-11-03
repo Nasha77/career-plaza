@@ -2083,6 +2083,17 @@ body:not(.simple) .title-card {
 .talk-tag[hidden] {
   display: none;
 }
+.talk-role {
+  padding-left: 8px;
+  border-left: 2px solid rgba(255, 255, 255, 0.45);
+  font-size: 0.78rem;
+  font-weight: 700;
+  opacity: 0.92;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40vw;
+}
 .talk-tag img {
   width: 30px;
   height: 30px;
@@ -2321,6 +2332,8 @@ body:not(.simple) .title-card {
   max-height: 46vh;
   overflow-y: auto;
   padding: 4px 2px;
+  /* Clear of the speaker's name tag, which sticks up above the talk box. */
+  margin-bottom: 12px;
 }
 .talk-choices:empty {
   display: none;
@@ -2655,4 +2668,90 @@ body[data-screen='scenario']:not(.simple)::before {
   .role-options {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---- Your notes: beside the talk box while writing ---- */
+.notes-dock {
+  position: absolute;
+  z-index: 3;
+  top: 128px;
+  left: 16px;
+  width: min(340px, 30vw);
+  max-height: calc(100% - 150px);
+  overflow: auto;
+  padding: 0 14px 12px;
+  background: #fffaf0;
+  color: #4a3b2a;
+  border-radius: 22px;
+  box-shadow: 0 6px 0 rgba(150, 120, 80, 0.18), 0 12px 28px rgba(60, 40, 10, 0.18);
+  pointer-events: auto;
+  animation: talk-in 220ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+.notes-dock > summary {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 10px 0 8px;
+  background: #fffaf0;
+  font: 900 1.05rem var(--font-display);
+  cursor: pointer;
+  list-style: none;
+}
+.notes-dock > summary::-webkit-details-marker {
+  display: none;
+}
+.notes-dock > summary .soft {
+  margin-left: auto;
+}
+.notes-icon {
+  font-size: 1.2rem;
+}
+.notes-body {
+  display: grid;
+  gap: 10px;
+}
+.notes-body .task-card,
+.notes-body .findings {
+  margin-top: 0;
+}
+.notes-tips ul {
+  margin: 4px 0 0;
+  padding-left: 1.2em;
+  font-size: 0.93rem;
+}
+.find-clue {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: 0.93rem;
+}
+.notes-pointer {
+  margin: 0 0 8px;
+  font-size: 0.93rem;
+}
+/* With the notes open on the left, the talk box moves over to make room. */
+@media (min-width: 980px) {
+  :has(> .notes-dock[open]) > .talk {
+    padding-left: calc(min(340px, 30vw) + 32px);
+  }
+}
+/* Narrow screens: no room beside the talk box, so the notes stack just above it and share the height. */
+.talk > .notes-dock {
+  position: static;
+  width: min(760px, 100%);
+  max-height: 30vh;
+  padding-bottom: 8px;
+  /* Room for the speaker's name tag, which sticks up above the talk box. */
+  margin-bottom: 26px;
+}
+.talk:has(> .notes-dock[open]) .talk-box {
+  max-height: 44vh;
+}
+/* On phones, the line pointing to the notes isn't needed: they're right above. */
+.talk:has(> .notes-dock) .notes-pointer {
+  display: none;
 }

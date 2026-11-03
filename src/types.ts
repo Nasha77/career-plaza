@@ -30,9 +30,25 @@ export interface ScenarioOption {
   studyLink: string;
   /** Short label for the place in the room where this approach happens. */
   spot: string;
+  /** Something the student has to get from a colleague before they can start here. */
+  needs?: OptionNeed;
   feedback: string;
   twistFeedback: string;
   reflectiveQuestion: string;
+}
+
+/** Information an approach needs, and who in the room has it. */
+export interface OptionNeed {
+  /** Who to ask: `person:<i>` (a colleague) or `extra:<i>` (a background person). */
+  who: string;
+  /** What's missing, as in "you'd need …". */
+  need: string;
+  /** The student's question. */
+  ask: string;
+  /** Their answer. */
+  lines: string[];
+  /** The note it adds to the student's notebook. */
+  clue: string;
 }
 
 export interface Resource {

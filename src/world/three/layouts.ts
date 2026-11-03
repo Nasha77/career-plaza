@@ -90,17 +90,17 @@ const resortA: Layout = {
     { m: 'furniture/stoolBar', x: 5.2, z: -2.8 },
     { m: 'food/donut-sprinkles', x: 5.3, z: -4.5, on: 9 },
     // Lounge with last year's photo album
-    { m: 'furniture/rugRounded', x: -3.8, z: 2.2, walk: true },
-    { m: 'furniture/loungeSofa', x: -6.1, z: 2.2, r: HALF },
-    { m: 'furniture/tableCoffee', x: -3.8, z: 2.2 }, // 17
-    { m: 'furniture/books', x: -3.8, z: 2.2, on: 17 },
-    { m: 'furniture/loungeChair', x: -1.7, z: 2.2, r: -HALF },
-    { m: 'furniture/lampRoundFloor', x: -6.3, z: 4.2 },
+    { m: 'kaykit/rug_oval_A', s: 1.6, x: -3.8, z: 2.2, walk: true },
+    { m: 'kaykit/couch_pillows', x: -6.1, z: 2.2, r: HALF },
+    { m: 'kaykit/table_low', x: -3.8, z: 2.2 }, // 17
+    { m: 'kaykit/book_set', x: -3.8, z: 2.2, on: 17 },
+    { m: 'kaykit/armchair_pillows', x: -1.7, z: 2.2, r: -HALF },
+    { m: 'kaykit/lamp_standing', x: -6.3, z: 4.2 },
     // Boxes of volunteer T-shirts by the door
     { m: 'furniture/cardboardBoxClosed', x: 2.6, z: 3.9 },
     { m: 'furniture/cardboardBoxOpen', x: 3.2, z: 2.9, r: 0.4 },
     { m: 'furniture/cardboardBoxClosed', x: 2.6, z: 3.9, on: 21, r: 0.3 },
-    { m: 'furniture/bookcaseOpen', x: 3.4, z: -0.4, r: -HALF },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: 3.4, z: -0.4, r: -HALF },
     { m: 'furniture/coatRackStanding', x: -6.4, z: -1.4 },
     plant(-6.4, -4.3),
     plant(3.4, -4.4),
@@ -150,13 +150,13 @@ const resortB: Layout = {
     { m: 'holiday/snowman', x: 7.0, z: 3.6, r: -0.6 },
     { m: 'holiday/nutcracker', x: -7.2, z: 3.8, r: 0.6 },
     // Planning table on a rug
-    { m: 'furniture/rugRectangle', x: -2.2, z: 1.6, walk: true },
-    { m: 'furniture/table', x: -2.2, z: 1.6 }, // 8
+    { m: 'kaykit/rug_rectangle_stripes_A', s: 1.6, x: -2.2, z: 1.6, walk: true },
+    { m: 'kaykit/table_medium_long', x: -2.2, z: 1.6 }, // 8
     { m: 'furniture/laptop', x: -2.6, z: 1.6, on: 8 },
     { m: 'food/cup-coffee', x: -1.4, z: 1.7, on: 8 },
-    { m: 'furniture/chair', x: -2.2, z: 3.0, r: PI },
-    { m: 'furniture/chair', x: -3.8, z: 1.6, r: HALF },
-    { m: 'furniture/chair', x: -0.6, z: 1.6, r: -HALF },
+    { m: 'kaykit/chair_A', x: -2.2, z: 3.0, r: PI },
+    { m: 'kaykit/chair_A', x: -3.8, z: 1.6, r: HALF },
+    { m: 'kaykit/chair_A', x: -0.6, z: 1.6, r: -HALF },
     // Desk with last year's numbers
     desk(1.4, -4.2), // 14
     { m: 'furniture/computerScreen', x: 1.4, z: -4.4, on: 14 },
@@ -210,15 +210,15 @@ const policyA: Layout = {
     { m: 'furniture/sideTable', x: 6.2, z: -4.4 }, // 8
     { m: 'furniture/kitchenCoffeeMachine', x: 6.2, z: -4.4, on: 8 },
     // Meeting room
-    { m: 'furniture/tableRound', x: -4.6, z: 2.4 }, // 10
-    { m: 'furniture/books', x: -4.6, z: 2.4, on: 10 },
-    { m: 'furniture/chair', x: -6.0, z: 2.4, r: HALF },
-    { m: 'furniture/chair', x: -3.2, z: 2.4, r: -HALF },
-    { m: 'furniture/chair', x: -4.6, z: 3.6, r: PI },
-    { m: 'furniture/rugRectangle', x: -4.6, z: 2.4, walk: true },
+    { m: 'kaykit/table_round_A', s: 0.85, x: -4.6, z: 2.4 }, // 10
+    { m: 'kaykit/book_set', x: -4.6, z: 2.4, on: 10 },
+    { m: 'kaykit/chair_A', x: -6.0, z: 2.4, r: HALF },
+    { m: 'kaykit/chair_A', x: -3.2, z: 2.4, r: -HALF },
+    { m: 'kaykit/chair_A', x: -4.6, z: 3.6, r: PI },
+    { m: 'kaykit/rug_rectangle_stripes_A', s: 1.6, x: -4.6, z: 2.4, walk: true },
     // Reports along the right wall
-    { m: 'furniture/bookcaseClosedWide', x: 6.4, z: -2.4, r: -HALF },
-    { m: 'furniture/bookcaseOpen', x: 6.4, z: 2.8, r: -HALF },
+    { m: 'kaykit/cabinet_medium_decorated', x: 6.4, z: -2.4, r: -HALF },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: 6.4, z: 2.8, r: -HALF },
     { m: 'furniture/trashcan', x: 0.2, z: -4.5 },
     plant(-6.4, -4.3),
     plant(-6.4, 0.0),
@@ -263,17 +263,17 @@ const policyB: Layout = {
     { m: 'furniture/sideTable', x: 6.2, z: -4.4 }, // 4
     { m: 'food/mug', x: 6.2, z: -4.4, on: 4 },
     // Library alcove
-    { m: 'furniture/bookcaseOpen', x: -7.4, z: -3.6, r: HALF },
-    { m: 'furniture/bookcaseOpen', x: -7.4, z: -1.8, r: HALF },
-    { m: 'furniture/rugRound', x: -6.4, z: -0.6, walk: true },
-    { m: 'furniture/loungeChairRelax', x: -6.6, z: -0.2, r: 2.4 },
-    { m: 'furniture/lampRoundFloor', x: -7.4, z: 0.4 },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: -7.4, z: -3.6, r: HALF },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: -7.4, z: -1.8, r: HALF },
+    { m: 'kaykit/rug_oval_B', s: 1.4, x: -6.4, z: -0.6, walk: true },
+    { m: 'kaykit/armchair', x: -6.6, z: -0.2, r: 2.4 },
+    { m: 'kaykit/lamp_standing', x: -7.4, z: 0.4 },
     // Table for the one-page brief
-    { m: 'furniture/table', x: 0.6, z: 1.8 }, // 11
+    { m: 'kaykit/table_medium_long', x: 0.6, z: 1.8 }, // 11
     { m: 'furniture/laptop', x: 0.6, z: 1.8, on: 11 },
-    { m: 'furniture/chair', x: 0.6, z: 3.2, r: PI },
-    { m: 'furniture/chair', x: -1.0, z: 1.8, r: HALF },
-    { m: 'furniture/loungeSofa', x: 6.1, z: 2.2, r: -HALF },
+    { m: 'kaykit/chair_A', x: 0.6, z: 3.2, r: PI },
+    { m: 'kaykit/chair_A', x: -1.0, z: 1.8, r: HALF },
+    { m: 'kaykit/couch_pillows', x: 6.1, z: 2.2, r: -HALF },
     plant(6.4, -1.6),
     plant(-4.4, 4.3),
     onShelf('furniture/books', -3.4, 3.0),
@@ -303,24 +303,24 @@ const foundationA: Layout = {
   door: [1.5, 4],
   props: [
     // Long meeting table with the report
-    { m: 'furniture/rugRectangle', x: -0.8, z: -0.6, walk: true },
-    { m: 'furniture/table', x: -0.8, z: -0.6, s: 1.3 }, // 1
-    { m: 'furniture/books', x: -1.2, z: -0.6, on: 1 },
+    { m: 'kaykit/rug_rectangle_stripes_A', s: 1.6, x: -0.8, z: -0.6, walk: true },
+    { m: 'kaykit/table_medium_long', x: -0.8, z: -0.6, s: 1.15 }, // 1
+    { m: 'kaykit/book_set', x: -1.2, z: -0.6, on: 1 },
     { m: 'food/cup-tea', x: 0.2, z: -0.7, on: 1 },
-    { m: 'furniture/chair', x: -2.6, z: -0.6, r: HALF },
-    { m: 'furniture/chair', x: -0.8, z: 1.0, r: PI },
-    { m: 'furniture/chair', x: 1.0, z: -0.6, r: -HALF },
+    { m: 'kaykit/chair_A', x: -2.6, z: -0.6, r: HALF },
+    { m: 'kaykit/chair_A', x: -0.8, z: 1.0, r: PI },
+    { m: 'kaykit/chair_A', x: 1.0, z: -0.6, r: -HALF },
     // Data desk
     desk(4.2, -4.2), // 7
     { m: 'furniture/computerScreen', x: 4.2, z: -4.4, on: 7 },
     chair(4.2, -2.9),
     // Interview corner
-    { m: 'furniture/rugRounded', x: -5.0, z: 3.4, walk: true },
-    { m: 'furniture/loungeChair', x: -6.2, z: 3.4, r: HALF },
-    { m: 'furniture/loungeChair', x: -3.8, z: 3.4, r: -HALF },
+    { m: 'kaykit/rug_oval_A', s: 1.6, x: -5.0, z: 3.4, walk: true },
+    { m: 'kaykit/armchair_pillows', x: -6.2, z: 3.4, r: HALF },
+    { m: 'kaykit/armchair_pillows', x: -3.8, z: 3.4, r: -HALF },
     { m: 'furniture/sideTable', x: -5.0, z: 4.5 }, // 13
     { m: 'food/cup-tea', x: -5.0, z: 4.5, on: 13 },
-    { m: 'furniture/bookcaseClosedWide', x: 6.4, z: -2.4, r: -HALF },
+    { m: 'kaykit/cabinet_medium_decorated', x: 6.4, z: -2.4, r: -HALF },
     { m: 'furniture/kitchenCabinet', x: 6.4, z: 3.4, r: -HALF }, // 16
     { m: 'furniture/kitchenCoffeeMachine', x: 6.4, z: 3.4, r: -HALF, on: 16 },
     plant(-6.4, -0.4),
@@ -358,28 +358,28 @@ const foundationB: Layout = {
   ],
   door: [-1, 4],
   props: [
-    { m: 'furniture/bookcaseOpen', x: 4.6, z: -4.5 },
-    { m: 'furniture/bookcaseOpen', x: 6.1, z: -4.5 },
-    { m: 'furniture/bookcaseOpen', x: 6.4, z: -1.8, r: -HALF },
-    { m: 'furniture/bookcaseOpen', x: -6.4, z: -2.6, r: HALF },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: 4.6, z: -4.5 },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: 6.1, z: -4.5 },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: 6.4, z: -1.8, r: -HALF },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: -6.4, z: -2.6, r: HALF },
     // Armchair and tea
-    { m: 'furniture/rugRound', x: -4.4, z: -1.8, walk: true },
-    { m: 'furniture/loungeChairRelax', x: -4.8, z: -3.2, r: 0.4 },
-    { m: 'furniture/tableCoffee', x: -3.8, z: -1.4 }, // 6
+    { m: 'kaykit/rug_oval_B', s: 1.4, x: -4.4, z: -1.8, walk: true },
+    { m: 'kaykit/armchair', x: -4.8, z: -3.2, r: 0.4 },
+    { m: 'kaykit/table_low', x: -3.8, z: -1.4 }, // 6
     { m: 'food/cup-tea', x: -3.8, z: -1.4, on: 6 },
-    { m: 'furniture/lampRoundFloor', x: -6.2, z: -4.3 },
+    { m: 'kaykit/lamp_standing', x: -6.2, z: -4.3 },
     // Grant records desk
     desk(1.6, -4.2), // 9
     { m: 'furniture/computerScreen', x: 1.6, z: -4.4, on: 9 },
     chair(1.6, -2.9),
     // Chairs set out for the evening, facing a small table
-    { m: 'furniture/chair', x: -3.4, z: 2.0, r: PI },
-    { m: 'furniture/chair', x: -2.0, z: 2.0, r: PI },
-    { m: 'furniture/chair', x: -0.6, z: 2.0, r: PI },
-    { m: 'furniture/chair', x: -3.4, z: 3.4, r: PI },
-    { m: 'furniture/chair', x: -2.0, z: 3.4, r: PI },
+    { m: 'kaykit/chair_A', x: -3.4, z: 2.0, r: PI },
+    { m: 'kaykit/chair_A', x: -2.0, z: 2.0, r: PI },
+    { m: 'kaykit/chair_A', x: -0.6, z: 2.0, r: PI },
+    { m: 'kaykit/chair_A', x: -3.4, z: 3.4, r: PI },
+    { m: 'kaykit/chair_A', x: -2.0, z: 3.4, r: PI },
     { m: 'furniture/cardboardBoxOpen', x: 1.6, z: 3.8 },
-    { m: 'furniture/loungeSofa', x: 6.1, z: 0.0, r: -HALF },
+    { m: 'kaykit/couch_pillows', x: 6.1, z: 0.0, r: -HALF },
     plant(-6.4, 4.3),
     plant(2.4, 0.6),
     onShelf('furniture/plantSmall2', -0.4, 3.6),
@@ -412,13 +412,13 @@ const workforceA: Layout = {
   door: [0, 3.4],
   props: [
     // Briefing table with the deck
-    { m: 'furniture/rugRectangle', x: -1.2, z: 0.6, walk: true },
-    { m: 'furniture/table', x: -1.2, z: 0.6, s: 1.3 }, // 1
+    { m: 'kaykit/rug_rectangle_stripes_A', s: 1.6, x: -1.2, z: 0.6, walk: true },
+    { m: 'kaykit/table_medium_long', x: -1.2, z: 0.6, s: 1.15 }, // 1
     { m: 'furniture/laptop', x: -1.8, z: 0.6, on: 1 },
-    { m: 'furniture/books', x: -0.4, z: 0.6, on: 1 },
-    { m: 'furniture/chairModernCushion', x: -3.0, z: 0.6, r: HALF },
-    { m: 'furniture/chairModernCushion', x: 0.6, z: 0.6, r: -HALF },
-    { m: 'furniture/chairModernCushion', x: -1.2, z: 2.2, r: PI },
+    { m: 'kaykit/book_set', x: -0.4, z: 0.6, on: 1 },
+    { m: 'kaykit/chair_B', x: -3.0, z: 0.6, r: HALF },
+    { m: 'kaykit/chair_B', x: 0.6, z: 0.6, r: -HALF },
+    { m: 'kaykit/chair_B', x: -1.2, z: 2.2, r: PI },
     // Analyst's desk behind the glass
     desk(5.0, -4.2), // 7
     { m: 'furniture/computerScreen', x: 4.5, z: -4.4, on: 7 },
@@ -426,10 +426,10 @@ const workforceA: Layout = {
     chair(5.0, -2.9),
     { m: 'furniture/trashcan', x: 7.2, z: -4.4 },
     // Reports shelf
-    { m: 'furniture/bookcaseClosedWide', x: -7.4, z: -3.4, r: HALF },
-    { m: 'furniture/bookcaseOpen', x: -7.4, z: -1.7, r: HALF },
+    { m: 'kaykit/cabinet_medium_decorated', x: -7.4, z: -3.4, r: HALF },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: -7.4, z: -1.7, r: HALF },
     // Lounge corner
-    { m: 'furniture/loungeDesignSofa', x: -6.2, z: 3.0 },
+    { m: 'kaykit/couch', x: -6.2, z: 3.0 },
     { m: 'furniture/sideTable', x: 6.8, z: 2.6 }, // 15
     { m: 'furniture/kitchenCoffeeMachine', x: 6.8, z: 2.6, on: 15 },
     plant(7.3, -0.6),
@@ -458,7 +458,7 @@ const workforceA: Layout = {
 const ring = (cx: number, cz: number, n: number, rx: number, rz: number): Prop[] =>
   Array.from({ length: n }, (_, i) => {
     const a = (i / n) * PI * 2;
-    return { m: 'furniture/chair', x: cx + Math.sin(a) * rx, z: cz + Math.cos(a) * rz, r: a + PI };
+    return { m: 'kaykit/chair_A', x: cx + Math.sin(a) * rx, z: cz + Math.cos(a) * rz, r: a + PI };
   });
 
 /** Workforce, second role: a focus-group room you reach through a short entry hall. */
@@ -469,14 +469,14 @@ const workforceB: Layout = {
   ],
   door: [0, 4.8],
   props: [
-    { m: 'furniture/rugRound', x: -0.4, z: 0.4, walk: true },
+    { m: 'kaykit/rug_oval_B', s: 1.4, x: -0.4, z: 0.4, walk: true },
     ...ring(-0.4, 0.4, 6, 2.4, 1.9),
     // Sign-up desk
     desk(-3.8, -4.2), // 8
     { m: 'furniture/laptop', x: -3.8, z: -4.2, on: 8 },
     chair(-3.8, -2.9),
     // Last year's notes
-    { m: 'furniture/bookcaseOpen', x: 4.4, z: -4.5 },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: 4.4, z: -4.5 },
     { m: 'furniture/cardboardBoxClosed', x: 5.4, z: -3.0 },
     { m: 'furniture/cardboardBoxOpen', x: 5.2, z: -1.8, r: 0.3 },
     // Water and snacks for the participants
@@ -509,7 +509,7 @@ const workforceB: Layout = {
 export const ROOM_SCALE = 1.5;
 
 /** Furniture that other things gather around (a chair at a desk, a lamp by a sofa). */
-const ANCHOR = /desk|table|sofa|Sofa|bookcase|kitchen|display|tree-decorated|stall/;
+const ANCHOR = /desk|table|sofa|Sofa|couch|bookcase|cabinet|kitchen|display|tree-decorated|stall/;
 
 /**
  * Spread a layout out to the bigger room. Floors, walls and wall-mounted things scale; each
@@ -619,22 +619,23 @@ const lobby: Layout = {
   floor: [[-6, -5, 6, 4]],
   door: [0, 3.4],
   props: [
-    // The front desk: two desks side by side; the screen sits to one side so the receptionist is in view
+    // The front desk: two desks joined into one long counter; the screen sits to one side so the
+    // receptionist is in view
     desk(-0.75, -2.4, Math.PI), // 0
-    desk(1.95, -2.4, Math.PI), // 1
-    { m: 'furniture/computerScreen', x: 1.5, z: -2.3, r: Math.PI, on: 1 },
-    { m: 'furniture/plantSmall1', x: 2.6, z: -2.4, on: 1 },
+    desk(1.14, -2.4, Math.PI), // 1 (edge to edge with the first, without overlapping)
+    { m: 'furniture/computerScreen', x: 1.2, z: -2.3, r: Math.PI, on: 1 },
+    { m: 'furniture/plantSmall1', x: 1.8, z: -2.4, on: 1 },
     { m: 'food/mug', x: -0.2, z: -2.3, on: 0 },
     // Waiting area on the left
-    { m: 'furniture/rugRounded', x: -3.8, z: 1.4, walk: true },
-    { m: 'furniture/loungeSofa', x: -5.4, z: 1.4, r: HALF },
-    { m: 'furniture/tableCoffee', x: -3.6, z: 1.4 }, // 7
-    { m: 'furniture/books', x: -3.6, z: 1.4, on: 7 },
-    { m: 'furniture/loungeChair', x: -3.6, z: 3.0, r: Math.PI },
+    { m: 'kaykit/rug_oval_A', s: 1.6, x: -3.8, z: 1.4, walk: true },
+    { m: 'kaykit/couch_pillows', x: -5.4, z: 1.4, r: HALF },
+    { m: 'kaykit/table_low', x: -3.6, z: 1.4 }, // 7
+    { m: 'kaykit/book_set', x: -3.6, z: 1.4, on: 7 },
+    { m: 'kaykit/armchair_pillows', x: -3.6, z: 3.0, r: Math.PI },
     // Water and leaflets on the right
     { m: 'furniture/kitchenFridgeSmall', x: 5.2, z: -0.4, r: -HALF },
-    { m: 'furniture/bookcaseOpen', x: 5.3, z: 1.6, r: -HALF },
-    { m: 'furniture/coatRackStanding', x: 4.8, z: 3.2 },
+    { m: 'kaykit/cabinet_medium_decorated', s: 0.8, x: 5.3, z: 1.6, r: -HALF },
+    { m: 'furniture/coatRackStanding', x: 4.9, z: 3.6 },
     plant(-5.4, -4.3),
     plant(5.4, -4.3),
     plant(-1.6, 3.6),

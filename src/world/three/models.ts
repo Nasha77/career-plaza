@@ -20,6 +20,8 @@ const PACK_SCALE: Record<string, number> = {
   food: 0.6,
   nature: 1,
   building: 0.5,
+  // KayKit Furniture and Restaurant Bits are built in metres: a table comes up to a character's middle.
+  kaykit: 0.344,
 };
 
 const loader = new GLTFLoader();

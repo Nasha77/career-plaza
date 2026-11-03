@@ -178,6 +178,12 @@ export class Actor {
   }
 
   emote(mood: Mood | EmoteKind, motion = true) {
+    // One icon at a time over a head, as in Animal Crossing: a new emote replaces the last.
+    for (const old of this.emotes) {
+      this.iconAnchor.remove(old.sprite);
+      old.dispose();
+    }
+    this.emotes.length = 0;
     const e = new Emote(mood as EmoteKind);
     this.iconAnchor.add(e.sprite);
     this.emotes.push(e);
@@ -273,7 +279,11 @@ export class Actor {
         this.emotes.splice(this.emotes.indexOf(e), 1);
       }
     }
-    this.marker?.update(dt, motion, 0.9);
+    if (this.marker) {
+      // The lasting marker steps aside while an emote is showing, so the two never overlap.
+      this.marker.sprite.visible = this.emotes.length === 0;
+      this.marker.update(dt, motion, 0.9);
+    }
     // Raise the icons a little when sitting
     this.iconAnchor.position.y = this.topY + (this.base === 'sit' ? -0.3 : 0.25);
     return busy || this.emotes.length > 0;

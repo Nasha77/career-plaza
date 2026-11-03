@@ -11,6 +11,9 @@ import { spawn, spawnCharacter } from './models';
 import { WalkGrid } from './walkgrid';
 
 /** A built room: furniture, people, the player, the walk grid and the click targets. */
+/** How tall standing furniture is, compared with the furniture kit's own proportions. */
+const FURNITURE_HEIGHT = 0.75;
+
 export interface Room {
   id: ScenarioId;
   kit: Kit;
@@ -37,7 +40,7 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
   const kit = new Kit();
   const group = new THREE.Group();
   const layout = setup.lobby ? LOBBY : layoutFor(id, setup.task);
-  const floor = buildShape(kit, group, id, layout.floor, layout.partitions ?? [], layout.door);
+  const floor = buildShape(kit, group, id, layout.floor, layout.partitions ?? []);
   // The boards, shelves and frames are drawn for the room's original size; spread them out to
   // the room's walls (their sizes stay the same).
   const wallThings = new THREE.Group();
@@ -65,10 +68,14 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
   layout.props.forEach((p, i) => {
     const sp = spawned[i];
     const y = p.y ?? (p.on !== undefined ? tops[p.on] : 0);
+    // The Mini Characters are chunky and short-legged, so standing furniture is lowered to their
+    // scale: a desk comes up to their middle, not their shoulders. Small things keep their shape.
+    const squash = p.on === undefined && p.y === undefined && p.m.startsWith('furniture/') && !/plant|lamp|rug|coatRack/i.test(p.m) ? FURNITURE_HEIGHT : 1;
+    sp.object.scale.y = squash;
     sp.object.position.set(p.x, y, p.z);
     sp.object.rotation.y = p.r ?? 0;
     group.add(sp.object);
-    tops[i] = y + sp.size.y;
+    tops[i] = y + sp.size.y * squash;
     if (!p.walk && p.on === undefined && p.y === undefined) grid.blockRect(p.x, p.z, sp.size.x, sp.size.z, p.r ?? 0);
     if (p.walk) sp.object.traverse((o) => ((o as THREE.Mesh).castShadow = false));
   });
@@ -85,48 +92,41 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
     hits.push(hit);
   };
 
-  // The way out: a door in a side wall, on the clearest stretch nearest where the player came in.
-  // (The front is open to the camera, so a door there would block the view.)
+  // The way out is where the player came in: a green mat with an arrow at the front edge, like the
+  // way-out mats in Pokemon interiors. The front is open to the camera, so nothing tall stands there.
   const [dx, dz] = layout.door;
-  let exitAt: [number, number, number] | null = null;
-  let best = Infinity;
-  for (const [x0, z0, x1, z1] of layout.floor)
-    for (const [wx, k] of [[x0, 1], [x1, -1]] as const) {
-      for (let z = z1 - 1.5; z >= z0 + 1.5; z -= 0.5) {
-        // Only an outside wall, with nothing standing in front of the doorway.
-        let clear = !onFloor(layout, wx - k * 0.3, z - 1.3) && !onFloor(layout, wx - k * 0.3, z + 1.3);
-        for (let ox = 0.8; ox <= 1.8 && clear; ox += 0.5) for (let oz = -1.3; oz <= 1.3 && clear; oz += 0.5) clear = grid.free(wx + k * ox, z + oz);
-        const d = Math.hypot(wx - dx, z - dz);
-        if (clear && d < best) [best, exitAt] = [d, [wx, z, k]];
-      }
-    }
-  const [wallX, ez, inward] = exitAt ?? [layout.floor[0][0], (layout.floor[0][1] + layout.floor[0][3]) / 2, 1];
-  const wood = kit.lambert(0x8a6240);
-  const panel = kit.lambert(0x5b3b24);
-  group.add(kit.box(0.1, 2.9, 2.2, panel, wallX + inward * 0.08, 1.45, ez));
-  group.add(kit.box(0.24, 3.2, 0.24, wood, wallX + inward * 0.12, 1.6, ez - 1.2), kit.box(0.24, 3.2, 0.24, wood, wallX + inward * 0.12, 1.6, ez + 1.2));
-  group.add(kit.box(0.24, 0.24, 2.64, wood, wallX + inward * 0.12, 3.2, ez));
-  grid.blockRect(wallX + inward * 0.3, ez, 0.6, 2.6, 0);
-  const exitSign = kit.canvasTexture(256, 80, (ctx, w, h) => {
-    ctx.fillStyle = '#2f7d4f';
+  const matTex = kit.canvasTexture(256, 160, (ctx, w, h) => {
+    ctx.fillStyle = '#4f9a62';
     ctx.beginPath();
-    ctx.roundRect(0, 0, w, h, 18);
+    ctx.roundRect(0, 0, w, h, 26);
     ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.roundRect(10, 10, w - 20, h - 20, 18);
+    ctx.stroke();
     ctx.fillStyle = '#ffffff';
-    ctx.font = "900 40px 'Nunito', sans-serif";
+    ctx.font = "900 46px 'Nunito', sans-serif";
     ctx.textAlign = 'center';
-    ctx.fillText('EXIT', w / 2, 54);
+    ctx.fillText('EXIT', w / 2, 70);
+    // An arrow pointing out of the room, toward the camera
+    ctx.beginPath();
+    ctx.moveTo(w / 2 - 34, 96);
+    ctx.lineTo(w / 2 + 34, 96);
+    ctx.lineTo(w / 2, 136);
+    ctx.closePath();
+    ctx.fill();
   });
-  const signMesh = new THREE.Mesh(kit.geo('plane', () => new THREE.PlaneGeometry(1, 1)), kit.track(new THREE.MeshBasicMaterial({ map: exitSign, toneMapped: false })));
-  signMesh.scale.set(1.3, 0.4, 1);
-  // The sign sticks out from the wall facing the camera, so it reads from the room's front view.
-  signMesh.position.set(wallX + inward * 0.75, 3.7, ez);
-  group.add(signMesh, kit.box(0.06, 0.4, 0.06, wood, wallX + inward * 0.75, 4.05, ez));
-  // A green mat in front of the door, like the way-out mats in Pokemon interiors.
-  group.add(kit.box(1.2, 0.04, 2.2, kit.lambert(0x5fae6e), wallX + inward * 0.85, 0.03, ez));
-  things.set('spot:exit', new THREE.Vector3(wallX + inward * 1.1, 1.6, ez));
-  addHit('spot:exit', wallX + inward * 0.6, 1.6, ez, 2.2, 3.2);
-
+  const plane = kit.geo('plane', () => new THREE.PlaneGeometry(1, 1));
+  const mat = new THREE.Mesh(plane, kit.track(new THREE.MeshLambertMaterial({ map: matTex })));
+  mat.rotation.x = -Math.PI / 2;
+  mat.scale.set(2.6, 1.6, 1);
+  mat.position.set(dx, 0.16, dz + 0.1);
+  mat.receiveShadow = true;
+  group.add(mat);
+  things.set('spot:exit', new THREE.Vector3(dx, 1.2, dz + 0.1));
+  // A low, flat target over the mat, so clicking the floor elsewhere still just walks.
+  addHit('spot:exit', dx, 0.3, dz + 0.1, 1.8, 0.6);
 
   // People
   // In the lobby, the 'manager' spot is the receptionist.
@@ -186,7 +186,9 @@ export async function buildRoom(id: ScenarioId, setup: RoomSetup): Promise<Room>
   }
 
   const player = new Actor(actorModels[actorModels.length - 1]);
-  player.place(layout.door[0], layout.door[1], Math.PI);
+  // One step in from the exit mat, so the way out stays in view.
+  const [sx, sz] = grid.free(layout.door[0], layout.door[1] - 1.4) ? [layout.door[0], layout.door[1] - 1.4] : layout.door;
+  player.place(sx, sz, Math.PI);
   group.add(player.group);
 
   const bounds = layout.floor.reduce(

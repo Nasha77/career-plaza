@@ -7,7 +7,7 @@ import { MAX_REVISIONS, coachWriting, type CoachResult } from '../feedback/coach
 import { ScriptedProvider } from '../feedback/scripted';
 import { buildRecord, exploredIds, guideLine, joinList, ratingWord, recordAsText, thenAndNow, type GrowthRecord, type ThenAndNow } from '../record';
 import { clearState, loadState, saveState } from '../store';
-import type { Attempt, ChatLine, ChoiceId, Rating, Resource, SaveState, Scenario, ScenarioId, SelfCheck, SkillName, TaskIndex } from '../types';
+import type { Attempt, ChatLine, ChoiceId, Rating, Resource, SaveState, Scenario, ScenarioId, ScenarioOption, SelfCheck, SkillName, TaskIndex } from '../types';
 import { PLAYER_LOOKS, castFor } from '../world/cast';
 import { reducedMotion, type Marker, type ThingId, type World } from '../world/types';
 import { portraitFor, preparePortraits } from './portraits';
@@ -53,6 +53,13 @@ interface Run {
   wantsMore: boolean;
   /** After the findings card, walk back to the manager once the conversation closes. */
   backToManager?: boolean;
+  /**
+   * The approach the player has picked but can't start yet, because they need something from a
+   * colleague first. From here on only one "!" shows the way: the colleague, then the spot.
+   */
+  pursuing?: ChoiceId;
+  /** Approaches whose missing piece the player has got from a colleague. */
+  clues: ChoiceId[];
 }
 
 export interface Elements {
@@ -157,6 +164,11 @@ export class App {
         skipTyping();
       }
     });
+    // Your notes sit beside or above the talk box depending on the width; follow a resize.
+    if (typeof matchMedia !== 'undefined')
+      matchMedia('(min-width: 980px)').addEventListener('change', () => {
+        if (this.run && this.screen === 'scenario') this.syncNotes(this.run);
+      });
     this.showTitle();
   }
 
@@ -603,7 +615,7 @@ export class App {
 
   private receptionSpeaker(id: ScenarioId): Speaker {
     const r = getScenario(id).reception;
-    return { name: r.name, color: NPC_COLOR[id], portrait: portraitFor(castFor(this.look).rooms[id].reception), voice: voiceFor(r.name) };
+    return { name: r.name, role: r.role, color: NPC_COLOR[id], portrait: portraitFor(castFor(this.look).rooms[id].reception), voice: voiceFor(r.name) };
   }
 
   private async useLobbyThing(tid: ThingId, walk = false) {
@@ -676,6 +688,7 @@ export class App {
       startedAt: new Date().toISOString(),
       step: 'brief',
       revisions: 0,
+      clues: [],
       wantsMore: false,
     };
     this.world.setHover(null);
@@ -730,6 +743,8 @@ export class App {
     this.inPanel = false;
     this.talkWith = null;
     this.talk.hide();
+    // The talk box is reused everywhere, so take any notes out of it too.
+    this.talk.el.querySelectorAll('.notes-dock').forEach((n) => n.remove());
   }
 
   private async exitToPlaza() {
@@ -755,12 +770,16 @@ export class App {
   private things(run: Run): { id: ThingId; label: string; kind: 'person' | 'spot' | 'look' }[] {
     const s = run.scenario;
     const manager = taskManagerIndex(s.id, run.taskIndex);
-    const out: { id: ThingId; label: string; kind: 'person' | 'spot' | 'look' }[] = [{ id: 'manager', label: `Talk to ${s.npc.name}`, kind: 'person' }];
+    const out: { id: ThingId; label: string; kind: 'person' | 'spot' | 'look' }[] = [{ id: 'manager', label: `Talk to ${s.npc.name} (${s.npc.role})`, kind: 'person' }];
     s.colleagues.forEach((c, i) => {
-      if (i !== manager) out.push({ id: `person:${i}`, label: `Talk to ${c.name}`, kind: 'person' });
+      if (i !== manager) out.push({ id: `person:${i}`, label: `Talk to ${c.name} (${c.role})`, kind: 'person' });
     });
     s.extras.forEach((e, i) => out.push({ id: `extra:${i}`, label: e.busy ? `${e.name} (${e.role}, busy)` : `Chat with ${e.name} (${e.role})`, kind: 'person' }));
-    s.options.forEach((o) => out.push({ id: `spot:${o.id}`, label: o.spot, kind: 'spot' }));
+    // Once an approach is chosen, the other two places drop out of the list.
+    s.options.forEach((o) => {
+      const picked = run.choiceId ?? run.pursuing;
+      if (!picked || o.id === picked) out.push({ id: `spot:${o.id}`, label: o.spot, kind: 'spot' });
+    });
     Object.entries(s.examine).forEach(([k, v]) => out.push({ id: `spot:${k}`, label: v.label, kind: 'look' }));
     out.push({ id: 'spot:exit', label: 'Leave the building', kind: 'look' });
     return out;
@@ -815,10 +834,19 @@ export class App {
     const simple = this.world.mode === 'simple';
     const name = s.npc.name;
     const option = s.options.find((o) => o.id === run.choiceId);
+    const pursued = s.options.find((o) => o.id === run.pursuing);
+    const gotIt = !!pursued && run.clues.includes(pursued.id);
+    const route = !pursued
+      ? null
+      : gotIt
+        ? `Head to ${pursued.spot.charAt(0).toLowerCase()}${pursued.spot.slice(1)} (marked !) to start.`
+        : `Ask ${needWho(s, pursued.needs!.who, true)} (marked !) for ${pursued.needs!.need}.`;
     const goal: Record<Step, string> = {
       brief: simple ? `Talk to ${name} to find out what needs doing.` : `Walk over to ${name} (marked !) to find out what needs doing.`,
       intro: `Talking with ${name}.`,
-      choose: simple ? 'Pick where to start from the list.' : `Pick where to start: walk to a marked spot (A, B or C), or ask ${name}.`,
+      choose:
+        route ??
+        (simple ? 'Look at each place to start in the list (A, B and C), then start where it feels right.' : 'Look around: walk to A, B and C to see what each involves, then start where it feels right.'),
       look: option ? `Take what you found back to ${name}.` : 'Have a look.',
       write: `Working with ${name}.`,
       coach: `Working with ${name}.`,
@@ -844,7 +872,12 @@ export class App {
     // Markers: "!" on whoever moves the task on, letters on the approach spots while choosing.
     const marks: Partial<Record<ThingId, Marker>> = {};
     if (run.step === 'brief' || (run.step === 'look' && run.choiceId)) marks.manager = '!';
-    if (run.step === 'choose') s.options.forEach((o) => (marks[`spot:${o.id}`] = o.id));
+    if (run.step === 'choose') {
+      // Before picking: A, B and C. After: a single "!" on wherever to go next.
+      if (!pursued) s.options.forEach((o) => (marks[`spot:${o.id}`] = o.id));
+      else if (gotIt) marks[`spot:${pursued.id}`] = '!';
+      else marks[pursued.needs!.who as ThingId] = '!';
+    }
     this.world.mark(marks);
 
     const things = this.things(run);
@@ -884,7 +917,7 @@ export class App {
           : null;
       const groups = [
         group('People', things.filter((t) => t.kind === 'person')),
-        group('Where to start', things.filter((t) => t.kind === 'spot')),
+        group(run.choiceId ? 'Where you started' : run.pursuing ? 'Where you\'ll start' : 'Where to start', things.filter((t) => t.kind === 'spot')),
         group('Look around', things.filter((t) => t.kind === 'look')),
       ];
       list.replaceChildren(...groups.filter((x): x is HTMLDivElement => x !== null));
@@ -906,6 +939,8 @@ export class App {
       return this.leaveScenario();
     }
     if (id === 'manager') return this.converse(run, 'manager', () => this.talkToManager(run));
+    const need = this.pendingNeed(run, id);
+    if (need) return this.converse(run, id, () => this.giveClue(run, id, need));
     if (id.startsWith('person:')) return this.converse(run, id, () => this.talkToColleague(run, Number(id.slice(7))));
     if (id.startsWith('extra:')) return this.converse(run, id, () => this.talkToExtra(run, id));
     const key = id.slice(5);
@@ -949,15 +984,15 @@ export class App {
     if (who === 'manager') {
       const m = taskManagerIndex(s.id, run.taskIndex);
       const look = m === null ? cast.manager : cast.colleagues[m];
-      return { name: s.npc.name, color: managerColor(run), portrait: portrait(look), voice: voiceFor(s.npc.name, VOICES[s.npc.name]) };
+      return { name: s.npc.name, role: s.npc.role, color: managerColor(run), portrait: portrait(look), voice: voiceFor(s.npc.name, VOICES[s.npc.name]) };
     }
     if (who.startsWith('extra:')) {
       const e = s.extras[Number(who.slice(6))];
-      return { name: e?.name ?? '', color: '#8a7357', voice: voiceFor(e?.name ?? 'extra') };
+      return { name: e?.name ?? '', role: e?.role, color: '#8a7357', voice: voiceFor(e?.name ?? 'extra') };
     }
     const i = Number(who.slice(7));
     const c = s.colleagues[i];
-    return { name: c.name, color: personColor(s.id, i), portrait: portrait(cast.colleagues[i]), voice: voiceFor(c.name, VOICES[c.name]) };
+    return { name: c.name, role: c.role, color: personColor(s.id, i), portrait: portrait(cast.colleagues[i]), voice: voiceFor(c.name, VOICES[c.name]) };
   }
 
   private say(run: Run, who: ThingId | null, line: string, controls?: HTMLElement | null) {
@@ -1014,13 +1049,36 @@ export class App {
     const s = run.scenario;
     await this.say(run, 'manager', `[thinking] ${s.question}`);
     if (this.run !== run) return;
-    const pick = await this.talk.choose([...s.options.map((o) => `${o.id}. ${o.text}`), 'Let me look around first.']);
+    await this.talk.choose(['Let me look around first.']);
     if (this.run !== run) return;
-    if (pick === s.options.length) {
-      await this.say(run, 'manager', `[happy] Sure, take your time. I've marked the places to start: A, B and C. Come back if you want to talk it through.`);
-      return;
+    await this.say(
+      run,
+      'manager',
+      `[happy] Good idea. I've marked three places you could start: A, B and C. Walk over to each one to see what it involves. Some need a word with a colleague first. When one feels right, start there.`,
+    );
+  }
+
+  /** The approach whose missing piece this person has, once the player knows to ask for it. */
+  private pendingNeed(run: Run, who: ThingId): ScenarioOption | undefined {
+    if (run.step !== 'choose') return undefined;
+    const o = run.scenario.options.find((x) => x.id === run.pursuing);
+    return o?.needs?.who === who && !run.clues.includes(o.id) ? o : undefined;
+  }
+
+  /** Asking a colleague for what an approach needs: their answer goes in the notebook. */
+  private async giveClue(run: Run, who: ThingId, o: ScenarioOption) {
+    const n = o.needs!;
+    this.world.emote(who, 'happy');
+    await this.talk.choose([n.ask]);
+    for (const line of n.lines) {
+      if (this.run !== run) return;
+      await this.say(run, who, line);
     }
-    await this.chooseApproach(run, s.options[pick].id);
+    if (this.run !== run) return;
+    run.clues.push(o.id);
+    chime();
+    this.world.emote('player', 'idea');
+    await this.say(run, null, `Added to your notes: *${n.clue}* Now head to ${o.spot.charAt(0).toLowerCase()}${o.spot.slice(1)} (marked !) to start.`);
   }
 
   /** Walking up to an approach spot. Before the intro it's a hint; while choosing, it's a choice. */
@@ -1033,8 +1091,28 @@ export class App {
       return;
     }
     if (run.step === 'choose') {
-      await this.say(run, null, `${o.spot}. Start here? *${o.text}*`);
-      const yes = (await this.talk.choose(['Start here', 'Not yet'])) === 0;
+      await this.say(run, null, `${o.spot}. Starting here means: *${o.text}*`);
+      if (this.run !== run) return;
+      const need = o.needs;
+      if (need && !run.clues.includes(id)) {
+        const who = needWho(s, need.who, true);
+        await this.say(run, null, `To start here, you'd need ${need.need}. *${who}*, might be able to help.`);
+        if (this.run !== run) return;
+        // Going to ask is the choice: the other places drop away and a "!" shows the way.
+        const go = (await this.talk.choose([`Go and ask ${who.split(',')[0]}`, 'Keep looking'])) === 0;
+        if (go && this.run === run) {
+          run.pursuing = id;
+          this.refreshRoom();
+        }
+        return;
+      }
+      if (need) {
+        // Back with what they needed: start straight away.
+        await this.say(run, null, `You've got what you need from ${needWho(s, need.who, true)}.`);
+        if (this.run === run) await this.chooseApproach(run, id, true);
+        return;
+      }
+      const yes = (await this.talk.choose(['Start here', 'Keep looking'])) === 0;
       if (yes && this.run === run) await this.chooseApproach(run, id, true);
       return;
     }
@@ -1188,6 +1266,7 @@ export class App {
     const s = run.scenario;
     this.refreshRoom();
     this.world.focus('manager');
+    this.syncNotes(run);
 
     switch (run.step) {
       case 'write': {
@@ -1202,8 +1281,7 @@ export class App {
         const controls = h(
           'div',
           { class: 'block' },
-          taskCard(run),
-          findingsCard(run, false),
+          h('p', { class: 'notes-pointer' }, 'Your task and everything you found are in ', h('strong', null, 'Your notes'), '. Use them in your answer.'),
           h('label', { id: 'write-l', class: 'label', for: 'write' }, 'Your words (saved as a work sample)'),
           ta,
           h(
@@ -1391,6 +1469,20 @@ export class App {
   }
 
   /** The task is done: close the talk box and let the player wander. */
+  /**
+   * "Your notes": the task, the approach, what the player found and any tips from colleagues,
+   * kept open beside the talk box while they write, so they never have to remember it.
+   */
+  private syncNotes(run: Run) {
+    const stage = this.els.stage;
+    stage.querySelectorAll('.notes-dock').forEach((n) => n.remove());
+    if (!['write', 'coach', 'followup'].includes(run.step)) return;
+    // Wide screens: beside the talk box. Narrow ones: stacked just above it, so neither covers the other.
+    const wide = typeof matchMedia === 'undefined' || matchMedia('(min-width: 980px)').matches;
+    if (wide) stage.append(notesPanel(run));
+    else this.talk.el.prepend(notesPanel(run));
+  }
+
   private endWork() {
     const run = this.run;
     if (!run) return;
@@ -2108,7 +2200,15 @@ function renderSelfCheck(mode: 'start' | 'retake', done: (check: SelfCheck | nul
 
 // ---- Findings: what the student's chosen approach turned up ---------------------------
 
-function findingsCard(run: { scenario: Scenario; choiceId?: ChoiceId }, open: boolean): HTMLElement | null {
+/** "Name (role)" for whoever holds an approach's missing piece. */
+function needWho(s: Scenario, who: string, inSentence = false): string {
+  const i = Number(who.split(':')[1]);
+  const p = who.startsWith('extra:') ? s.extras[i] : s.colleagues[i];
+  if (!p) return '';
+  return inSentence ? `${p.name}, the ${p.role}` : `${p.name} (${p.role})`;
+}
+
+function findingsCard(run: { scenario: Scenario; choiceId?: ChoiceId; clues?: ChoiceId[] }, open: boolean): HTMLElement | null {
   const option = run.scenario.options.find((o) => o.id === run.choiceId);
   if (!option) return null;
   const f = option.result;
@@ -2130,7 +2230,33 @@ function findingsCard(run: { scenario: Scenario; choiceId?: ChoiceId }, open: bo
     h('summary', null, h('span', { class: 'find-kicker' }, 'What you found'), h('span', { class: 'find-title' }, f.title)),
     body,
     f.note ? h('p', { class: 'find-note' }, h('strong', null, 'Worth noticing: '), f.note) : null,
+    option.needs && run.clues?.includes(option.id) ? h('p', { class: 'find-clue' }, h('strong', null, `From ${needWho(run.scenario, option.needs.who)}: `), option.needs.clue) : null,
     h('p', { class: 'find-foot' }, 'Practice data: the names and figures are made up.'),
+  );
+}
+
+// ---- Your notes: everything the student needs for the writing, in one place ----
+
+function notesPanel(run: Run): HTMLElement {
+  const s = run.scenario;
+  const findings = findingsCard(run, true);
+  return h(
+    'details',
+    { class: 'notes-dock card', open: true },
+    h('summary', null, h('span', { class: 'notes-icon', 'aria-hidden': 'true' }, '📒'), h('span', null, 'Your notes')),
+    h(
+      'div',
+      { class: 'notes-body' },
+      // What they found comes first: it's what the answer is built from.
+      findings,
+      taskCard(run),
+      h(
+        'div',
+        { class: 'notes-tips' },
+        h('p', { class: 'task-kicker' }, 'A strong answer'),
+        h('ul', null, s.writeGuide.points.map((pt) => h('li', null, pt))),
+      ),
+    ),
   );
 }
 

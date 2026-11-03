@@ -525,6 +525,15 @@ export class World3D implements World {
       if (!anchor || this.spotMarks.has(id)) continue;
       const e = new Emote(kind === '!' ? 'mark' : kind, Infinity);
       anchor.add(e.sprite);
+      // If someone stands right by this spot, lift its marker clear of the icon over their head.
+      anchor.updateWorldMatrix(true, false);
+      const at = anchor.getWorldPosition(new THREE.Vector3());
+      let lift = 0;
+      r.actors.forEach((a) => {
+        const p = a.group.position;
+        if (Math.hypot(p.x - at.x, p.z - at.z) < 1.6) lift = Math.max(lift, a.topY + 1.5 - at.y);
+      });
+      e.lift = Math.max(0, lift);
       this.spotMarks.set(id, e);
     }
     this.needsRender = true;
@@ -740,7 +749,7 @@ export class World3D implements World {
     const aspect = this.camera.aspect;
     const tanH = Math.tan((this.camera.fov * DEG) / 2) * aspect;
     const intro = easeInOut(this.intro);
-    const radius = (clamp((aspect < 1 ? 24 : 40) / tanH, aspect < 1 ? 60 : 70, 120) + this.zoom) * (1 + intro * 0.4);
+    const radius = (clamp((aspect < 1 ? 28 : 40) / tanH, aspect < 1 ? 60 : 70, 130) + this.zoom) * (1 + intro * 0.4);
     const polar = (aspect < 1 ? 46 : 52) * DEG + this.pol - intro * 18 * DEG + this.parallax.y * 4 * DEG;
     const swing = reducedMotion() ? 0 : Math.sin(this.orbitPhase) * 9 * DEG;
     // From the south, along the campus's main axis (the entrance gate towards the clock tower)
@@ -773,7 +782,9 @@ export class World3D implements World {
       // Across the reception desk the pair line up front to back, so look from the front corner.
       const az = r?.lobby && this.focusId === 'manager' ? -0.55 : TALK_AZ;
       const radius = clamp((gap * 1.3 + 4.6) / Math.min(tanH, 0.9), 12, 18);
-      const polar = 70 * DEG;
+      // Tall phone screens see a lot above and below: look down more, so the room fills the frame
+      // instead of the dark space above the walls.
+      const polar = (aspect < 0.8 ? 55 : 70) * DEG;
       const pos = new THREE.Vector3(Math.sin(polar) * Math.sin(az), Math.cos(polar), Math.sin(polar) * Math.cos(az)).multiplyScalar(radius).add(mid);
       return { pos, target: mid };
     }
@@ -786,13 +797,14 @@ export class World3D implements World {
     // On narrow (phone) screens, show about two-thirds of the room's width and follow the player across it.
     const narrow = aspect < 0.8;
     const halfW = (bx1 - bx0) / 2;
-    const viewHalf = narrow ? Math.max(4.2, halfW * 0.62) : halfW + 1.6;
+    const viewHalf = narrow ? Math.max(4.2, halfW * 0.5) : halfW + 1.6;
     const follow = narrow ? clamp(p.x, bx0 + viewHalf - 1, bx1 - viewHalf + 1) : cx + (p.x - cx) * 0.18;
     const target = new THREE.Vector3(follow, 0.6, cz + (p.z - cz) * 0.12 + 0.4);
     const tanV = Math.tan((this.camera.fov * DEG) / 2);
     const radius = clamp(Math.max(viewHalf / tanH, (bz1 - bz0) / 2 / tanV + 6), narrow ? 12 : 17, 40);
     const azimuth = 0;
-    const polar = 47 * DEG;
+    // Phones are tall: looking down more lets the room's depth fill the screen.
+    const polar = (narrow ? 36 : 47) * DEG;
     const pos = new THREE.Vector3(Math.sin(polar) * Math.sin(azimuth), Math.cos(polar), Math.sin(polar) * Math.cos(azimuth))
       .multiplyScalar(radius)
       .add(target);
@@ -1179,6 +1191,13 @@ export class World3D implements World {
         const ls = hovered ? 1.12 : 1;
         b.label.scale.set(LABEL_W * ls, LABEL_H * ls, 1);
         b.label.position.y = labelY(b.height) + b.lift;
+        // On narrow screens a label near the edge would be cut off: slide it back on screen.
+        const at = b.label.getWorldPosition(new THREE.Vector3());
+        // (Labels keep a fixed size on screen, so their half-width in screen units doesn't depend on distance.)
+        const half = (LABEL_W * ls) / 2 / (Math.tan((this.camera.fov * DEG) / 2) * this.camera.aspect);
+        const x = at.project(this.camera).x;
+        const over = Math.max(0, x + half - 0.96) - Math.max(0, -0.96 - (x - half));
+        b.label.center.x = clamp(0.5 + over / (2 * half), 0, 1);
 
         if (motion) b.animate?.(t);
         b.pulse = Math.max(0, b.pulse - dt * 0.5);

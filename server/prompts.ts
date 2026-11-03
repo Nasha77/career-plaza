@@ -63,7 +63,9 @@ function findings(o: ReturnType<typeof chosen>): string {
   const f = o.result as { title: string; rows?: string[][]; items?: string[]; note?: string };
   const body = f.rows ? f.rows.map(([k, v]) => `- ${k}: ${v}`) : (f.items ?? []).map((i) => `- ${i}`);
   const note = f.note ? `\nWorth noticing: ${f.note}` : '';
-  return `What the student's approach turned up, shown on their screen (made-up practice data, "${f.title}"):\n${body.join('\n')}${note}`;
+  // Approaches that needed a colleague's help: the student had to ask for it, and it's in their notes.
+  const tip = o.needs ? `\nA colleague also told the student: ${o.needs.clue}` : '';
+  return `What the student's approach turned up, shown on their screen (made-up practice data, "${f.title}"):\n${body.join('\n')}${note}${tip}`;
 }
 
 // ---- Coaching -----------------------------------------------------------------

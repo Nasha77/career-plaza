@@ -119,7 +119,7 @@ const inRects = (rects: Rect[], x: number, z: number) => rects.some(([x0, z0, x1
  * front is left open, as in Animal Crossing and Pokemon), wainscoting, windows, white glass
  * partitions, and a warm lamp light. Returns the floor (for clicking to walk).
  */
-export function buildShape(kit: Kit, g: THREE.Group, id: ScenarioId, rects: Rect[], partitions: Partition[], door: [number, number]): THREE.Group {
+export function buildShape(kit: Kit, g: THREE.Group, id: ScenarioId, rects: Rect[], partitions: Partition[]): THREE.Group {
   const c = COLORS[id];
   const PANEL_H = 1.5;
   const floorTex = floorTexture(kit, FLOORS[id], c.floor);
@@ -231,8 +231,7 @@ export function buildShape(kit: Kit, g: THREE.Group, id: ScenarioId, rects: Rect
     }
   }
 
-  // Doormat where the player comes in
-  g.add(kit.box(2.4, 0.03, 1.1, kit.lambert(c.panel), door[0], 0.13, door[1] + 0.3));
+  // (The exit mat where the player comes in is added with the room, in room.ts.)
   // A warm lamp-light glow over the middle of the room
   let sx = 0;
   let sz = 0;

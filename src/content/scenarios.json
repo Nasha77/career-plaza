@@ -285,7 +285,17 @@
             "note": "The seniors remember the people, not the activities."
           },
           "studyLink": "Like opening an essay with a vivid example that makes readers care.",
-          "spot": "Photo album from last year"
+          "spot": "Photo album from last year",
+          "needs": {
+            "who": "extra:1",
+            "need": "last year's photos, and to know who's happy to be quoted",
+            "ask": "Do you have anything from last year's visit I could use for a newsletter story?",
+            "lines": [
+              "[happy] Oh, I keep everything! The photo album is on the shelf, it's all yours.",
+              "[thinking] One thing: ask before you quote anyone by name. Mdm Tan said yes. I'd check with the others first."
+            ],
+            "clue": "The photo album is yours to use. Mdm Tan agreed to be quoted; check with anyone else first."
+          }
         },
         {
           "id": "C",
@@ -578,7 +588,17 @@
             "feedback": "Buzz before the day is what fills a Sunday. You're thinking about why people would actually come.",
             "twistFeedback": "A 'rain or shine, we've got you covered' story could turn the forecast into a reason to visit indoors.",
             "reflectiveQuestion": "Did coming up with ideas feel energising, or would you rather someone else made the content?",
-            "spot": "The photo corner"
+            "spot": "The photo corner",
+            "needs": {
+              "who": "person:1",
+              "need": "to know how our festive posts did last year",
+              "ask": "Could I see how last year's festive posts did?",
+              "lines": [
+                "[excited] Yes! I'll unlock the analytics for you.",
+                "[idea] Tip from me: Stories do best at 8pm, when most of our followers are online. Keep each one under 15 seconds."
+              ],
+              "clue": "Stories do best at 8pm, and each one should be under 15 seconds."
+            }
           }
         ],
         "reactions": {
@@ -870,7 +890,17 @@
             "note": "Two news outlets quoted our tracker last month."
           },
           "studyLink": "Like writing a careful conclusion that says what the evidence does and doesn't show.",
-          "spot": "The deal tracker"
+          "spot": "The deal tracker",
+          "needs": {
+            "who": "person:2",
+            "need": "the house rules for public notes on the tracker",
+            "ask": "Are there rules for writing a public note on the tracker?",
+            "lines": [
+              "[thinking] There are. Under 50 words. Say what we know, what we don't, and when we'll update.",
+              "[worried] And never guess. Journalists quote us, so one wrong word travels fast."
+            ],
+            "clue": "Public notes: under 50 words; say what we know, what we don't, and when we'll update. Never guess."
+          }
         },
         {
           "id": "C",
@@ -1104,7 +1134,17 @@
             "feedback": "Patterns from similar projects are often the best early warning we have.",
             "twistFeedback": "Look for neighbouring projects that faced rule changes too. How they adapted is useful evidence.",
             "reflectiveQuestion": "Did spotting patterns across cases hold your attention?",
-            "spot": "The regional map"
+            "spot": "The regional map",
+            "needs": {
+              "who": "person:0",
+              "need": "the regional project data, which Sophie keeps",
+              "ask": "Could I use the regional project map for the mangrove comparison?",
+              "lines": [
+                "[happy] Of course. I've shared the file with you: three similar mangrove projects are on it.",
+                "[idea] Look past the credits sold. The notes column is where the problems show up."
+              ],
+              "clue": "The regional map has three similar mangrove projects. The notes column shows where things went wrong."
+            }
           },
           {
             "id": "C",
@@ -1433,7 +1473,17 @@
             "note": "What changed depends a lot on who stayed and why others left."
           },
           "studyLink": "Like interviews for fieldwork or an oral history project.",
-          "spot": "The interview corner"
+          "spot": "The interview corner",
+          "needs": {
+            "who": "person:0",
+            "need": "an introduction to the partner charity and some participants",
+            "ask": "Could you put me in touch with the partner charity to interview a few participants?",
+            "lines": [
+              "[happy] Happily. They can set up three short calls this week.",
+              "[thinking] Ask about the people who stopped coming too, not just the ones who stayed. That's where the honest answers are."
+            ],
+            "clue": "The partner charity can set up three short calls. Ask about who stopped coming, not just who stayed."
+          }
         },
         {
           "id": "C",
@@ -1671,7 +1721,17 @@
             "feedback": "Our own data tells a story no one else has. That's what makes a newsletter worth reading.",
             "twistFeedback": "Comparing our data with the co-host's could make the event even more interesting.",
             "reflectiveQuestion": "How did it feel to find the story in a set of numbers?",
-            "spot": "Grant records"
+            "spot": "Grant records",
+            "needs": {
+              "who": "person:1",
+              "need": "the grant records, which Mei manages",
+              "ask": "Could you help me get last year's grant records for donors under 30?",
+              "lines": [
+                "[happy] Done, I've filtered them for you.",
+                "[idea] One catch: gifts under $20 aren't recorded, and young donors give a lot of small gifts. Mention that if you use the numbers."
+              ],
+              "clue": "The records are filtered to donors under 30, but gifts under $20 aren't recorded."
+            }
           },
           {
             "id": "C",
@@ -2029,7 +2089,17 @@
             "note": "The union voice isn't confirmed yet."
           },
           "studyLink": "Like organising a seminar where different viewpoints get heard.",
-          "spot": "The briefing table"
+          "spot": "The briefing table",
+          "needs": {
+            "who": "person:2",
+            "need": "to know who to invite, and how to reach them",
+            "ask": "Who should we invite for the business, government and union voices?",
+            "lines": [
+              "[thinking] Two business leaders have said yes. The government rep needs the agenda by Wednesday to confirm.",
+              "[idea] Nobody has invited the union yet. Ade is our contact, and a personal call works better than an email."
+            ],
+            "clue": "Government rep needs the agenda by Wednesday. The union hasn't been invited; call Ade, the union contact, personally."
+          }
         }
       ],
       "reactions": {
@@ -2223,7 +2293,17 @@
             "feedback": "A balanced room is what makes the findings fair. That's careful, important work.",
             "twistFeedback": "Let everyone know an observer is coming. People should know before they agree to attend.",
             "reflectiveQuestion": "How did it feel to be the person making sure everyone has a seat?",
-            "spot": "The sign-up desk"
+            "spot": "The sign-up desk",
+            "needs": {
+              "who": "extra:0",
+              "need": "to know why young workers aren't signing up",
+              "ask": "Why do you think so few young workers have signed up?",
+              "lines": [
+                "[thinking] Most of them can't take time off on a weekday. Their shifts don't let them.",
+                "[idea] An evening slot would help, and a text invite works better than email for them."
+              ],
+              "clue": "Young workers can't take weekday time off. An evening slot and a text invite would help."
+            }
           },
           {
             "id": "C",
