@@ -71,6 +71,8 @@ export interface Reactions {
 export interface Extra {
   name: string;
   role: string;
+  /** So their character model matches their name. */
+  gender: 'f' | 'm';
   line: string;
   /** What they're busy with, if they'd rather not be disturbed. */
   busy?: string;
@@ -125,10 +127,12 @@ export interface Scenario {
   examine: Record<string, { label: string; lines: string[] }>;
   /** The second task, offered on the next visit: a different role with one of the colleagues. */
   taskB?: TaskB;
+  /** The front desk: who welcomes you, what they say about the company, and the sign behind them. */
+  reception: { name: string; role: string; lines: string[]; sign: string[] };
 }
 
 /** Everything that changes between a building's two tasks. The building and its people stay. */
-export type TaskB = Omit<Scenario, 'id' | 'building' | 'colleagues' | 'taskB'> & {
+export type TaskB = Omit<Scenario, 'id' | 'building' | 'colleagues' | 'taskB' | 'reception'> & {
   /** Which colleague runs this task (their index in `colleagues`). */
   managerColleague: number;
 };

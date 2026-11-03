@@ -5,7 +5,7 @@ import { Actor } from './actor';
 import { buildAtmosphere, type Atmosphere } from './atmosphere';
 import { Emote } from './emotes';
 import { Kit } from './kit';
-import { modelsFor } from './layouts';
+import { lobbyModels, modelsFor } from './layouts';
 import { castFor, extraLook, PLAYER_LOOKS } from '../cast';
 import { STROLLERS, dressCampus, policyHall, shophouses, type ClassicBuilding } from './campus';
 import { preload, spawn, spawnCharacter } from './models';
@@ -570,7 +570,7 @@ export class World3D implements World {
     this.uiHover = null;
     const reduced = reducedMotion();
     // Load the room's models while the camera flies to the door.
-    preload(modelsFor(id, room.task, room.look));
+    preload(room.lobby ? lobbyModels(room.look, id) : modelsFor(id, room.task, room.look));
     const building = buildRoom(id, room);
 
     if (!reduced) {
@@ -619,6 +619,39 @@ export class World3D implements World {
     midway?.();
     this.renderNow();
     await fade(this.veil, false, reduced ? 200 : 380);
+  }
+
+  async changeRoom(id: ScenarioId, room: RoomSetup, midway?: () => void): Promise<void> {
+    if (this.state !== 'interior' || !this.room) return this.enter(id, room, midway);
+    this.state = 'moving';
+    const reduced = reducedMotion();
+    preload(room.lobby ? lobbyModels(room.look, id) : modelsFor(id, room.task, room.look));
+    const building = buildRoom(id, room);
+    await fade(this.veil, true, reduced ? 160 : 240);
+    let data: Room;
+    try {
+      data = await building;
+    } catch (err) {
+      this.state = 'interior';
+      await fade(this.veil, false, 200);
+      throw err;
+    }
+    this.scene.remove(this.room.group);
+    this.spotMarks.forEach((m) => m.dispose());
+    this.spotMarks.clear();
+    disposeRoom(this.room);
+    this.setHoverThing(null);
+    prepareForLighting(data.group);
+    this.scene.add(data.group);
+    this.renderer.shadowMap.needsUpdate = true;
+    this.room = data;
+    this.free = false;
+    this.focusId = null;
+    this.state = 'interior';
+    this.snapCamera();
+    midway?.();
+    this.renderNow();
+    await fade(this.veil, false, reduced ? 200 : 340);
   }
 
   async exit(midway?: () => void): Promise<void> {

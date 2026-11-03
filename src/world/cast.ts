@@ -48,12 +48,22 @@ const PREFERRED: Record<ScenarioId, string[]> = {
   workforce: ['character-male-b', 'character-female-e', 'character-male-e', 'character-female-c'],
 };
 const BUILDINGS: ScenarioId[] = ['resort', 'policy', 'foundation', 'workforce'];
-/** The plaza guide, then the people strolling on the plaza. */
-const PLAZA_PREFERRED = ['character-male-c', 'character-female-e', 'character-male-e', 'character-female-c', 'character-male-a'];
+/** The plaza guide. (People strolling on the plaza are background extras.) */
+const PLAZA_PREFERRED = ['character-male-c'];
+/** Each building's receptionist: Jasmine, Omar, Bea and Hakim. */
+const RECEPTION_PREFERRED: Record<ScenarioId, string> = {
+  resort: 'character-female-c',
+  policy: 'character-male-f',
+  foundation: 'character-female-d',
+  workforce: 'character-male-a',
+};
+
+export type Gender = 'f' | 'm';
+export const genderOf = (look: string): Gender => (modelOf(look).includes('female') ? 'f' : 'm');
 
 export interface Cast {
-  rooms: Record<ScenarioId, { manager: string; colleagues: string[] }>;
-  /** The guide first, then the passers-by. */
+  rooms: Record<ScenarioId, { manager: string; colleagues: string[]; reception: string }>;
+  /** The plaza guide. */
   plaza: string[];
 }
 
@@ -65,8 +75,9 @@ export function castFor(playerLook: string): Cast {
   if (hit) return hit;
   const banned = modelOf(playerLook);
   const used = new Set<string>();
+  // Stay with models of the same gender as the preferred one, so a look always fits its name.
   const take = (preferred: string): string => {
-    const models = [preferred, ...MODELS.filter((m) => m !== preferred)].filter((m) => m !== banned);
+    const models = [preferred, ...MODELS.filter((m) => m !== preferred)].filter((m) => m !== banned && genderOf(m) === genderOf(preferred));
     for (let v = 0; v < VARIANTS; v++)
       for (const m of models) {
         const look = v ? `${m}#${v}` : m;
@@ -80,7 +91,7 @@ export function castFor(playerLook: string): Cast {
   const rooms = {} as Cast['rooms'];
   for (const id of BUILDINGS) {
     const [manager, ...colleagues] = PREFERRED[id].map(take);
-    rooms[id] = { manager, colleagues };
+    rooms[id] = { manager, colleagues, reception: take(RECEPTION_PREFERRED[id]) };
   }
   const plaza = PLAZA_PREFERRED.map(take);
   const cast = { rooms, plaza };
@@ -146,8 +157,8 @@ export const EXTRA_VARIANTS = 9;
  * A background extra's look: any model except the player's, always with a changed skin tone and
  * outfit, so extras can repeat models without ever looking like the player or a main character.
  */
-export function extraLook(seed: number, playerLook: string): string {
-  const models = MODELS.filter((m) => m !== modelOf(playerLook));
+export function extraLook(seed: number, playerLook: string, gender?: Gender): string {
+  const models = MODELS.filter((m) => m !== modelOf(playerLook) && (!gender || genderOf(m) === gender));
   let h = seed * 2654435761;
   h = (h ^ (h >>> 15)) >>> 0;
   const model = models[h % models.length];

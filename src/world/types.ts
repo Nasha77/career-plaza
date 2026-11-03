@@ -6,6 +6,8 @@ export interface RoomSetup {
   twist: boolean;
   /** Which Kenney character the player chose. */
   look: string;
+  /** The building's reception lobby, where the player picks a role. */
+  lobby?: boolean;
 }
 
 /** Something in a room you can walk up to: the manager, a colleague (by content index) or a spot. */
@@ -27,6 +29,8 @@ export interface World {
   setHover(id: ScenarioId | null): void;
   /** Move from the plaza into a building's interior, set up for one task. `midway` runs while the screen is veiled. */
   enter(id: ScenarioId, room: RoomSetup, midway?: () => void): Promise<void>;
+  /** Go from one room to another in the same building (the lobby to an office), behind the veil. */
+  changeRoom(id: ScenarioId, room: RoomSetup, midway?: () => void): Promise<void>;
   /** Move from an interior back out to the plaza. `midway` runs while the screen is veiled. */
   exit(midway?: () => void): Promise<void>;
   /** Who is speaking, for the talking bounce (the plaza guide, or someone in the room). */

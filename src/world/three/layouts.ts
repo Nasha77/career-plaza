@@ -610,3 +610,50 @@ export function modelsFor(id: ScenarioId, task: TaskIndex, look: string): string
 export function onFloor(l: Layout, x: number, z: number): boolean {
   return l.floor.some(([x0, z0, x1, z1]) => x >= x0 && x <= x1 && z >= z0 && z <= z1);
 }
+
+/**
+ * The reception lobby every building opens into: a front desk with the receptionist, the
+ * company's sign behind them, a waiting area, and a doorway through to the offices.
+ */
+const lobby: Layout = {
+  floor: [[-6, -5, 6, 4]],
+  door: [0, 3.4],
+  props: [
+    // The front desk: two desks side by side, a screen and a little bell of a cash register
+    desk(-0.75, -2.4, Math.PI), // 0
+    desk(1.95, -2.4, Math.PI), // 1
+    { m: 'furniture/computerScreen', x: -0.6, z: -2.3, r: Math.PI, on: 0 },
+    { m: 'furniture/plantSmall1', x: 2.6, z: -2.4, on: 1 },
+    { m: 'food/mug', x: 1.4, z: -2.3, on: 1 },
+    // Waiting area on the left
+    { m: 'furniture/rugRounded', x: -3.8, z: 1.4, walk: true },
+    { m: 'furniture/loungeSofa', x: -5.4, z: 1.4, r: HALF },
+    { m: 'furniture/tableCoffee', x: -3.6, z: 1.4 }, // 7
+    { m: 'furniture/books', x: -3.6, z: 1.4, on: 7 },
+    { m: 'furniture/loungeChair', x: -3.6, z: 3.0, r: Math.PI },
+    // Water and leaflets on the right
+    { m: 'furniture/kitchenFridgeSmall', x: 5.2, z: -0.4, r: -HALF },
+    { m: 'furniture/bookcaseOpen', x: 5.3, z: 1.6, r: -HALF },
+    { m: 'furniture/coatRackStanding', x: 4.8, z: 3.2 },
+    plant(-5.4, -4.3),
+    plant(5.4, -4.3),
+    plant(-1.6, 3.6),
+  ],
+  frames: [
+    [-4.4, 3.4, 1.0, 1.2, 1],
+    [1.2, 3.2, 1.0, 1.2, 2, 'left'],
+  ],
+  manager: { x: 0.6, z: -3.6, r: 0 },
+  people: {},
+  spots: {
+    sign: { x: -0.2, z: -4.9, y: 3.6 },
+  },
+};
+
+export const LOBBY: Layout = spread(lobby);
+
+/** The models a lobby needs (to start loading early). */
+export function lobbyModels(look: string, id: ScenarioId): string[] {
+  const cast = castFor(look).rooms[id];
+  return [...new Set([...LOBBY.props.map((p) => p.m), `characters/${modelOf(cast.reception)}`, `characters/${modelOf(look)}`])];
+}

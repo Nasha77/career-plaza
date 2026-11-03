@@ -622,7 +622,8 @@
             "name": "Ben",
             "role": "Mall Operations",
             "line": "If the choir moves inside, I'll need the atrium cleared by 1:45. No pressure.",
-            "busy": "on a call about moving the choir stage"
+            "busy": "on a call about moving the choir stage",
+            "gender": "m"
           },
           {
             "name": "Aisha",
@@ -642,7 +643,8 @@
                 "text": "The bubble tea place",
                 "reply": "Bold. Sticky glue and sticky drinks, though..."
               }
-            ]
+            ],
+            "gender": "f"
           }
         ]
       },
@@ -695,16 +697,31 @@
               "text": "A cute drawing of the seniors' centre",
               "reply": "Aww. Soft and friendly. I like it."
             }
-          ]
+          ],
+          "gender": "m"
         },
         {
           "name": "Siti",
           "role": "Volunteer Coordinator",
           "line": "Last year I carried forty T-shirts up the stairs. This year: a trolley.",
           "ask": "If you could volunteer anywhere this weekend, where would you go?",
-          "reply": "Nice. That's exactly the kind of thing people sign up for."
+          "reply": "Nice. That's exactly the kind of thing people sign up for.",
+          "gender": "f"
         }
-      ]
+      ],
+      "reception": {
+        "name": "Jasmine",
+        "role": "Reception",
+        "lines": [
+          "[happy] Welcome to Harbourfront Resort! I'm Jasmine, at the front desk.",
+          "We're a resort on the bay: a hotel, a shopping mall and an events venue, all in one.",
+          "Behind the scenes, our teams run marketing, big events, and community programmes with local partners."
+        ],
+        "sign": [
+          "A sign: \"Harbourfront Resort. Stay, shop, celebrate.\"",
+          "Underneath, smaller: \"Proud partner of local community programmes.\""
+        ]
+      }
     },
     {
       "id": "policy",
@@ -1177,13 +1194,15 @@
                 "text": "Three or more",
                 "reply": "Wow. Kenji will try to recruit you for the regional team."
               }
-            ]
+            ],
+            "gender": "f"
           },
           {
             "name": "Leo",
             "role": "Climate Finance Intern",
             "line": "Day three. I now know what 'additionality' means. Mostly.",
-            "busy": "reading a ninety-page report on carbon credits"
+            "busy": "reading a ninety-page report on carbon credits",
+            "gender": "m"
           }
         ]
       },
@@ -1236,16 +1255,31 @@
               "text": "'No idea, sorry!'",
               "reply": "Ha. Honest, but let's sound a bit more helpful."
             }
-          ]
+          ],
+          "gender": "m"
         },
         {
           "name": "Lin",
           "role": "Data Volunteer",
           "line": "I update the tracker on Fridays. Mondays are for fixing what I broke on Friday.",
           "ask": "What's something you've tracked or counted, just for fun?",
-          "reply": "Love that. Tracking things is just curiosity with a spreadsheet."
+          "reply": "Love that. Tracking things is just curiosity with a spreadsheet.",
+          "gender": "f"
         }
-      ]
+      ],
+      "reception": {
+        "name": "Omar",
+        "role": "Reception",
+        "lines": [
+          "[happy] Hello, welcome to the Climate Policy Association. I'm Omar.",
+          "We're a member association: companies working together on carbon markets and climate policy.",
+          "Our teams track deals between countries, research projects across Asia-Pacific, and keep members up to date."
+        ],
+        "sign": [
+          "A sign: \"Climate Policy Association. Working together on carbon markets.\"",
+          "A small plaque lists member companies from twelve countries."
+        ]
+      }
     },
     {
       "id": "foundation",
@@ -1717,7 +1751,8 @@
             "name": "Wen",
             "role": "Library Volunteer",
             "line": "Every report here has a sticky note. Rachel's system. Nobody else understands it.",
-            "busy": "re-shelving reports by colour (don't ask)"
+            "busy": "re-shelving reports by colour (don't ask)",
+            "gender": "f"
           },
           {
             "name": "Kai",
@@ -1737,7 +1772,8 @@
                 "text": "Fruit and water, keep it simple",
                 "reply": "Sensible. Rachel will appreciate the budget."
               }
-            ]
+            ],
+            "gender": "m"
           }
         ]
       },
@@ -1776,16 +1812,31 @@
               "text": "Both, side by side",
               "reply": "My favourite answer. A number and a face."
             }
-          ]
+          ],
+          "gender": "m"
         },
         {
           "name": "Nur",
           "role": "Volunteer",
           "line": "I help at the youth programme on Saturdays. The kids taught me spreadsheets.",
           "ask": "If you taught a room of teenagers for an afternoon, what would you teach?",
-          "reply": "They'd love that. Honestly, I'd sign up too."
+          "reply": "They'd love that. Honestly, I'd sign up too.",
+          "gender": "f"
         }
-      ]
+      ],
+      "reception": {
+        "name": "Bea",
+        "role": "Reception",
+        "lines": [
+          "[happy] Hi there, welcome to the Community Foundation! I'm Bea.",
+          "We help people and companies give well, and we fund community programmes, from youth skills to eldercare.",
+          "Our teams run programmes, research how people give, and bring donors and charities together."
+        ],
+        "sign": [
+          "A sign: \"Community Foundation. Giving that changes things.\"",
+          "Next to it, a wall of thank-you cards from programme participants."
+        ]
+      }
     },
     {
       "id": "workforce",
@@ -2246,14 +2297,16 @@
                 "text": "Online, after work",
                 "reply": "Practical. Shift workers would thank you."
               }
-            ]
+            ],
+            "gender": "m"
           },
           {
             "name": "Yuki",
             "role": "Note-taker",
             "line": "I write down everything people say. Even the jokes. Especially the jokes.",
             "ask": "What's one question you'd ask a young worker about AI?",
-            "reply": "Good one. I'll add it to the discussion guide."
+            "reply": "Good one. I'll add it to the discussion guide.",
+            "gender": "f"
           }
         ]
       },
@@ -2292,16 +2345,31 @@
               "text": "Not sure yet",
               "reply": "Honestly, same. That's why we're asking people."
             }
-          ]
+          ],
+          "gender": "f"
         },
         {
           "name": "Sam",
           "role": "Comms Officer",
           "line": "Marcus wants the slides 'punchier'. I've added three exclamation marks.",
           "ask": "Give me a punchier title for a talk about AI and jobs.",
-          "reply": "Ooh, better than mine. I'm stealing it."
+          "reply": "Ooh, better than mine. I'm stealing it.",
+          "gender": "m"
         }
-      ]
+      ],
+      "reception": {
+        "name": "Hakim",
+        "role": "Reception",
+        "lines": [
+          "[happy] Good morning, welcome to the Workforce Strategy Hub. I'm Hakim.",
+          "We study how work is changing (AI, skills, new kinds of jobs) and help organisations plan for it.",
+          "Our teams do research, and bring businesses, government and unions together to talk it through."
+        ],
+        "sign": [
+          "A sign: \"Workforce Strategy Hub. Ready for the future of work.\"",
+          "A screen beside it scrolls this week's headlines about jobs and AI."
+        ]
+      }
     }
   ]
 }

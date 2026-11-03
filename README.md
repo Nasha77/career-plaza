@@ -16,7 +16,7 @@ and build a growth record of what they used, what they enjoyed, and what to try 
 | | |
 |---|---|
 | **Four internships** | Communications Intern at Harbourfront Resort (Priya) · International Policy Intern at Climate Policy Association (Daniel) · Programme Intern at Community Foundation (Grace) · Policy & Research Intern at Workforce Strategy Hub (Marcus). Each is based on a real posting, with the employer renamed. |
-| **Two roles in each building** | When you click a building you choose which role to try: the original one, or a second role with one of the colleagues (Marketing & Events with Wei Ling, Carbon Markets Research with Kenji, Research & Programmes with Rachel, Engagement with Nadia). Trying a role again brings a twist. The second roles are also based on real postings. |
+| **Two roles in each building** | Each building opens into a reception: the receptionist (Jasmine, Omar, Bea or Hakim) tells you what the company does, then you choose which internship to try: the original one, or a second role with one of the colleagues (Marketing & Events with Wei Ling, Carbon Markets Research with Kenji, Research & Programmes with Rachel, Engagement with Nadia). Trying a role again brings a twist. The second roles are also based on real postings. |
 | **Colleagues** | Two or three more people in every room. Click them (or use "Meet the team") to hear about their team and the roles there. |
 | **Self-check** | A short, skippable check at the start: how confident you feel in four skills, and what draws you. It can be retaken later. |
 | **Scenarios** | The manager sets a task, you pick one of three approaches, see **what you found** (practice data for that approach), and write a short answer. |
@@ -160,7 +160,7 @@ automatically when WebGL is unavailable) plays exactly the same game.
 
 Each room is shaped like the work done there, the way Pokemon Black and White builds its interiors: an L-shaped office with a pantry nook, a wide mall floor, an office with a glass-walled meeting room, a library alcove, a briefing room with the analyst behind glass, a focus-group room reached through an entry hall. The camera looks in from the front with warm, lived-in lighting, like an Animal Crossing house.
 
-The main characters (you, the guide, the managers and named colleagues) each look different, using the 12 Kenney characters plus recoloured outfits and hair; the character you pick is never used for anyone else. Background people in the offices and on the plaza reuse models in other skin tones and outfits, and each says a short line if you talk to them.
+The main characters (you, the guide, the receptionists, managers and named colleagues) each look different, with a character model that fits their name, using the 12 Kenney characters plus recoloured outfits and hair; the character you pick is never used for anyone else. Background people in the offices and on the plaza reuse models in other skin tones and outfits, and each says a short line if you talk to them.
 
 Walk around each room: click or tap the floor to walk, click a person or object to go over and interact (arrow keys or WASD also move you, E interacts). "Things here" lists everything in the room for keyboard and screen-reader players. Conversations use an Animal Crossing-style talk box with character "babble" voices (mute with the speaker button).
 

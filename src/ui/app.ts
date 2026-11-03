@@ -119,6 +119,10 @@ export class App {
   /** Who is speaking in the talk box, for the talking bounce and emotes. */
   private talkWith: ThingId | null = null;
   private walkedOnce = false;
+  /** The building whose reception the player is in (before choosing a role). */
+  private lobby: ScenarioId | null = null;
+  /** Whether the receptionist has already introduced the company this visit. */
+  private lobbyGreeted = false;
 
   constructor(private els: Elements, private opts: AppOptions) {
     this.world = opts.world;
@@ -159,10 +163,12 @@ export class App {
   private bindWorld() {
     this.world.setPlayerLook(this.look);
     this.world.onPick = (id) => {
-      if (this.screen === 'plaza') this.pickRole(id);
+      if (this.screen === 'plaza') void this.enterLobby(id);
     };
     this.world.onThing = (id) => {
-      if (this.screen === 'scenario' && this.run) void this.useThing(id);
+      if (this.screen !== 'scenario') return;
+      if (this.run) void this.useThing(id);
+      else if (this.lobby) void this.useLobbyThing(id);
     };
     this.world.onHover = (id) => {
       document.querySelectorAll<HTMLElement>('.bbtn').forEach((b) => {
@@ -371,7 +377,7 @@ export class App {
           type: 'button',
           'data-id': id,
           'aria-label': `${s.building}: ${roles} roles to choose from. ${visited ? `Explored, ${inside}.` : 'Not explored yet.'}`,
-          onclick: () => this.pickRole(id),
+          onclick: () => void this.enterLobby(id),
           onmouseenter: () => this.world.setHover(id),
           onmouseleave: () => this.world.setHover(null),
           onfocus: () => this.world.setHover(id),
@@ -440,17 +446,18 @@ export class App {
    * Before going in, the player picks which of the building's roles to try. Each card says who
    * they'd work with, what the job is, and whether they've tried it (a second go brings a twist).
    */
-  private pickRole(id: ScenarioId) {
-    if (this.busy || this.screen !== 'plaza') return;
-    if (taskCount(id) < 2) return void this.enterBuilding(id, 0);
+  private pickRole(id: ScenarioId): Promise<TaskIndex | null> {
+    if (taskCount(id) < 2) return Promise.resolve(0);
     this.els.stage.querySelector('.role-pick-wrap')?.remove();
+    let settle: (t: TaskIndex | null) => void = () => {};
+    const picked = new Promise<TaskIndex | null>((r) => (settle = r));
     const s0 = getScenario(id);
     const prev = document.activeElement as HTMLElement | null;
-    const close = () => {
+    const close = (choice: TaskIndex | null = null) => {
       wrap.remove();
       document.removeEventListener('keydown', onKey, true);
-      this.world.setHover(null);
       prev?.focus?.();
+      settle(choice);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -467,10 +474,7 @@ export class App {
         {
           class: `role-option ${tries ? 'tried' : ''}`,
           type: 'button',
-          onclick: () => {
-            close();
-            void this.enterBuilding(id, t);
-          },
+          onclick: () => close(t),
         },
         h('span', { class: 'role-tag', style: `--c:${color}` }, tries ? `✓ Tried · new twist next` : 'New'),
         h('strong', { class: 'role-name' }, task.internRole),
@@ -482,17 +486,176 @@ export class App {
       'section',
       { class: 'role-pick card', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'role-pick-h' },
       h('p', { class: 'kicker' }, s0.building),
-      h('h2', { id: 'role-pick-h' }, 'Which role would you like to try?'),
+      h('h2', { id: 'role-pick-h' }, 'Which internship would you like to try?'),
       h('p', { class: 'soft' }, 'Both happen in the same building, with different people. You can come back for the other one any time.'),
       h('div', { class: 'role-options' }, cards),
-      h('div', { class: 'actions' }, h('button', { class: 'btn ghost', type: 'button', onclick: close }, 'Not now')),
+      h('div', { class: 'actions' }, h('button', { class: 'btn ghost', type: 'button', onclick: () => close() }, 'Not yet')),
     );
     const wrap = h('div', { class: 'role-pick-wrap', onclick: (e: Event) => e.target === wrap && close() }, card);
     document.addEventListener('keydown', onKey, true);
     this.els.stage.append(wrap);
-    this.world.setHover(id);
-    this.announce(`${s0.building}: choose a role.`);
+    this.announce(`${s0.building}: choose an internship.`);
     card.querySelector<HTMLElement>('.role-option')?.focus();
+    return picked;
+  }
+
+  // ---- Reception ----
+  //
+  // Every building opens into a reception lobby. The receptionist says what the company does,
+  // then offers its two internships; the player picks one and goes through to that office.
+
+  private async enterLobby(id: ScenarioId) {
+    if (this.busy || this.screen !== 'plaza') return;
+    this.busy = true;
+    this.resetTalk();
+    this.run = null;
+    this.lobby = id;
+    this.lobbyGreeted = false;
+    this.world.setHover(null);
+    this.world.setTalking(null);
+    this.els.stage.replaceChildren();
+    void preparePortraits([castFor(this.look).rooms[id].reception]);
+    try {
+      await this.world.enter(id, { task: 0, twist: false, look: this.look, lobby: true }, () => {
+        this.setScreen('scenario');
+        this.renderLobby();
+      });
+    } catch (err) {
+      console.error(err);
+      this.lobby = null;
+      this.showPlaza();
+      return;
+    } finally {
+      this.busy = false;
+    }
+    if (this.lobby !== id) return;
+    this.world.setFree(true);
+    this.world.emote('manager', 'happy');
+  }
+
+  /** The lobby's banner and "Things here" list. */
+  private renderLobby() {
+    const id = this.lobby;
+    if (!id) return;
+    const s = getScenario(id);
+    const r = s.reception;
+    const simple = this.world.mode === 'simple';
+    const list = h('div', { class: 'things-list', hidden: !simple, id: 'things' });
+    const toggle = h(
+      'button',
+      {
+        class: 'btn small things-btn',
+        type: 'button',
+        'aria-controls': 'things',
+        'aria-expanded': String(simple),
+        onclick: () => {
+          list.hidden = !list.hidden;
+          toggle.setAttribute('aria-expanded', String(!list.hidden));
+          if (!list.hidden) list.querySelector<HTMLElement>('button')?.focus();
+        },
+      },
+      'Things here',
+    );
+    const things: [ThingId, string][] = [
+      ['manager', `Talk to ${r.name} (${r.role})`],
+      ['spot:sign', 'The company sign'],
+    ];
+    list.replaceChildren(
+      h(
+        'div',
+        { class: 'things-row' },
+        things.map(([tid, label], i) =>
+          h(
+            'button',
+            {
+              class: `thing-btn ${i === 0 ? 'marked' : ''}`,
+              type: 'button',
+              onclick: () => {
+                if (!simple) list.hidden = true;
+                void this.useLobbyThing(tid, true);
+              },
+            },
+            i === 0 ? h('span', { class: 'mark', 'aria-hidden': 'true' }, '!') : null,
+            label,
+          ),
+        ),
+      ),
+    );
+    const hint = simple ? '' : ' Click or tap the floor to walk.';
+    const banner = h(
+      'section',
+      { class: 'room-banner card', 'aria-label': 'Reception' },
+      h(
+        'div',
+        { class: 'rb-head' },
+        h('span', { class: `bicon-wrap b-${id}` }, buildingIcon(id)),
+        h('div', { class: 'rb-text' }, h('strong', null, `${s.building} · Reception`), h('span', { class: 'soft small' }, `${taskCount(id)} internships open`)),
+        toggle,
+      ),
+      h('p', { class: 'objective', role: 'status' }, `Say hello to ${r.name} at the front desk (marked !) to choose an internship.${hint}`),
+      list,
+    );
+    this.els.stage.replaceChildren(h('div', { class: 'room-ui' }, banner), this.talk.el);
+    this.world.mark({ manager: '!' });
+    this.world.setLabels(Object.fromEntries(things) as Partial<Record<ThingId, string>>);
+  }
+
+  private receptionSpeaker(id: ScenarioId): Speaker {
+    const r = getScenario(id).reception;
+    return { name: r.name, color: NPC_COLOR[id], portrait: portraitFor(castFor(this.look).rooms[id].reception), voice: voiceFor(r.name) };
+  }
+
+  private async useLobbyThing(tid: ThingId, walk = false) {
+    const id = this.lobby;
+    if (!id || this.conversing || this.busy) return;
+    this.conversing = true;
+    this.world.setFree(false);
+    if (walk) await this.world.goTo(tid);
+    if (this.lobby !== id) return;
+    const s = getScenario(id);
+    let chosen: TaskIndex | null = null;
+    try {
+      if (tid === 'spot:sign') {
+        this.world.focus(null);
+        this.talkWith = null;
+        for (const line of s.reception.sign) {
+          if (this.lobby !== id) return;
+          await this.talk.say(null, line);
+        }
+        return;
+      }
+      this.world.focus('manager');
+      this.talkWith = 'manager';
+      const who = this.receptionSpeaker(id);
+      const lines = this.lobbyGreeted
+        ? ['[happy] Welcome back! Have you decided which internship you\'d like to try?']
+        : [...s.reception.lines, `[idea] We have ${taskCount(id)} internships open right now. Have a look, and pick the one you'd like to try.`];
+      for (const line of lines) {
+        if (this.lobby !== id) return;
+        await this.talk.say(who, line);
+      }
+      this.lobbyGreeted = true;
+      if (this.lobby !== id) return;
+      chosen = await this.pickRole(id);
+      if (this.lobby !== id) return;
+      if (chosen === null) {
+        await this.talk.say(who, "[happy] No problem. Have a look around, I'm right here when you're ready.");
+        return;
+      }
+      const task = getTask(id, chosen);
+      this.world.act('manager', 'nod');
+      await this.talk.say(who, `[excited] Lovely choice! ${task.npc.name} is expecting you. Head on through to the office.`);
+    } finally {
+      if (this.lobby === id) {
+        this.talk.hide();
+        this.world.focus(null);
+        this.world.setTalking(null);
+        this.talkWith = null;
+        this.conversing = false;
+        if (chosen === null) this.world.setFree(true);
+      }
+    }
+    if (chosen !== null && this.lobby === id) await this.enterBuilding(id, chosen);
   }
 
   private async enterBuilding(id: ScenarioId, taskIndex: TaskIndex) {
@@ -516,10 +679,14 @@ export class App {
     const cast = castFor(this.look).rooms[id];
     void preparePortraits([cast.manager, ...cast.colleagues]);
     try {
-      await this.world.enter(id, { task: taskIndex, twist: isRevisit, look: this.look }, () => {
+      const room = { task: taskIndex, twist: isRevisit, look: this.look };
+      const midway = () => {
+        this.lobby = null;
         this.setScreen('scenario');
         this.renderRoom();
-      });
+      };
+      if (this.lobby === id) await this.world.changeRoom(id, room, midway);
+      else await this.world.enter(id, room, midway);
     } catch (err) {
       console.error(err);
       this.run = null;
@@ -535,7 +702,11 @@ export class App {
   }
 
   private async leaveScenario() {
-    if (this.busy || !this.run) return;
+    if (this.busy) return;
+    if (!this.run) {
+      if (this.lobby) await this.exitToPlaza();
+      return;
+    }
     if (this.run.choiceId && !this.run.saved) {
       const ok = await confirmDialog({
         title: 'Leave this building?',
@@ -559,6 +730,8 @@ export class App {
   private async exitToPlaza() {
     this.busy = true;
     this.run = null;
+    this.lobby = null;
+    this.els.stage.querySelector('.role-pick-wrap')?.remove();
     this.resetTalk();
     this.talk.hide();
     this.world.setTalking(null);

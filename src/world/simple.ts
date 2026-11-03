@@ -36,6 +36,9 @@ export class SimpleWorld implements World {
   exit(midway?: () => void): Promise<void> {
     return this.swap(midway);
   }
+  changeRoom(_id: ScenarioId, _room: RoomSetup, midway?: () => void): Promise<void> {
+    return this.swap(midway);
+  }
   private async swap(midway?: () => void): Promise<void> {
     await fade(this.veil, true, 150);
     midway?.();

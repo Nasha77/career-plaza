@@ -661,3 +661,50 @@ export const BOARDS: Record<ScenarioId, [Boards, Boards]> = {
 };
 
 export const boardsFor = (id: ScenarioId, task: TaskIndex) => BOARDS[id][task];
+
+const LOBBY_SIGN: Record<ScenarioId, [string, string, string]> = {
+  resort: ['Harbourfront Resort', 'Stay, shop, celebrate', '#2f6f6a'],
+  policy: ['Climate Policy Association', 'Working together on carbon markets', '#34465e'],
+  foundation: ['Community Foundation', 'Giving that changes things', '#8c3b4a'],
+  workforce: ['Workforce Strategy Hub', 'Ready for the future of work', '#1f4e5a'],
+};
+
+/** The reception's wall: the company's sign behind the desk, and a doorway through to the offices. */
+export function lobbyBoards(kit: Kit, g: THREE.Group, id: ScenarioId) {
+  const [name, tagline, color] = LOBBY_SIGN[id];
+  const sign = kit.canvasTexture(768, 220, (ctx, w, h) => {
+    ctx.fillStyle = color;
+    roundRect(ctx, 0, 0, w, h, 26);
+    ctx.fill();
+    ctx.fillStyle = '#fffaea';
+    ctx.textAlign = 'center';
+    ctx.font = `900 64px ${DISPLAY_FONT}`;
+    let size = 64;
+    while (ctx.measureText(name).width > w - 60 && size > 36) {
+      size -= 2;
+      ctx.font = `900 ${size}px ${DISPLAY_FONT}`;
+    }
+    ctx.fillText(name, w / 2, 104);
+    ctx.font = `700 34px ${FONT}`;
+    ctx.fillStyle = 'rgba(255,250,234,0.85)';
+    ctx.fillText(tagline, w / 2, 164);
+  });
+  backBoard(kit, g, sign, 4.6, 1.32, -0.2, 3.6, 0x3b2e22);
+  // A doorway on the back wall, through to the offices
+  const frameMat = kit.lambert(0x8a6240);
+  g.add(kit.box(1.9, 3.0, 0.1, kit.lambert(0x2b211a), 4.3, 1.5, BACK_Z + 0.06));
+  g.add(kit.box(0.18, 3.2, 0.2, frameMat, 3.3, 1.6, BACK_Z + 0.1), kit.box(0.18, 3.2, 0.2, frameMat, 5.3, 1.6, BACK_Z + 0.1));
+  g.add(kit.box(2.2, 0.2, 0.2, frameMat, 4.3, 3.2, BACK_Z + 0.1));
+  const label = kit.canvasTexture(256, 72, (ctx, w, h) => {
+    ctx.fillStyle = '#fffaea';
+    roundRect(ctx, 0, 0, w, h, 18);
+    ctx.fill();
+    ctx.fillStyle = '#5a4632';
+    ctx.font = `800 34px ${DISPLAY_FONT}`;
+    ctx.textAlign = 'center';
+    ctx.fillText('Offices →', w / 2, 48);
+  });
+  const l = plane(kit, label, 1.4, 0.4);
+  l.position.set(4.3, 3.6, BACK_Z + 0.15);
+  g.add(l);
+}
