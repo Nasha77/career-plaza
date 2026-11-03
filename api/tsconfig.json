@@ -1,0 +1,5 @@
+{
+  "//": "Vercel type-checks api/ with the nearest tsconfig; use the server settings (Node types), not the browser game's.",
+  "extends": "../tsconfig.server.json",
+  "include": ["../server", "."]
+}
